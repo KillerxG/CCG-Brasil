@@ -43,13 +43,13 @@ end
 function s.recfilter(c)
 	return c:IsFaceup() and c:IsSetCard(0x289) and c:IsType(TYPE_MONSTER)
 end
-function s.rectg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.mattg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.recfilter,tp,LOCATION_GRAVE,0,1,nil) end
 	local g=Duel.GetMatchingGroup(s.recfilter,tp,LOCATION_GRAVE,0,nil)
 	local rec=g:GetClassCount(Card.GetRace)*300
 	Duel.SetOperationInfo(0,CATEGORY_RECOVER,nil,0,1-tp,rec)
 end
-function s.recop(e,tp,eg,ep,ev,re,r,rp)
+function s.matop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(s.recfilter,tp,LOCATION_GRAVE,0,nil)
 	local rec=g:GetClassCount(Card.GetRace)*300
 	Duel.Recover(tp,rec,REASON_EFFECT)

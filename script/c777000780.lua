@@ -99,11 +99,11 @@ end
 function s.drfilter(c)
 	return c:IsSetCard(0x300) and c:IsType(TYPE_MONSTER) and c:IsDiscardable()
 end
-function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.drcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.drfilter,tp,LOCATION_HAND,0,1,nil) end
 	Duel.DiscardHand(tp,s.drfilter,1,1,REASON_COST+REASON_DISCARD)
 end
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsPlayerCanDraw(tp,2) end
 	Duel.SetTargetPlayer(tp)
 	Duel.SetTargetParam(2)
@@ -112,7 +112,7 @@ end
 function s.banfilter(c)
 	return c:IsRace(RACE_DRAGON) and c:IsAbleToRemove()
 end
-function s.activate(e,tp,eg,ep,ev,re,r,rp)
+function s.drop(e,tp,eg,ep,ev,re,r,rp)
 	local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
 	if Duel.Draw(p,d,REASON_EFFECT) and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
 	local g=Duel.SelectMatchingCard(tp,s.banfilter,tp,LOCATION_EXTRA,0,1,1,nil,e,tp)
