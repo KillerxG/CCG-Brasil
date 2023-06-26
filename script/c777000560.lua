@@ -83,7 +83,7 @@ function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)	
 	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_GRAVE,0,nil)
-	local rec=g:GetClassCount(Card.GetCode)*400
+	local rec=g:GetClassCount(Card.GetRace)*400
 	Duel.Recover(tp,rec,REASON_EFFECT)
 	
 end
