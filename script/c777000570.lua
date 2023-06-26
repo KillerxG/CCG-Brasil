@@ -2,8 +2,6 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	c:AddSetcodesRule(id,true,0x314)--Waifu Arch
-	c:AddSetcodesRule(id,true,0x314d)--Furry Arch
 	--Link Materials
 	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsType,TYPE_EFFECT),2,nil,s.matcheck)
 	c:EnableReviveLimit()
@@ -48,7 +46,7 @@ function s.initial_effect(c)
 end
 --Link Materials
 function s.matcheck(g,lc,sumtype,tp)
-	return g:IsExists(Card.IsSetCard,1,nil,0x296,lc,sumtype,tp)
+	return g:IsExists(Card.IsSetCard,1,nil,0x289,lc,sumtype,tp)
 end
 --(1)Activate Cost
 function s.costcon(e,tp,eg,ep,ev,re,r,rp)
@@ -65,7 +63,7 @@ end
 --(3)Prevent effect target
 --(4)Prevent destruction by effects
 function s.imfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x296)
+	return c:IsFaceup() and c:IsSetCard(0x289)
 end
 function s.imcon(e)
 	return e:GetHandler():GetLinkedGroup():IsExists(s.imfilter,1,nil)

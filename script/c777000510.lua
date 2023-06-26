@@ -2,8 +2,6 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	c:AddSetcodesRule(id,true,0x314)--Waifu Arch
-	c:AddSetcodesRule(id,true,0x314d)--Furry Arch
 	c:SetSPSummonOnce(id)
 	--Link Summon
 	Link.AddProcedure(c,s.matfilter,1,1)
@@ -16,7 +14,7 @@ function s.initial_effect(c)
 	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
 	e1:SetCountLimit(1,id)
 	e1:SetRange(LOCATION_MZONE)
-	e1:SetCondition(aux.zptcon(aux.FilterBoolFunction(Card.IsSetCard,0x296)))
+	e1:SetCondition(aux.zptcon(aux.FilterBoolFunction(Card.IsSetCard,0x289)))
 	e1:SetCost(s.setcost)
 	e1:SetTarget(s.settg)
 	e1:SetOperation(s.setop)
@@ -24,11 +22,11 @@ function s.initial_effect(c)
 end
 --Link Summon
 function s.matfilter(c,lc,sumtype,tp)
-	return c:IsSetCard(0x296,lc,sumtype,tp) and not c:IsSummonCode(lc,sumtype,tp,id)
+	return c:IsSetCard(0x289,lc,sumtype,tp) and not c:IsSummonCode(lc,sumtype,tp,id)
 end
 --(1)Set Arknight S/T
 function s.filter(c)
-	return c:IsSetCard(0x296) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsSSetable()
+	return c:IsSetCard(0x289) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsSSetable()
 end
 function s.setcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.CheckLPCost(tp,1000) end

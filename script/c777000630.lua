@@ -6,9 +6,6 @@ function s.initial_effect(c)
 	c:EnableReviveLimit()
 	c:EnableCounterPermit(0x1296)
 	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsType,TYPE_EFFECT),2,nil,s.matcheck)
-	c:AddSetcodesRule(id,true,0x314)--Waifu Arch
-	c:AddSetcodesRule(id,true,0x296)--Arknight Arch
-	Card.Alias(c,id)
 	--(1)Counter
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
@@ -46,14 +43,14 @@ function s.initial_effect(c)
 end
 --Link Summon
 function s.matcheck(g,lc,sumtype,tp)
-	return g:IsExists(Card.IsSetCard,1,nil,0x296,lc,sumtype,tp)
+	return g:IsExists(Card.IsSetCard,1,nil,0x289,lc,sumtype,tp)
 end
 --(1)Counter
 function s.ctcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK)
 end
 function s.ctfilter(c)
-	return c:IsRace(RACE_ALL) and c:IsSetCard(0x296)
+	return c:IsRace(RACE_ALL) and c:IsSetCard(0x289)
 end
 local function getcount(tp)
 	local totrace=0
