@@ -33,10 +33,10 @@ s.listed_names={777000010}
 --(1)Special "Herrscher" from GY
 function s.costfilter(c,e,tp)
 	local ft=Duel.GetLocationCount(tp,LOCATION_MZONE)
-	return c:IsMonster() and c:IsSetCard(0x299) and c:IsFaceup() and c:IsAbleToRemoveAsCost() and aux.SpElimFilter(c,true,true)
+	return c:IsMonster() and c:IsSetCard(0x315) and c:IsFaceup() and c:IsAbleToRemoveAsCost() and aux.SpElimFilter(c,true,true)
 end
 function s.spfilter(c,e,tp)
-	return c:IsMonster() and c:IsSetCard(0x299b) and c:IsCanBeSpecialSummoned(e,0,tp,true,false,POS_FACEUP)
+	return c:IsMonster() and c:IsSetCard(0x315b) and c:IsCanBeSpecialSummoned(e,0,tp,true,false,POS_FACEUP)
 end
 function s.spcheck(sg,e,tp)
 	return aux.ChkfMMZ(1)(sg,e,tp) and Duel.IsExistingTarget(s.spfilter,tp,LOCATION_GRAVE,0,1,sg,e,tp)
@@ -93,7 +93,7 @@ function s.hrop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(2)Special Summon "HI3rd" from hand
 function s.filter(c,e,tp)
-	return  c:IsSetCard(0x299) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP)
+	return  c:IsSetCard(0x315) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP)
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0

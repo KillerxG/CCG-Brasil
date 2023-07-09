@@ -3,7 +3,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
 	--Fusion Material
-	Fusion.AddProcFun2(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x299),s.ffilter,true)
+	Fusion.AddProcFun2(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x315),s.ffilter,true)
 	c:EnableReviveLimit()
 	c:EnableCounterPermit(0x199)
 	--(1)Herrscher Counter
@@ -43,7 +43,7 @@ function s.ffilter(c,fc,sumtype,tp)
 end
 --(1)Herrscher Counter
 function s.cfilter(c)
-	return c:IsSetCard(0x299) and not c:IsPublic()
+	return c:IsSetCard(0x315) and not c:IsPublic()
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND,0,1,nil) end
@@ -103,7 +103,7 @@ function s.atkcon(e)
 	return e:GetHandler():GetSequence()==2
 end
 function s.atkfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x299) and c:GetAttribute()~=0
+	return c:IsFaceup() and c:IsSetCard(0x315) and c:GetAttribute()~=0
 end
 function s.atkvalue(e,c)
 	local g=Duel.GetMatchingGroup(s.atkfilter,c:GetControler(),0,LOCATION_MZONE,nil)

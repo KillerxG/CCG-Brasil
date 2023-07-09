@@ -29,10 +29,10 @@ function s.initial_effect(c)
 end
 --(1)Special Summon Herrscher
 function s.tgfilter(c,e,tp)
-	return c:IsFaceup() and c:IsSetCard(0x299) and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil,e,tp,c:GetAttribute())
+	return c:IsFaceup() and c:IsSetCard(0x315) and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil,e,tp,c:GetAttribute())
 end
 function s.spfilter(c,e,tp,attr)
-	return c:IsSetCard(0x299) and not c:IsAttribute(attr) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE)
+	return c:IsSetCard(0x315) and not c:IsAttribute(attr) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE)
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	local c=e:GetHandler()
@@ -69,7 +69,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 end
 --(2)Herrscher Counters
 function s.cttfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x299b) and c:IsLevelAbove(1) and c:IsCanAddCounter(0x199,c:GetLevel())
+	return c:IsFaceup() and c:IsSetCard(0x315b) and c:IsLevelAbove(1) and c:IsCanAddCounter(0x199,c:GetLevel())
 end
 function s.cttg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.cttfilter(chkc) end

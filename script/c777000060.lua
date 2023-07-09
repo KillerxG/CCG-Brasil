@@ -3,7 +3,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
 	--Fusion Material
-	Fusion.AddProcFun2(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x299),s.ffilter,true)
+	Fusion.AddProcFun2(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x315),s.ffilter,true)
 	c:EnableReviveLimit()
 	c:EnableCounterPermit(0x199)
 	--(1)Herrscher Counter
@@ -47,7 +47,7 @@ function s.ffilter(c,fc,sumtype,tp)
 end
 --(1)Herrscher Counter
 function s.ctfilter(c)
-	return c:IsSetCard(0x299) and c:IsAbleToGrave()
+	return c:IsSetCard(0x315) and c:IsAbleToGrave()
 end
 function s.ctcheck(sg,e,tp)
 	return sg:GetClassCount(Card.GetCode)==#sg and e:GetHandler():IsCanAddCounter(0x199,#sg)
@@ -74,13 +74,13 @@ end
 --(2)All "HI3rd" Monsters gain 500 ATK
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	local at=Duel.GetAttacker()
-	return at:IsControler(tp) and at:IsSetCard(0x299) and e:GetHandler():GetSequence()==2
+	return at:IsControler(tp) and at:IsSetCard(0x315) and e:GetHandler():GetSequence()==2
 end
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,0x299),tp,LOCATION_MZONE,0,1,nil) end
+	if chk==0 then return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,0x315),tp,LOCATION_MZONE,0,1,nil) end
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(aux.FaceupFilter(Card.IsSetCard,0x299),tp,LOCATION_MZONE,0,nil)
+	local g=Duel.GetMatchingGroup(aux.FaceupFilter(Card.IsSetCard,0x315),tp,LOCATION_MZONE,0,nil)
 	for tc in aux.Next(g) do
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)

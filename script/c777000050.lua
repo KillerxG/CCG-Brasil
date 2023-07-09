@@ -3,7 +3,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
 	--Fusion Material
-	Fusion.AddProcFun2(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x299),s.ffilter,true)
+	Fusion.AddProcFun2(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x315),s.ffilter,true)
 	c:EnableReviveLimit()
 	c:EnableCounterPermit(0x199)	
 	--(1)Place Herrscher Counter(s)
@@ -40,7 +40,7 @@ function s.ffilter(c,fc,sumtype,tp)
 end
 --(2)Place Herrscher Counter(s)
 function s.pctfilter(c,tp)
-  return c:IsFaceup() --and c:IsSetCard(0x299) and c:GetSummonPlayer()==tp
+  return c:IsFaceup() --and c:IsSetCard(0x315) and c:GetSummonPlayer()==tp
 end
 function s.pctop(e,tp,eg,ep,ev,re,r,rp)
   local ct=eg:FilterCount(s.pctfilter,nil,tp)
@@ -53,7 +53,7 @@ function s.atkcon(e)
 	return e:GetHandler():GetSequence()==2
 end
 function s.atkfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x299) and c:GetAttribute()~=0
+	return c:IsFaceup() and c:IsSetCard(0x315) and c:GetAttribute()~=0
 end
 function s.atkvalue(e,c)
 	local g=Duel.GetMatchingGroup(s.atkfilter,c:GetControler(),0,LOCATION_MZONE,nil)
@@ -66,7 +66,7 @@ function s.setcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	e:GetHandler():RemoveCounter(tp,0x199,1,REASON_COST)
 end
 function s.setfilter(c)
-	return c:IsSetCard(0x299) and c:IsSSetable()
+	return c:IsSetCard(0x315) and c:IsSSetable()
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) end

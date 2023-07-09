@@ -3,7 +3,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
 	--Fusion Material
-	Fusion.AddProcFun2(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x299),s.ffilter,true)
+	Fusion.AddProcFun2(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x315),s.ffilter,true)
 	c:EnableReviveLimit()
 	c:EnableCounterPermit(0x199)	
 	--(1)Double damage
@@ -63,7 +63,7 @@ function s.tdamcon(e)
 	return e:GetHandler():GetSequence()==2
 end
 function s.tdamtg(e,c)
-	return c:IsSetCard(0x299) --and c:GetBattleTarget()~=nil
+	return c:IsSetCard(0x315) --and c:GetBattleTarget()~=nil
 end
 --(2)Place Counter
 function s.ctfilter(c,tp)

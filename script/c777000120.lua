@@ -30,7 +30,7 @@ end
 s.listed_names={777000010}
 --(1)Destroy cards
 function s.cfilter(c)
-	return c:IsSetCard(0x299)
+	return c:IsSetCard(0x315)
 end
 function s.lmfilter(c)
 	return c:IsFaceup() and c:IsSetCard(0x9999) and c:IsType(TYPE_FUSION)
@@ -60,7 +60,7 @@ function s.chainlm(e,rp,tp)
 end
 --(2)Shuffle and Draw
 function s.drfilter(c)
-	return c:IsFaceup() and c:IsType(TYPE_MONSTER) and c:IsSetCard(0x299) and c:IsAbleToDeck()
+	return c:IsFaceup() and c:IsType(TYPE_MONSTER) and c:IsSetCard(0x315) and c:IsAbleToDeck()
 end
 function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_REMOVED) and chkc:IsControler(tp) and s.drfilter(chkc) end

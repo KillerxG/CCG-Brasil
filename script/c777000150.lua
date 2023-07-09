@@ -28,7 +28,7 @@ function s.initial_effect(c)
 end
 --(1)Special Summon
 function s.cfilter(c)
-	return c:IsFacedown() or not c:IsSetCard(0x299)
+	return c:IsFacedown() or not c:IsSetCard(0x315)
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return not Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
@@ -49,13 +49,13 @@ function s.tdcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsLocation(LOCATION_GRAVE) and r==REASON_FUSION
 end
 function s.spfilter(c,e,tp)
-	return c:IsType(TYPE_MONSTER) and c:IsSetCard(0x299) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+	return c:IsType(TYPE_MONSTER) and c:IsSetCard(0x315) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.setfilter(c)
-	return (c:IsCode(24094653) or (c:IsSetCard(0x299) and c:IsSpellTrap())) and c:IsSSetable()
+	return (c:IsCode(24094653) or (c:IsSetCard(0x315) and c:IsSpellTrap())) and c:IsSSetable()
 end
 function s.gyfilter(c)
-	return c:IsMonster() and c:IsSetCard(0x299) and c:IsAbleToGrave()
+	return c:IsMonster() and c:IsSetCard(0x315) and c:IsAbleToGrave()
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.setfilter(chkc) end
@@ -72,7 +72,7 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
 		local g=Duel.SelectMatchingCard(tp,s.gyfilter,tp,LOCATION_DECK,0,1,1,nil)
 		if #g>0 and Duel.SendtoGrave(g,REASON_EFFECT) then Duel.GetOperatedGroup():GetFirst():IsLocation(LOCATION_GRAVE) end
-			local rg=Duel.GetMatchingGroup(Card.IsSetCard,tp,LOCATION_GRAVE,0,nil,0x299)
+			local rg=Duel.GetMatchingGroup(Card.IsSetCard,tp,LOCATION_GRAVE,0,nil,0x315)
 			local ct=rg:GetClassCount(Card.GetAttribute)
 			if ct>=3 and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 			and Duel.IsExistingMatchingCard(aux.NecroValleyFilter(s.spfilter),tp,LOCATION_GRAVE,0,1,nil,e,tp)

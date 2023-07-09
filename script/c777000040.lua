@@ -29,7 +29,7 @@ function s.initial_effect(c)
 end
 --(1)Special Summon
 function s.spfilter(c)
-	return c:IsSetCard(0x299b)
+	return c:IsSetCard(0x315b)
 end
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_EXTRA,0,1,nil) end
@@ -81,7 +81,7 @@ function s.lizfilter(e,c)
 end
 --(2)Change to DEF
 function s.cfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x299b)
+	return c:IsFaceup() and c:IsSetCard(0x315b)
 end
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)

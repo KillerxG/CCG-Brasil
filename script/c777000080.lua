@@ -27,7 +27,7 @@ function s.initial_effect(c)
 end
 --(1)Special Summon "Herrscher" monster
 function s.filter(c)
-	return c:IsSetCard(0x299) and c:IsMonster() and c:IsAbleToHand()
+	return c:IsSetCard(0x315) and c:IsMonster() and c:IsAbleToHand()
 end
 function s.filter2(c)
 	return c:IsCode(24094653) and c:IsAbleToHand()
