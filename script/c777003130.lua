@@ -126,7 +126,7 @@ function s.wincon(e)
 	return Duel.GetMatchingGroup(s.winfilter,e:GetHandlerPlayer(),LOCATION_GRAVE,0,nil):GetClassCount(Card.GetAttribute)>=5 
 end
 function s.winop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Win(tp,nil)
+	Duel.Win(tp,aux.Stringid(id,1))
 end
 --(6)Return to hand
 function s.cfilter2(c)
