@@ -63,7 +63,7 @@ function s.spcon(e,c)
 	if c==nil then return true end
 	local tp=e:GetHandlerPlayer()
 	local rg=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_MZONE,0,e:GetHandler())
-	return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and #rg>2 and aux.SelectUnselectGroup(rg,e,tp,3,3,nil,0)
+	return #rg>2 and aux.SelectUnselectGroup(rg,e,tp,3,3,nil,0)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,c)
 	local c=e:GetHandler()
