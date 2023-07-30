@@ -20,7 +20,6 @@ function s.initial_effect(c)
 	e2:SetRange(LOCATION_GRAVE)
 	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e2:SetCountLimit(1,id+1)
-	e2:SetCost(s.lvcost)
 	e2:SetTarget(s.lvtg)
 	e2:SetOperation(s.lvop)
 	c:RegisterEffect(e2)
@@ -82,10 +81,6 @@ function s.tkop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 --(2)Change Level
-function s.lvcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.CheckLPCost(tp,800) end
-	Duel.PayLPCost(tp,800)
-end
 function s.levfilter(c)
 	return c:IsFaceup() and c:HasLevel()
 end

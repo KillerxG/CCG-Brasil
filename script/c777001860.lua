@@ -18,7 +18,6 @@ function s.initial_effect(c)
 	e2:SetType(EFFECT_TYPE_IGNITION)
 	e2:SetRange(LOCATION_GRAVE)
 	e2:SetCountLimit(1,id+1)
-	e2:SetCost(s.spcost)
 	e2:SetCondition(s.spcon)
 	e2:SetTarget(s.sptg)
 	e2:SetOperation(s.spop)
@@ -29,10 +28,6 @@ function s.synval(e,mc,sc)
 	return sc:IsLevel(6,8)
 end
 --(2)Special Summon itself from the GY
-function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.CheckLPCost(tp,800) end
-	Duel.PayLPCost(tp,800)
-end
 function s.spconfilter(c)
 	return c:IsFaceup() and (c:IsType(TYPE_TOKEN) or c:IsCode(777001840))
 end
