@@ -51,8 +51,8 @@ function s.initial_effect(c)
 	e4:SetCode(EVENT_PHASE+PHASE_END)
 	e4:SetRange(LOCATION_MZONE)
 	e4:SetCountLimit(1)
-	e4:SetTarget(s.mattg)
-	e4:SetOperation(s.matop)
+	e4:SetTarget(s.target)
+	e4:SetOperation(s.activate)
 	c:RegisterEffect(e4)
 end
 --(2)Special Summon Procedure
