@@ -5,46 +5,81 @@ function s.initial_effect(c)
 	--Synchro Summon Procedure
 	Synchro.AddProcedure(c,nil,1,1,Synchro.NonTuner(nil),1,99)
 	c:EnableReviveLimit()
-	--Activation Limit
+    --Special Summoning Condition
 	local e0=Effect.CreateEffect(c)
-	e0:SetType(EFFECT_TYPE_FIELD)
-	e0:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e0:SetCode(EFFECT_CANNOT_ACTIVATE)
-	e0:SetRange(LOCATION_EMZONE)
-	e0:SetTargetRange(0,1)
-	e0:SetValue(1)
-	e0:SetCondition(s.actcon)
+	e0:SetType(EFFECT_TYPE_SINGLE)
+	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
+	e0:SetValue(aux.synlimit)
 	c:RegisterEffect(e0)
-	--Banish 
+	--Special Summon Procedure
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_REMOVE)
-	e1:SetType(EFFECT_TYPE_QUICK_O)
-	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e1:SetCode(EVENT_FREE_CHAIN)
-	e1:SetRange(LOCATION_MZONE)
-	e1:SetHintTiming(0,TIMING_MAIN_END+TIMING_BATTLE_START+TIMING_BATTLE_END)
-	e1:SetCountLimit(1,id)
-	e1:SetCondition(s.tmprmcon)
-	e1:SetTarget(s.tmprmtg)
-	e1:SetOperation(s.tmprmop)
+	e1:SetType(EFFECT_TYPE_FIELD)
+	e1:SetCode(EFFECT_SPSUMMON_PROC)
+	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e1:SetRange(LOCATION_EXTRA)
+	e1:SetCondition(s.spcon)
+	e1:SetTarget(s.sptg)
+	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
-	--Apply "Cheat Code" Quick-Play Spell Effect
+	--Banish 
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e2:SetProperty(EFFECT_FLAG_DELAY)
-	e2:SetCode(EVENT_LEAVE_FIELD)
-	e2:SetCountLimit(1,id+1)
-	e2:SetCost(s.efcost)
-	e2:SetTarget(s.eftg)
-	e2:SetOperation(s.efop)
+	e2:SetDescription(aux.Stringid(id,0))
+	e2:SetCategory(CATEGORY_REMOVE)
+	e2:SetType(EFFECT_TYPE_QUICK_O)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e2:SetCode(EVENT_FREE_CHAIN)
+	e2:SetRange(LOCATION_MZONE)
+	e2:SetHintTiming(0,TIMING_MAIN_END+TIMING_BATTLE_START+TIMING_BATTLE_END)
+	e2:SetCountLimit(1,id)
+	e2:SetCondition(s.tmprmcon)
+	e2:SetTarget(s.tmprmtg)
+	e2:SetOperation(s.tmprmop)
 	c:RegisterEffect(e2)
+	--Apply "Cheat Code" Quick-Play Spell Effect
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,1))
+	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e3:SetProperty(EFFECT_FLAG_DELAY)
+	e3:SetCode(EVENT_LEAVE_FIELD)
+	e3:SetCountLimit(1,id+1)
+	e3:SetCost(s.efcost)
+	e3:SetTarget(s.eftg)
+	e3:SetOperation(s.efop)
+	c:RegisterEffect(e3)
+	Duel.AddCustomActivityCounter(id,ACTIVITY_CHAIN,s.chainfilter)
 end
---Activation Limit
-function s.actcon(e)
-	local a=Duel.GetAttacker()
-	return a and a:IsControler(e:GetHandlerPlayer())
+--Special Summon Procedure
+function s.chainfilter(re,tp,cid)                 
+		local rc=re:GetHandler()
+	return not (re:IsActiveType(TYPE_MONSTER) and re:GetHandler():IsType(TYPE_LINK))
+end
+function s.spfilter(c,tp,sc)
+	return c:IsCode(666200000) and not c:IsType(TYPE_SYNCHRO,sc,MATERIAL_SYNCHRO,tp) 
+		and c:IsType(TYPE_EFFECT,sc,MATERIAL_SYNCHRO,tp) and Duel.GetLocationCountFromEx(tp,tp,c,sc)>0
+end
+function s.spcon(e,c)
+	if c==nil then return true end
+	local tp=c:GetControler()
+	return Duel.CheckReleaseGroup(c:GetControler(),s.spfilter,1,false,1,true,c,c:GetControler(),nil,false,nil,tp,c)
+		and (Duel.GetCustomActivityCount(id,tp,ACTIVITY_CHAIN)~=0 or Duel.GetCustomActivityCount(id,1-tp,ACTIVITY_CHAIN)~=0)
+end
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,c)
+	local g=Duel.SelectReleaseGroup(tp,s.spfilter,1,1,false,true,true,c,nil,nil,false,nil,tp,c)
+	if g then
+		g:KeepAlive()
+		e:SetLabelObject(g)
+		return true
+	else
+		return false
+	end
+end
+function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
+	local g=e:GetLabelObject()
+	Duel.Release(g,REASON_COST+REASON_MATERIAL)
+	c:SetMaterial(g)
+	g:DeleteGroup()
 end
 --Banish 
 function s.rescon(sg,e,tp,mg)
@@ -54,7 +89,7 @@ function s.tmprmfilter(c,e)
 	return c:IsCanBeEffectTarget(e) and c:IsAbleToRemove()
 end
 function s.tmprmcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsBattlePhase() or Duel.IsMainPhase()
+	return Duel.IsMainPhase()
 end
 function s.tmprmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return false end
