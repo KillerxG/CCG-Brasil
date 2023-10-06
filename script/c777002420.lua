@@ -66,7 +66,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP)
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_UPDATE_DEFENSE)
+		e1:SetCode(EFFECT_UPDATE_ATTACK)
 		e1:SetValue(lc:GetAttack())
 		token:RegisterEffect(e1)
 		
