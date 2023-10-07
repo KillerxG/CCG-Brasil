@@ -41,6 +41,7 @@ function s.initial_effect(c)
 	e4:SetLabelObject(e3)
 	c:RegisterEffect(e4)
 end
+s.listed_names={777003710,id}
 --(1)Ritual Summon 1
 function s.spmfilterf(c,tp,mg,rc)
   if c:IsControler(tp) and c:IsLocation(LOCATION_MZONE) and c:GetSequence()<5 then
