@@ -15,7 +15,7 @@ end
 --(1)Search
 function s.filter(c,tp)
 	return c:IsRitualMonster() and c:IsAbleToHand()
-		and Duel.IsExistingMatchingCard(s.filter2,tp,LOCATION_DECK,0,1,nil,c)
+		and Duel.IsExistingMatchingCard(s.filter2,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil,c)
 end
 function s.filter2(c,mc)
 	return c:IsRitualSpell() and c:IsAbleToHand() and s.isfit(c,mc)
@@ -24,14 +24,14 @@ function s.isfit(c,mc)
 	return (mc.fit_monster and c:IsCode(table.unpack(mc.fit_monster))) or mc:ListsCode(c:GetCode())
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK,0,1,nil,tp) end
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,2,tp,LOCATION_DECK)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil,tp) end
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,2,tp,LOCATION_DECK+LOCATION_GRAVE)
 end
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil,tp)
 	if #g>0 then
-		local mg=Duel.GetMatchingGroup(s.filter2,tp,LOCATION_DECK,0,nil,g:GetFirst())
+		local mg=Duel.GetMatchingGroup(s.filter2,tp,LOCATION_DECK+LOCATION_GRAVE,0,nil,g:GetFirst())
 		if #mg>0 then
 			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 			local sg=mg:Select(tp,1,1,nil)
