@@ -32,7 +32,7 @@ function s.initial_effect(c)
 end
 --(1)Add 1 "Yokai" monster from Deck
 function s.thfilter(c)
-	return c:IsSetCard(0x400) and c:IsMonster() and c:IsAbleToHand()
+	return c:IsSetCard(0x401) and c:IsMonster() and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
