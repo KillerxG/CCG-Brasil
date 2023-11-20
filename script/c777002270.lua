@@ -124,7 +124,7 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
 	local sg=g:Filter(Card.IsRelateToEffect,nil,e)
 	if Duel.Remove(sg,POS_FACEUP,REASON_EFFECT) then
-		Duel.SendtoGrave(c,tp,REASON_EFFECT)
+		Duel.SendtoGrave(c,nil,REASON_EFFECT)
 	end
 end
 --(3)Unaffected by monsters

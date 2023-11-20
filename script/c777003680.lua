@@ -32,9 +32,6 @@ function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.mzthfilter,tp,LOCATION_DECK|LOCATION_GRAVE,0,1,nil) end
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK|LOCATION_GRAVE)
 end
-function s.spfilter(c,e,tp)
-	return c:IsFaceup() and c:IsCode(777003710) 
-end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.mzthfilter),tp,LOCATION_DECK|LOCATION_GRAVE,0,1,1,nil)
@@ -43,9 +40,9 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.ShuffleHand(tp)
 	local tc=g:GetFirst()
 	local c=e:GetHandler()
-	if tc and tc:IsLocation(LOCATION_HAND) and tc:IsCode(777003710) then
+	if tc and tc:IsLocation(LOCATION_HAND) and (tc:IsRace(RACE_DRAGON) or tc:IsRace(RACE_FIEND)) then
 		Duel.SendtoGrave(c,REASON_EFFECT)
-		elseif tc and tc:IsLocation(LOCATION_HAND) and not tc:IsCode(777003710) then
+		elseif tc and tc:IsLocation(LOCATION_HAND) and not (tc:IsRace(RACE_DRAGON) or tc:IsRace(RACE_FIEND)) then
 		Duel.Remove(c,POS_FACEUP,REASON_EFFECT)
 		
 	end
@@ -67,7 +64,7 @@ function s.tgop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
 	local g=Duel.SelectMatchingCard(tp,s.tgfilter,tp,LOCATION_EXTRA,0,1,1,nil)
 	local tc=g:GetFirst()
-	if tc and Duel.SendtoGrave(tc,REASON_EFFECT)>0 and tc:IsLocation(LOCATION_GRAVE) and tc:IsType(TYPE_SYNCHRO)
+	if tc and Duel.SendtoGrave(tc,REASON_EFFECT)>0 and tc:IsLocation(LOCATION_GRAVE) and tc:HasLevel()
 		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 		and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
 		if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP) 
