@@ -9,8 +9,9 @@ function s.initial_effect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetCountLimit(1,id)
-	e1:SetTarget(s.target)
-	e1:SetOperation(s.activate)
+	e1:SetCost(s.thcost)
+	e1:SetTarget(s.thtg)
+	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 	--(2)Recover
 	local e2=Effect.CreateEffect(c)
@@ -22,20 +23,24 @@ function s.initial_effect(c)
 	e2:SetRange(LOCATION_GRAVE)
 	e2:SetCountLimit(1,id+1)
 	e2:SetCost(aux.bfgcost)
-	e2:SetTarget(s.mattg)
-	e2:SetOperation(s.matop)
+	e2:SetTarget(s.rectg)
+	e2:SetOperation(s.recop)
 	c:RegisterEffect(e2)
 end
 --(1)Search or Foolish
-function s.filter(c)
+function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.CheckLPCost(tp,800) end
+	Duel.PayLPCost(tp,800)
+end
+function s.thfilter(c)
 	return c:IsSetCard(0x289) and c:IsMonster() and (c:IsAbleToHand() or c:IsAbleToGrave())
 end
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK,0,1,nil) end
+function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
 end
-function s.activate(e,tp,eg,ep,ev,re,r,rp)
+function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil)
+	local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK,0,1,1,nil)
 	local tc=g:GetFirst()
 	aux.ToHandOrElse(tc,tp)
 end
@@ -43,14 +48,14 @@ end
 function s.recfilter(c)
 	return c:IsFaceup() and c:IsSetCard(0x289) and c:IsType(TYPE_MONSTER)
 end
-function s.mattg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.rectg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.recfilter,tp,LOCATION_GRAVE,0,1,nil) end
 	local g=Duel.GetMatchingGroup(s.recfilter,tp,LOCATION_GRAVE,0,nil)
-	local rec=g:GetClassCount(Card.GetRace)*300
+	local rec=g:GetClassCount(Card.GetRace)*500
 	Duel.SetOperationInfo(0,CATEGORY_RECOVER,nil,0,1-tp,rec)
 end
-function s.matop(e,tp,eg,ep,ev,re,r,rp)
+function s.recop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(s.recfilter,tp,LOCATION_GRAVE,0,nil)
-	local rec=g:GetClassCount(Card.GetRace)*300
+	local rec=g:GetClassCount(Card.GetRace)*500
 	Duel.Recover(tp,rec,REASON_EFFECT)
 end
