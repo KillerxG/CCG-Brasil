@@ -21,6 +21,18 @@ function s.initial_effect(c)
 	e2:SetRange(LOCATION_MZONE+LOCATION_GRAVE)
 	e2:SetValue(RACE_FIEND)
 	c:RegisterEffect(e2)
+	--(3)Ritual Summon
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,2))
+	e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e3:SetType(EFFECT_TYPE_IGNITION)
+	e3:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e3:SetRange(LOCATION_GRAVE)
+	e3:SetCountLimit(1,id+1)
+	e3:SetCost(s.ritcost)
+	e3:SetTarget(s.rittg)
+	e3:SetOperation(s.ritop)
+	c:RegisterEffect(e3)
 end
 function s.spfilter(c)
 	return c:IsLevelAbove(1) and c:IsRitualMonster()
@@ -70,4 +82,32 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 					end
 		end
 	end
+end
+--(3)Ritual Summon
+function s.cfilter(c)
+	return c:IsMonster() and c:IsAbleToRemoveAsCost()
+end
+function s.ritcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
+	if chk==0 then return aux.bfgcost(e,tp,eg,ep,ev,re,r,rp,0)
+		and Duel.IsExistingMatchingCard(s.cfilter,tp,0,LOCATION_GRAVE,1,c) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,0,LOCATION_GRAVE,1,1,c)
+	g:AddCard(c)
+	Duel.Remove(g,POS_FACEUP,REASON_COST)
+end
+function s.ritfilter(c,e,tp)
+	return c:IsSetCard(0x288) and c:IsRitualMonster() and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_RITUAL,tp,false,true) and c:IsFaceup()
+end
+function s.rittg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+		and Duel.IsExistingMatchingCard(s.ritfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil,e,tp) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED)
+end
+function s.ritop(e,tp,eg,ep,ev,re,r,rp)
+	if Duel.GetLocationCount(tp,LOCATION_MZONE)==0 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+	local tc=Duel.SelectMatchingCard(tp,s.ritfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil,e,tp):GetFirst()
+	local c=e:GetHandler()
+	Duel.SpecialSummon(tc,SUMMON_TYPE_RITUAL,tp,tp,false,true,POS_FACEUP)
 end

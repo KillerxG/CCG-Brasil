@@ -16,6 +16,7 @@ function s.initial_effect(c)
 	--(2)SS Ritual Monster
 	local e2=Effect.CreateEffect(c)
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e2:SetCode(EVENT_RECOVER)
 	e2:SetRange(LOCATION_MZONE)
@@ -27,13 +28,21 @@ function s.initial_effect(c)
 	--(3)Add 1 Ritual Spell
 	local e3=Effect.CreateEffect(c)
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_DRAW)
-	e3:SetDescription(aux.Stringid(id,1))
+	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetType(EFFECT_TYPE_IGNITION)
 	e3:SetRange(LOCATION_HAND)
 	e3:SetCountLimit(1,id+1)
 	e3:SetTarget(s.thtg)
 	e3:SetOperation(s.thop)
 	c:RegisterEffect(e3)
+	--(4)Set Race
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_SINGLE)
+	e4:SetCode(EFFECT_ADD_RACE)
+	e4:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e4:SetRange(LOCATION_MZONE+LOCATION_GRAVE+LOCATION_HAND)
+	e4:SetValue(RACE_DRAGON)
+	c:RegisterEffect(e4)
 end
 s.listed_names={777003920,id}
 --(1)Destroy and Recover
@@ -100,7 +109,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=g:GetFirst()
 	local c=e:GetHandler()
 	if tc and tc:IsLocation(LOCATION_HAND) and (tc:IsSetCard(0x288) or tc:IsCode(777003920)) 
-	and Duel.IsPlayerCanDraw(tp,1) and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+	and Duel.IsPlayerCanDraw(tp,1) and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
 		Duel.Draw(tp,1,REASON_EFFECT)
 	end
 end
