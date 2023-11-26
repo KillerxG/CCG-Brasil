@@ -1,4 +1,4 @@
---Royal Angel - Mayka
+--Golden Dragon - Ellen
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -47,7 +47,7 @@ function s.selfnouvfilter(c,tp)
 	return c:IsControler(tp)
 end
 function s.spfilter(c,e,tp)
-	return c:IsRitualMonster() and c:IsCanBeSpecialSummoned(e,0,tp,false,true)
+	return c:IsRitualMonster() and c:IsCanBeSpecialSummoned(e,0,tp,false,true) and not c:IsCode(id)
 end
 function s.rescon(sg,e,tp,mg)
 	return Duel.GetMZoneCount(tp,sg)>0 and sg:IsExists(s.atkposchk,1,nil,sg,tp)
@@ -57,10 +57,10 @@ function s.atkposchk(c,sg,tp)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local g=Duel.GetMatchingGroup(s.cfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil,tp)
-	if chk==0 then return #g>=2 and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil,e,tp)
+	if chk==0 then return #g>=2 and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK+LOCATION_HAND,0,1,nil,e,tp)
 		and aux.SelectUnselectGroup(g,e,tp,2,2,s.rescon,0) end
 	Duel.SetOperationInfo(0,CATEGORY_RELEASE,g,2,0,0)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_DECK)
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_DECK+LOCATION_HAND)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(s.cfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil,tp)
@@ -68,7 +68,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local rg=aux.SelectUnselectGroup(g,e,tp,2,2,s.rescon,1,tp,HINTMSG_RELEASE)
 	if Duel.Release(rg,REASON_EFFECT)==2 and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_DECK,0,1,1,nil,e,tp)
+		local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_DECK+LOCATION_HAND,0,1,1,nil,e,tp)
 		if #g>0 then
 			if Duel.SpecialSummon(g,0,tp,tp,false,true,POS_FACEUP) then
 			Duel.SendtoGrave(e:GetHandler(),REASON_EFFECT+REASON_DISCARD)
