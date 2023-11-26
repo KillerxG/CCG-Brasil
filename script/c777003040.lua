@@ -38,7 +38,7 @@ function s.atkval(e,c)
 end
 --(2)Copy Effect
 function s.filter(c)
-	return c:IsSetCard(0x278) and c:IsMonster() and not c:IsCode(id)
+	return c:IsSetCard(0x278) and c:IsMonster() and c:IsType(TYPE_EFFECT) and not c:IsCode(id) and not c:IsType(TYPE_UNION)
 end
 function s.operation(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
