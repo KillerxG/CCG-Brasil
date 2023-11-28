@@ -34,10 +34,10 @@ function s.initial_effect(c)
 	e4:SetRange(LOCATION_GRAVE)
 	e4:SetCode(EVENT_REMOVE)
 	e4:SetCountLimit(1,id+1)
-	e4:SetCost(s.cost)
-	e4:SetCondition(s.spcon)
-	e4:SetTarget(s.sptg)
-	e4:SetOperation(s.spop)
+	e4:SetCost(s.xyzcost)
+	e4:SetCondition(s.xyzcon)
+	e4:SetTarget(s.xyztg)
+	e4:SetOperation(s.xyzop)
 	c:RegisterEffect(e4)
 	--(4)Set Rank-Up-Magic
 	local e5=Effect.CreateEffect(c)
@@ -93,7 +93,7 @@ end
 function s.costfilter(c)
 	return c:IsRace(RACE_DRAGON) and c:IsLocation(LOCATION_EXTRA) and not c:IsType(TYPE_XYZ) and c:IsAbleToRemoveAsCost(POS_FACEUP)
 end
-function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.xyzcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_EXTRA,0,1,nil) end
 	local g=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_EXTRA,0,1,1,nil)
 	Duel.Remove(g,POS_FACEUP,REASON_COST)
@@ -101,10 +101,10 @@ end
 function s.cfilter(c,tp)
 	return c:IsRace(RACE_DRAGON)
 end
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
+function s.xyzcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(s.cfilter,1,nil,tp)
 end
-function s.filter(c,e,tp,tc)
+function s.sffilter(c,e,tp,tc)
 	return c:IsSetCard(0x300) and c:IsLevel(4)
 		and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 		and Duel.IsExistingMatchingCard(s.xyzfilter,tp,LOCATION_EXTRA,0,1,nil,Group.FromCards(c,tc))
@@ -112,23 +112,23 @@ end
 function s.xyzfilter(c,mg)
 	return c:IsRace(RACE_DRAGON) and c:IsType(TYPE_XYZ) and c:IsXyzSummonable(nil,mg,2,2)
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+function s.xyztg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return false end
 	local c=e:GetHandler()
 	if chk==0 then return c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 		and Duel.IsPlayerCanSpecialSummonCount(tp,2)
 		and not Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT)
 		and Duel.GetLocationCount(tp,LOCATION_MZONE)>1
-		and Duel.IsExistingTarget(s.filter,tp,LOCATION_GRAVE,0,1,c,e,tp,c) end
+		and Duel.IsExistingTarget(s.sffilter,tp,LOCATION_GRAVE,0,1,c,e,tp,c) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,2,tp,LOCATION_GRAVE)
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
+function s.xyzop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT) then return end
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<2 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.filter),tp,LOCATION_GRAVE,0,1,1,c,e,tp,c)+c
+	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.sffilter),tp,LOCATION_GRAVE,0,1,1,c,e,tp,c)+c
 	if #g~=2 then return end
 	for tc in aux.Next(g) do
 		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
