@@ -27,7 +27,7 @@ function s.initial_effect(c)
 end
 --(1)Special Summon
 function s.spcfilter(c)
-	return c:IsMonster() and c:IsSetCard(0x278) and c:IsAbleToGraveAsCost()
+	return c:IsMonster() and c:IsSetCard(0x278) and c:IsAbleToGraveAsCost() and not c:IsCode(id)
 end
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.spcfilter,tp,LOCATION_HAND+LOCATION_DECK,0,1,nil) end
