@@ -27,14 +27,13 @@ function s.initial_effect(c)
 	e3:SetCode(EFFECT_ATTACK_ALL)
 	e3:SetValue(1)
 	c:RegisterEffect(e3)
-	--(4)Disable
+	--(4)Negate during BP
 	local e4=Effect.CreateEffect(c)
-	e4:SetType(EFFECT_TYPE_FIELD)
+	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e4:SetCode(EVENT_CHAIN_SOLVING)
 	e4:SetRange(LOCATION_MZONE)
-	e4:SetTargetRange(0,LOCATION_ONFIELD)
-	e4:SetCondition(s.condition)
-	e4:SetTarget(s.disable)
-	e4:SetCode(EFFECT_DISABLE)
+	e4:SetCondition(s.negcon)
+	e4:SetOperation(s.negop)
 	c:RegisterEffect(e4)
 end
 --(1)Face-down
@@ -75,11 +74,12 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	end
 	Duel.Readjust()
 end
---(4)Disable
-function s.condition(e,tp,eg,ep,ev,re,r,rp)
-	local ph=Duel.GetCurrentPhase()
-	return ph>=PHASE_BATTLE_START and ph<=PHASE_BATTLE
+--(4)Negate during BP
+function s.negcon(e,tp,eg,ep,ev,re,r,rp)
+	return rp==1-tp and re:IsActiveType(TYPE_MONSTER) 
+		and Duel.IsChainDisablable(ev) and Duel.IsBattlePhase()
 end
-function s.disable(e,c)
-	return c:IsFaceup() and not c:IsType(TYPE_NORMAL)
+function s.negop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_CARD,0,id)
+	Duel.NegateEffect(ev)
 end
