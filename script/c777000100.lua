@@ -30,6 +30,14 @@ function s.initial_effect(c)
 	local e3=e2:Clone()
 	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
 	c:RegisterEffect(e3)
+	--(3)Grant effect when used as material for "Herrscher" monster
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	e4:SetProperty(EFFECT_FLAG_EVENT_PLAYER)
+	e4:SetCode(EVENT_BE_MATERIAL)
+	e4:SetCondition(s.efcon)
+	e4:SetOperation(s.efop)
+	c:RegisterEffect(e4)
 end
 --(1)Special Summon 1 "HI3rd" and search 1 card
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
@@ -37,14 +45,14 @@ function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return c:IsLocation(LOCATION_GRAVE) and r==REASON_FUSION
 end
 function s.spfilter(c,e,tp)
-	return c:IsFaceup() and c:IsSetCard(0x315) and not c:IsCode(id) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+	return c:IsFaceup() and c:IsSetCard(0x299) and not c:IsCode(id) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_REMOVED+LOCATION_GRAVE,0,1,nil,e,tp) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_REMOVED+LOCATION_GRAVE)
 	local rc=e:GetHandler():GetReasonCard()
-	if rc and (rc:IsSetCard(0x315b) and rc:IsType(TYPE_FUSION)) then
+	if rc and (rc:IsSetCard(0x299b) and rc:IsType(TYPE_FUSION)) then
 		e:SetLabel(1)
 		e:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOHAND+CATEGORY_SEARCH)
 		Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
@@ -54,7 +62,7 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	end
 end
 function s.thfilter(c)
-	return (c:IsCode(24094653) or (c:IsSetCard(0x315) and c:IsSpellTrap())) and c:IsAbleToHand()
+	return (c:IsCode(24094653) or (c:IsSetCard(0x299) and c:IsSpellTrap())) and c:IsAbleToHand()
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
@@ -72,7 +80,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(2)Special Summon itself from the hand
 function s.cfilter(c,tp)
-	return c:IsFaceup() and c:IsSetCard(0x315) and c:IsSummonPlayer(tp)
+	return c:IsFaceup() and c:IsSetCard(0x299) and c:IsSummonPlayer(tp)
 end
 function s.sp2con(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(s.cfilter,1,nil,tp)
@@ -87,4 +95,19 @@ function s.sp2op(e,tp,eg,ep,ev,re,r,rp)
 	if c:IsRelateToEffect(e) then
 		Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
 	end
+end
+--(3)Grant effect when used as material for "Herrscher" monster
+function s.efcon(e,tp,eg,ep,ev,re,r,rp)
+	local rc=e:GetHandler():GetReasonCard()
+	return rc:IsSetCard(0x299b) and r==REASON_FUSION
+end
+function s.efop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local rc=c:GetReasonCard()
+	--Indes by battle
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
+	e1:SetValue(1)
+	rc:RegisterEffect(e1)
 end

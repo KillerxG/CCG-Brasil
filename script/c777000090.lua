@@ -24,6 +24,18 @@ function s.initial_effect(c)
 	e2:SetTarget(s.chtg)
 	e2:SetOperation(s.chop)
 	c:RegisterEffect(e2)
+	--(3)Fusion Summon using materials from hand or field, including a "HI3rd" monster
+	local params = {nil,nil,function(e,tp,mg) return nil,s.fcheck end}
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,2))
+	e3:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_FUSION_SUMMON)
+	e3:SetType(EFFECT_TYPE_QUICK_O)
+	e3:SetCode(EVENT_FREE_CHAIN)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetCountLimit(1,id+1)
+	e3:SetTarget(Fusion.SummonEffTG(table.unpack(params)))
+	e3:SetOperation(Fusion.SummonEffOP(table.unpack(params)))
+	c:RegisterEffect(e3)
 end
 --(1)Change att and Special this card
 function s.exfilter1(c,tp)
@@ -67,7 +79,7 @@ function s.rvop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(2)Switch Locations
 function s.cfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x315b)
+	return c:IsFaceup() and c:IsSetCard(0x299b)
 end
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
@@ -83,4 +95,8 @@ function s.chop(e,tp,eg,ep,ev,re,r,rp)
 	if #swap_g~=2 then return end
 	Duel.HintSelection(swap_g,true)
 	Duel.SwapSequence(swap_g:GetFirst(),swap_g:GetNext())
+end
+--(3)Fusion Summon using materials from hand or field, including a "HI3rd" monster
+function s.fcheck(tp,sg,fc)
+	return sg:IsExists(Card.IsSetCard,1,nil,0x299)
 end

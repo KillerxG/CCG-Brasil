@@ -29,10 +29,10 @@ function s.initial_effect(c)
 end
 --(1)Special Summon Herrscher
 function s.tgfilter(c,e,tp)
-	return c:IsFaceup() and c:IsSetCard(0x315) and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil,e,tp,c:GetAttribute())
+	return c:IsFaceup() and c:IsSetCard(0x299) and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil,e,tp,c:GetAttribute())
 end
 function s.spfilter(c,e,tp,attr)
-	return c:IsSetCard(0x315) and not c:IsAttribute(attr) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE)
+	return c:IsSetCard(0x299) and not c:IsAttribute(attr) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE)
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	local c=e:GetHandler()
@@ -54,22 +54,10 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	end
 	if not e:IsHasType(EFFECT_TYPE_ACTIVATE) then return end
 	local c=e:GetHandler()
-	--Cannot Special Summon from the Extra Deck, except Fusion Monsters
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,2))
-	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_CLIENT_HINT)
-	e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
-	e1:SetTargetRange(1,0)
-	e1:SetTarget(function(_,c) return not c:IsType(TYPE_FUSION) and c:IsLocation(LOCATION_EXTRA) end)
-	e1:SetReset(RESET_PHASE+PHASE_END)
-	Duel.RegisterEffect(e1,tp)
-	--Clock Lizard check
-	aux.addTempLizardCheck(c,tp,function(_,c) return not c:IsOriginalType(TYPE_FUSION) end)
 end
 --(2)Herrscher Counters
 function s.cttfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x315b) and c:IsLevelAbove(1) and c:IsCanAddCounter(0x199,c:GetLevel())
+	return c:IsFaceup() and c:IsSetCard(0x299b) and c:IsLevelAbove(1) and c:IsCanAddCounter(0x199,c:GetLevel())
 end
 function s.cttg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.cttfilter(chkc) end

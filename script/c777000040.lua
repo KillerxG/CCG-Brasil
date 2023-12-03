@@ -26,10 +26,17 @@ function s.initial_effect(c)
 	e2:SetTarget(s.target)
 	e2:SetOperation(s.activate)
 	c:RegisterEffect(e2)
+	--(3)Fusion Summon
+	local e3=Fusion.CreateSummonEff(c,aux.FilterBoolFunction(Card.IsSetCard,0x299),nil,s.fextra)
+	e3:SetType(EFFECT_TYPE_QUICK_O)
+	e3:SetCode(EVENT_FREE_CHAIN)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetCountLimit(1,id+1)
+	c:RegisterEffect(e3)
 end
 --(1)Special Summon
 function s.spfilter(c)
-	return c:IsSetCard(0x315b)
+	return c:IsSetCard(0x299b)
 end
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_EXTRA,0,1,nil) end
@@ -55,33 +62,11 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		e1:SetValue(att)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
 		c:RegisterEffect(e1)
-		--Cannot Special Summon from the Extra Deck, except Fusion Monsters
-		local e2=Effect.CreateEffect(c)
-		e2:SetType(EFFECT_TYPE_FIELD)
-		e2:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
-		e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-		e2:SetRange(LOCATION_MZONE)
-		e2:SetAbsoluteRange(tp,1,0)
-		e2:SetTarget(s.splimit)
-		e2:SetReset(RESET_EVENT+RESETS_STANDARD)
-		c:RegisterEffect(e2)
-		local e3=e2:Clone()
-		e3:SetCode(CARD_CLOCK_LIZARD)
-		e3:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-		e3:SetTarget(s.lizfilter)
-		e3:SetValue(1)
-		c:RegisterEffect(e3)
 	end
-end
-function s.splimit(e,c)
-	return not c:IsType(TYPE_FUSION) and c:IsLocation(LOCATION_EXTRA)
-end
-function s.lizfilter(e,c)
-	return not c:IsOriginalType(TYPE_FUSION)
 end
 --(2)Change to DEF
 function s.cfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x315b)
+	return c:IsFaceup() and c:IsSetCard(0x299b)
 end
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
@@ -113,4 +98,8 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 		e2:SetType(EFFECT_TYPE_SINGLE)
 		e2:SetCode(EFFECT_CANNOT_CHANGE_POSITION)
 		tc:RegisterEffect(e2)
+end
+--(3)Fusion Summon
+function s.fextra(e,tp,mg)
+	return Duel.GetMatchingGroup(Fusion.IsMonsterFilter(Card.IsFaceup),tp,0,LOCATION_ONFIELD,nil)
 end

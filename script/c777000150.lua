@@ -25,10 +25,18 @@ function s.initial_effect(c)
 	e2:SetTarget(s.settg)
 	e2:SetOperation(s.setop)
 	c:RegisterEffect(e2)
+	--(3)Grant effect when used as material for "Herrscher" monster
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	e3:SetProperty(EFFECT_FLAG_EVENT_PLAYER)
+	e3:SetCode(EVENT_BE_MATERIAL)
+	e3:SetCondition(s.efcon)
+	e3:SetOperation(s.efop)
+	c:RegisterEffect(e3)
 end
 --(1)Special Summon
 function s.cfilter(c)
-	return c:IsFacedown() or not c:IsSetCard(0x315)
+	return c:IsFacedown() or not c:IsSetCard(0x299)
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return not Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
@@ -49,13 +57,13 @@ function s.tdcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsLocation(LOCATION_GRAVE) and r==REASON_FUSION
 end
 function s.spfilter(c,e,tp)
-	return c:IsType(TYPE_MONSTER) and c:IsSetCard(0x315) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+	return c:IsType(TYPE_MONSTER) and c:IsSetCard(0x299) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.setfilter(c)
-	return (c:IsCode(24094653) or (c:IsSetCard(0x315) and c:IsSpellTrap())) and c:IsSSetable()
+	return (c:IsCode(24094653) or (c:IsSetCard(0x299) and c:IsSpellTrap())) and c:IsSSetable()
 end
 function s.gyfilter(c)
-	return c:IsMonster() and c:IsSetCard(0x315) and c:IsAbleToGrave()
+	return c:IsMonster() and c:IsSetCard(0x299) and c:IsAbleToGrave()
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.setfilter(chkc) end
@@ -72,7 +80,7 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
 		local g=Duel.SelectMatchingCard(tp,s.gyfilter,tp,LOCATION_DECK,0,1,1,nil)
 		if #g>0 and Duel.SendtoGrave(g,REASON_EFFECT) then Duel.GetOperatedGroup():GetFirst():IsLocation(LOCATION_GRAVE) end
-			local rg=Duel.GetMatchingGroup(Card.IsSetCard,tp,LOCATION_GRAVE,0,nil,0x315)
+			local rg=Duel.GetMatchingGroup(Card.IsSetCard,tp,LOCATION_GRAVE,0,nil,0x299)
 			local ct=rg:GetClassCount(Card.GetAttribute)
 			if ct>=3 and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 			and Duel.IsExistingMatchingCard(aux.NecroValleyFilter(s.spfilter),tp,LOCATION_GRAVE,0,1,nil,e,tp)
@@ -86,4 +94,33 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
 		end
 	end
 end
-
+--(3)Grant effect when used as material for "Herrscher" monster
+function s.efcon(e,tp,eg,ep,ev,re,r,rp)
+	local rc=e:GetHandler():GetReasonCard()
+	return rc:IsSetCard(0x299b) and r==REASON_FUSION
+end
+function s.efop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local rc=c:GetReasonCard()
+	--Untargeted
+	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,3))
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e1:SetRange(LOCATION_MZONE)
+	e1:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
+	e1:SetValue(aux.tgoval)
+	rc:RegisterEffect(e1)
+	--Indes
+	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(id,4))
+	e2:SetType(EFFECT_TYPE_SINGLE)
+	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
+	e2:SetRange(LOCATION_MZONE)
+	e2:SetValue(s.indval)
+	rc:RegisterEffect(e2)
+end
+function s.indval(e,re,tp)
+	return tp~=e:GetHandlerPlayer()
+end
