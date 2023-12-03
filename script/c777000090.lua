@@ -79,7 +79,7 @@ function s.rvop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(2)Switch Locations
 function s.cfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x299b)
+	return c:IsFaceup() and c:IsSetCard(0x315b)
 end
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
@@ -98,5 +98,5 @@ function s.chop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(3)Fusion Summon using materials from hand or field, including a "HI3rd" monster
 function s.fcheck(tp,sg,fc)
-	return sg:IsExists(Card.IsSetCard,1,nil,0x299)
+	return sg:IsExists(Card.IsSetCard,1,nil,0x315)
 end

@@ -45,14 +45,14 @@ function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return c:IsLocation(LOCATION_GRAVE) and r==REASON_FUSION
 end
 function s.spfilter(c,e,tp)
-	return c:IsFaceup() and c:IsSetCard(0x299) and not c:IsCode(id) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+	return c:IsFaceup() and c:IsSetCard(0x315) and not c:IsCode(id) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_REMOVED+LOCATION_GRAVE,0,1,nil,e,tp) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_REMOVED+LOCATION_GRAVE)
 	local rc=e:GetHandler():GetReasonCard()
-	if rc and (rc:IsSetCard(0x299b) and rc:IsType(TYPE_FUSION)) then
+	if rc and (rc:IsSetCard(0x315b) and rc:IsType(TYPE_FUSION)) then
 		e:SetLabel(1)
 		e:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOHAND+CATEGORY_SEARCH)
 		Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
@@ -62,7 +62,7 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	end
 end
 function s.thfilter(c)
-	return (c:IsCode(24094653) or (c:IsSetCard(0x299) and c:IsSpellTrap())) and c:IsAbleToHand()
+	return (c:IsCode(24094653) or (c:IsSetCard(0x315) and c:IsSpellTrap())) and c:IsAbleToHand()
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
@@ -80,7 +80,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(2)Special Summon itself from the hand
 function s.cfilter(c,tp)
-	return c:IsFaceup() and c:IsSetCard(0x299) and c:IsSummonPlayer(tp)
+	return c:IsFaceup() and c:IsSetCard(0x315) and c:IsSummonPlayer(tp)
 end
 function s.sp2con(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(s.cfilter,1,nil,tp)
@@ -99,7 +99,7 @@ end
 --(3)Grant effect when used as material for "Herrscher" monster
 function s.efcon(e,tp,eg,ep,ev,re,r,rp)
 	local rc=e:GetHandler():GetReasonCard()
-	return rc:IsSetCard(0x299b) and r==REASON_FUSION
+	return rc:IsSetCard(0x315b) and r==REASON_FUSION
 end
 function s.efop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()

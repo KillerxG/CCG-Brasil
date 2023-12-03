@@ -27,7 +27,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.activate)
 	c:RegisterEffect(e2)
 	--(3)Fusion Summon
-	local e3=Fusion.CreateSummonEff(c,aux.FilterBoolFunction(Card.IsSetCard,0x299),nil,s.fextra)
+	local e3=Fusion.CreateSummonEff(c,aux.FilterBoolFunction(Card.IsSetCard,0x315),nil,s.fextra)
 	e3:SetType(EFFECT_TYPE_QUICK_O)
 	e3:SetCode(EVENT_FREE_CHAIN)
 	e3:SetRange(LOCATION_MZONE)
@@ -36,7 +36,7 @@ function s.initial_effect(c)
 end
 --(1)Special Summon
 function s.spfilter(c)
-	return c:IsSetCard(0x299b)
+	return c:IsSetCard(0x315b)
 end
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_EXTRA,0,1,nil) end
@@ -66,7 +66,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(2)Change to DEF
 function s.cfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x299b)
+	return c:IsFaceup() and c:IsSetCard(0x315b)
 end
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
