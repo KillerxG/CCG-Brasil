@@ -70,9 +70,9 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(2.1)Lock Summon
 function s.splimit(e,c)
-	return not (c:IsType(TYPE_LINK) and c:IsAttribute(ATTRIBUTE_LIGHT)) and c:IsLocation(LOCATION_EXTRA)
+	return not (c:IsType(TYPE_LINK) or c:IsAttribute(ATTRIBUTE_LIGHT)) and c:IsLocation(LOCATION_EXTRA)
 end
 --(2.2)Lizard check
 function s.lizfilter(e,c)
-	return not (c:IsOriginalType(TYPE_LINK) and c:IsOriginalAttribute(ATTRIBUTE_LIGHT))
+	return not (c:IsOriginalType(TYPE_LINK) or c:IsOriginalAttribute(ATTRIBUTE_LIGHT))
 end
