@@ -1,4 +1,4 @@
---Silver Fangs City
+--Silver Fangs Town
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -14,7 +14,7 @@ function s.initial_effect(c)
 	e2:SetType(EFFECT_TYPE_IGNITION)
 	e2:SetCode(EVENT_FREE_CHAIN)
 	e2:SetRange(LOCATION_FZONE)
-	e1:SetCountLimit(1,id)
+	e2:SetCountLimit(1,id)
 	e2:SetTarget(s.drtg)
 	e2:SetOperation(s.drop)
 	c:RegisterEffect(e2)
