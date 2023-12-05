@@ -33,10 +33,10 @@ function s.srcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.Release(g,REASON_COST)
 end
 function s.srtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsPlayerCanDraw(tp,2) end
+	if chk==0 then return Duel.IsPlayerCanDraw(tp,1) end
 	Duel.SetTargetPlayer(tp)
-	Duel.SetTargetParam(2)
-	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,2)
+	Duel.SetTargetParam(1)
+	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
 end
 function s.filter(c)
 	return c:IsRitualSpell() and c:IsAbleToHand()
