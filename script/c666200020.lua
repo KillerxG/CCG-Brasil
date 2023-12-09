@@ -14,7 +14,7 @@ function s.initial_effect(c)
 	e0:SetOperation(s.naop)
 	c:RegisterEffect(e0)
 	--Special Summon 
-	local e1=Effect.CreateEffect(c)
+    local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,1))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
 	e1:SetType(EFFECT_TYPE_IGNITION)
@@ -34,7 +34,6 @@ function s.nacost(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.Release(e:GetHandler(),REASON_COST)
 end
 function s.natg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() end
 	if chk==0 then return Duel.IsExistingTarget(Card.IsFaceup,tp,LOCATION_MZONE,LOCATION_MZONE,1,e:GetHandler()) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
@@ -65,8 +64,8 @@ end
 function s.cfilter(c)
 	return c:IsSetCard(0x352) and c:IsMonster() and c:IsAbleToRemoveAsCost()
 end
-function s.spfilter(c,e,tp,lv,g)
-	return c:IsRace(RACE_CYBERSE) and c:IsLinkBelow(lv) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_LINK,tp,false,false) and Duel.GetLocationCountFromEx(tp,tp,g,c)>0
+function s.spfilter(c,e,tp,lv)
+	return c:IsSetCard(0x352) and c:IsMonster() and c:IsLevelBelow(lv) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
@@ -75,15 +74,15 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 		e:SetLabel(0)
 		local cg=Duel.GetMatchingGroup(s.cfilter,tp,LOCATION_GRAVE,0,nil)
 		return aux.bfgcost(e,tp,eg,ep,ev,re,r,rp,0) and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-			and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp,#cg)
+			and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil,e,tp,#cg)
 	end
 	local cg=Duel.GetMatchingGroup(s.cfilter,tp,LOCATION_GRAVE,0,nil)
-	local tg=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_EXTRA,0,nil,e,tp,#cg)
+	local tg=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_DECK,0,nil,e,tp,#cg)
 	local lvt={}
 	local tc=tg:GetFirst()
 	for tc in aux.Next(tg) do
 		local tlv=0
-		tlv=tlv+tc:GetLink()
+		tlv=tlv+tc:GetLevel()
 		lvt[tlv]=tlv
 	end
 	local pc=1
@@ -102,19 +101,18 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	rg1:AddCard(c)
 	Duel.Remove(rg1,POS_FACEUP,REASON_COST)
 	e:SetLabel(lv)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_DECK)
 end
-function s.sfilter(c,e,tp,lv,g)
-	return c:IsRace(RACE_CYBERSE) and c:GetLink()==lv and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_LINK,tp,false,false) and Duel.GetLocationCountFromEx(tp,tp,g,c)>0
+function s.sfilter(c,e,tp,lv)
+	return c:IsSetCard(0x352) and c:IsMonster() and c:GetLevel()==lv and c:IsCanBeSpecialSummoned(e,0,tp,false,false)  and not c:IsCode(id)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	local lv=e:GetLabel()
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectMatchingCard(tp,s.sfilter,tp,LOCATION_EXTRA,0,1,1,nil,e,tp,lv)
+	local g=Duel.SelectMatchingCard(tp,s.sfilter,tp,LOCATION_DECK,0,1,1,nil,e,tp,lv)
 	local tc=g:GetFirst()
-	if tc and Duel.SpecialSummon(tc,SUMMON_TYPE_LINK,tp,tp,false,false,POS_FACEUP)~=0 then
-		local fid=e:GetHandler():GetFieldID()
-		tc:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1,fid)
-end
+	if tc then
+    Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
+	end
 end

@@ -19,14 +19,14 @@ function s.initial_effect(c)
 	e1:SetType(EFFECT_TYPE_IGNITION)
 	e1:SetRange(LOCATION_GRAVE)
 	e1:SetCountLimit(1,id)
-	e1:SetCost(aux.bfgcost)
+	e1:SetCost(s.drcost)
 	e1:SetTarget(s.drtg)
 	e1:SetOperation(s.drop)
 	c:RegisterEffect(e1)
 end
 --Send to GY or Banish
 function s.tgfilter(c,e,tp)
-	return c:IsRace(RACE_CYBERSE) and (c:IsAbleToGrave() or c:IsAbleToRemove())
+	return c:IsAttribute(ATTRIBUTE_DARK) and c:IsRace(RACE_CYBERSE) and (c:IsAbleToGrave() or c:IsAbleToRemove())
 end
 function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
@@ -43,16 +43,14 @@ function s.tgop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetFieldGroupCount(tp,LOCATION_DECK,0)==0 then return end
 	Duel.ConfirmDecktop(tp,ct)
 	local g=Duel.GetDecktopGroup(tp,ct):Filter(s.tgfilter,nil,e,tp)
-     if #g>0 then 
-		Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,2))
+      if #g>0 then 
+	Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,2))
 	local sg=g:Select(tp,1,1,nil)
 	Duel.DisableShuffleCheck()
-	if #g>0 then
-		local tc=g:GetFirst()
-		if tc and tc:IsAbleToGrave() and (not tc:IsAbleToRemove() or Duel.SelectYesNo(tp,aux.Stringid(id,3))) then
-			Duel.SendtoGrave(tc,REASON_EFFECT)
+	if sg:GetFirst():IsAbleToGrave() and (not sg:GetFirst():IsAbleToRemove() or Duel.SelectYesNo(tp,aux.Stringid(id,3))) then
+			Duel.SendtoGrave(sg,REASON_EFFECT)
 		else
-			Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)
+			Duel.Remove(sg,POS_FACEUP,REASON_EFFECT)
 		end
 	ct=ct-1
 	if ct>0 then
@@ -61,19 +59,25 @@ function s.tgop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 end
-end
 --Draw
-function s.drfilter(c)
-	return c:GetSequence()>=5
+function s.cfilter(c)
+	return c:IsSetCard(0x352) and c:IsMonster() and c:IsAbleToRemoveAsCost()
+end
+function s.drcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return e:GetHandler():IsAbleToRemoveAsCost()
+		and Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_GRAVE,0,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+	g:AddCard(e:GetHandler())
+	Duel.Remove(g,POS_FACEUP,REASON_COST)
 end
 function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local ct=Duel.GetMatchingGroupCount(s.drfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
-	if chk==0 then return ct>0 and Duel.IsPlayerCanDraw(tp,ct) end
+	if chk==0 then return Duel.IsPlayerCanDraw(tp,1) end
 	Duel.SetTargetPlayer(tp)
-	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,ct)
+	Duel.SetTargetParam(1)
+	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
 end
 function s.drop(e,tp,eg,ep,ev,re,r,rp)
-	local p=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER)
-	local d=Duel.GetMatchingGroupCount(s.drfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
+	local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
 	Duel.Draw(p,d,REASON_EFFECT)
 end
