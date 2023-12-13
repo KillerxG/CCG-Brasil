@@ -52,7 +52,7 @@ function s.initial_effect(c)
 end
 --Link Summon
 function s.matcheck(g,lc,sumtype,tp)
-	return g:IsExists(Card.IsType,1,nil,TYPE_RITUAL,lc,sumtype,tp)
+	return g:IsExists(Card.IsRace,1,nil,RACE_DRAGON,lc,sumtype,tp) and g:IsExists(Card.IsLevelAbove,1,nil,8)
 end
 --(1)Change Name
 function s.valcheck(e,c)
