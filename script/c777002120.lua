@@ -64,6 +64,7 @@ function s.bossfilter(c)
 end
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_MZONE,0,1,nil) and Duel.GetTurnPlayer()==tp and Duel.IsMainPhase()
+		and Duel.GetLocationCount(1-tp,LOCATION_SZONE)>0
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return false end
