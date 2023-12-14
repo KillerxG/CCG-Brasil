@@ -56,7 +56,7 @@ function s.copycost(e,tp,eg,ep,ev,re,r,rp,chk)
 	e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
 end
 function s.copyfilter(c)
-	return c:IsMonster() and c:IsSetCard(0x278) and not c:IsCode(id) and not c:IsCode(777003040)
+	return c:IsMonster() and c:IsSetCard(0x278) and not c:IsType(TYPE_XYZ) and not c:IsType(TYPE_RITUAL)
 end
 function s.copytg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	local c=e:GetHandler()
