@@ -37,6 +37,13 @@ function s.initial_effect(c)
 	e3:SetCost(s.atcost)
 	e3:SetOperation(s.atop)
 	c:RegisterEffect(e3)
+	--(4)Synchro Limit
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_SINGLE)
+	e4:SetCode(EFFECT_CANNOT_BE_SYNCHRO_MATERIAL)
+	e4:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e4:SetValue(s.synlimit)
+	c:RegisterEffect(e4)
 end
 s.listed_names={777000760,id}
 --(1)Special summon itself from hand
@@ -93,4 +100,9 @@ function s.atop(e,tp,eg,ep,ev,re,r,rp)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_DISABLE+RESET_PHASE+PHASE_END+RESET_OPPO_TURN)
 		c:RegisterEffect(e1)
 	end
+end
+--(4)Synchro Limit
+function s.synlimit(e,c)
+	if not c then return false end
+	return not (c:IsAttribute(ATTRIBUTE_LIGHT) or c:IsRace(RACE_DRAGON))
 end

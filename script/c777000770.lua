@@ -27,6 +27,13 @@ function s.initial_effect(c)
 	e3:SetTarget(s.sptg)
 	e3:SetOperation(s.spop)
 	c:RegisterEffect(e3)
+	--(3)Synchro Limit
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_SINGLE)
+	e4:SetCode(EFFECT_CANNOT_BE_SYNCHRO_MATERIAL)
+	e4:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e4:SetValue(s.synlimit)
+	c:RegisterEffect(e4)
 end
 s.listed_names={777000760,id}
 --(1)Search
@@ -61,4 +68,9 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if #g>0 then
 		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
 	end
+end
+--(3)Synchro Limit
+function s.synlimit(e,c)
+	if not c then return false end
+	return not (c:IsAttribute(ATTRIBUTE_LIGHT) or c:IsRace(RACE_DRAGON))
 end
