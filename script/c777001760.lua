@@ -9,6 +9,7 @@ function s.initial_effect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetCountLimit(1,id)
+	e1:SetCost(s.spcost)
 	e1:SetTarget(s.sptg)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
@@ -40,6 +41,13 @@ end
 function s.spfilter(c,e,tp)
 	return c:IsSetCard(0x301) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_XYZ,tp,false,false)
 end
+function s.cfilter(c)
+	return c:IsRace(RACE_THUNDER) and c:IsDiscardable()
+end
+function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND,0,1,e:GetHandler()) end
+	Duel.DiscardHand(tp,s.cfilter,1,1,REASON_COST+REASON_DISCARD,e:GetHandler())
+end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp) end
@@ -61,28 +69,8 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		if #pg>0 then
 			Duel.BreakEffect()
 			Duel.Overlay(sc,pg)
-			--(1.1)Lock Summon
-			local e1=Effect.CreateEffect(c)
-			e1:SetType(EFFECT_TYPE_FIELD)
-			e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
-			e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-			e1:SetTargetRange(1,0)
-			e1:SetTarget(s.splimit)
-			e1:SetReset(RESET_PHASE+PHASE_END)
-			Duel.RegisterEffect(e1,tp)
-			aux.RegisterClientHint(e:GetHandler(),nil,tp,1,0,aux.Stringid(id,5),nil)
-			--(1.2)Lizard check
-			aux.addTempLizardCheck(e:GetHandler(),tp,s.lizfilter)
 		end
 	end
-end
---(1.1)Lock Summon
-function s.splimit(e,c)
-	return not c:IsRace(RACE_THUNDER) and c:IsLocation(LOCATION_EXTRA)
-end
---(1.2)Lizard check
-function s.lizfilter(e,c)
-	return not c:IsOriginalRace(RACE_THUNDER)
 end
 --(2)Attach this card as material	
 function s.matfilter(c)
