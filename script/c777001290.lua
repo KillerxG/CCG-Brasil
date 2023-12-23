@@ -65,14 +65,6 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if not tc then return end
 	tc:SetMaterial(nil)
 	if Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)~=0 then
-		--Cannot attack
-		local e1=Effect.CreateEffect(e:GetHandler())
-		e1:SetDescription(3206)
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_CANNOT_ATTACK)
-		e1:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_CLIENT_HINT)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-		tc:RegisterEffect(e1,true)
 		tc:CompleteProcedure()
 		--Destroy it during end phase
 		aux.DelayedOperation(tc,PHASE_END,id,e,tp,function(ag) Duel.Destroy(ag,REASON_EFFECT) end,nil,0)
