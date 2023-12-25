@@ -61,13 +61,17 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=g:GetMinGroup(Card.GetSequence):GetFirst()
 	Duel.ConfirmCards(tp,tc)
 	Duel.ConfirmCards(1-tp,tc)
+	if tc:IsSetCard(0x307) then
 	local op=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3))
 	if op==0 then Duel.MoveSequence(tc,0) end
-	if not tc:IsSetCard(0x307) then return end
 	local ct=Duel.Draw(tp,1,REASON_EFFECT)
 	if ct>0 then
 		Duel.BreakEffect()
 		Duel.Recover(tp,tc:GetAttack(),REASON_EFFECT)
+	end
+	end
+	if not tc:IsSetCard(0x307) then
+		Duel.SendtoGrave(tc,REASON_EFFECT)
 	end
 end
 --(2)Change all monsters to Attack Position
