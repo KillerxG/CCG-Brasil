@@ -95,7 +95,8 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 		tc:RegisterEffectRush(e1)
 	end
-	if Duel.GetLP(tp)>Duel.GetLP(1-tp)
+	local f=Duel.GetFieldGroup(tp,LOCATION_ONFIELD,LOCATION_ONFIELD)
+	if Duel.GetLP(tp)>Duel.GetLP(1-tp) and #f>0
 		and Duel.GetMatchingGroup(nil,tp,0,LOCATION_ONFIELD,nil)
 		and Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
 			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
