@@ -46,7 +46,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.SpecialSummonComplete() then
 			local x=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_MZONE,0,nil,777000685)
 			local ct=Duel.SendtoGrave(x,REASON_EFFECT)
-			Duel.SpecialSummonStep(tc,0,tp,tp,true,false,POS_FACEUP)
+			Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
 		end		
 	end
 	--Thunder Force
@@ -60,7 +60,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.SpecialSummonComplete() then
 			local x=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_MZONE,0,nil,777001675)
 			local ct=Duel.SendtoGrave(x,REASON_EFFECT)
-			Duel.SpecialSummonStep(tc,0,tp,tp,true,false,POS_FACEUP)
+			Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
 		end
 	end
 	--Phantom Gunners
@@ -74,7 +74,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.SpecialSummonComplete() then
 			local x=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_MZONE,0,nil,777000965)
 			local ct=Duel.SendtoGrave(x,REASON_EFFECT)
-			Duel.SpecialSummonStep(tc,0,tp,tp,true,false,POS_FACEUP)
+			Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
 		end
 	end
 	--Shinigami
@@ -88,7 +88,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.SpecialSummonComplete() then
 			local x=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_MZONE,0,nil,777001475)
 			local ct=Duel.SendtoGrave(x,REASON_EFFECT)
-			Duel.SpecialSummonStep(tc,0,tp,tp,true,false,POS_FACEUP)
+			Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
 		end
 	end
 	--Timerx
@@ -102,7 +102,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.SpecialSummonComplete() then
 			local x=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_MZONE,0,nil,777001155)
 			local ct=Duel.SendtoGrave(x,REASON_EFFECT)
-			Duel.SpecialSummonStep(tc,0,tp,tp,true,false,POS_FACEUP)
+			Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
 		end
 	end
 	--Sky Wind
@@ -116,7 +116,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.SpecialSummonComplete() then
 			local x=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_MZONE,0,nil,777001495)
 			local ct=Duel.SendtoGrave(x,REASON_EFFECT)
-			Duel.SpecialSummonStep(tc,0,tp,tp,true,false,POS_FACEUP)
+			Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
 		end
 	end
 	--Silver Fangs
@@ -130,7 +130,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.SpecialSummonComplete() then
 			local x=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_MZONE,0,nil,777001325)
 			local ct=Duel.SendtoGrave(x,REASON_EFFECT)
-			Duel.SpecialSummonStep(tc,0,tp,tp,true,false,POS_FACEUP)
+			Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
 		end
 	end
 	--Warbeast
@@ -144,7 +144,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.SpecialSummonComplete() then
 			local x=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_MZONE,0,nil,777001845)
 			local ct=Duel.SendtoGrave(x,REASON_EFFECT)
-			Duel.SpecialSummonStep(tc,0,tp,tp,true,false,POS_FACEUP)
+			Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
 		end
 	end
 	--Cyberclops
@@ -158,7 +158,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.SpecialSummonComplete() then
 			local x=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_MZONE,0,nil,333000045)
 			local ct=Duel.SendtoGrave(x,REASON_EFFECT)
-			Duel.SpecialSummonStep(tc,0,tp,tp,true,false,POS_FACEUP)
+			Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
 		end		
 	end
 	--Rockslash
@@ -172,7 +172,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.SpecialSummonComplete() then
 			local x=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_MZONE,0,nil,777002015)
 			local ct=Duel.SendtoGrave(x,REASON_EFFECT)
-			Duel.SpecialSummonStep(tc,0,tp,tp,true,false,POS_FACEUP)
+			Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
 		end
 	end
 	--Elementale
@@ -186,7 +186,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.SpecialSummonComplete() then
 			local x=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_MZONE,0,nil,777003135)
 			local ct=Duel.SendtoGrave(x,REASON_EFFECT)
-			Duel.SpecialSummonStep(tc,0,tp,tp,true,false,POS_FACEUP)
+			Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
 		end
 	end
 	--Oceanic Storm	
@@ -200,7 +200,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.SpecialSummonComplete() then
 			local x=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_MZONE,0,nil,777003325)
 			local ct=Duel.SendtoGrave(x,REASON_EFFECT)
-			Duel.SpecialSummonStep(tc,0,tp,tp,true,false,POS_FACEUP)
+			Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
 		end
 	end
 end
