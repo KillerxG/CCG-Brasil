@@ -1,4 +1,4 @@
---Ritualist Judge
+--Crimson Rose Warrior
 --Scripted by KillerxG
 local s,id=GetID()
 local TYPES=TYPE_FUSION+TYPE_RITUAL+TYPE_SYNCHRO+TYPE_XYZ+TYPE_LINK
