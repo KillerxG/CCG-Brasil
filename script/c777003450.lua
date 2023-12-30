@@ -105,7 +105,7 @@ function s.atcon(e,tp,eg,ep,ev,re,r,rp)
 	return c:IsReason(REASON_COST) and re:IsActivated() and re:IsActiveType(TYPE_XYZ) and c:IsPreviousLocation(LOCATION_OVERLAY)
 end
 function s.spfilter1(c,e,tp)
-  return c:IsSetCard(0x998) and c:IsType(TYPE_MONSTER) and not c:IsPublic()
+  return c:IsType(TYPE_MONSTER) and not c:IsPublic()
   and Duel.IsExistingMatchingCard(s.spfilter2,tp,LOCATION_GRAVE,0,1,nil,e,tp,c:GetLevel())
 end
 function s.spfilter2(c,e,tp,lv)

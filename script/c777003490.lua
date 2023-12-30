@@ -26,7 +26,7 @@ function s.initial_effect(c)
 	e2:SetTarget(s.sptg)
 	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
-	--(3)Reveal then Special
+	--(3)Target then Search
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -99,13 +99,13 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
   end
 end
---(3)Reveal then Special
+--(3)Target then Search
 function s.atcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsReason(REASON_COST) and re:IsActivated() and re:IsActiveType(TYPE_XYZ) and c:IsPreviousLocation(LOCATION_OVERLAY)
 end
 function s.thfilter1(c,tp)
-  return c:IsFaceup() and c:IsSetCard(0x998) and Duel.IsExistingMatchingCard(s.thfilter2,tp,LOCATION_DECK,0,1,nil,c:GetAttack())
+  return c:IsFaceup() and Duel.IsExistingMatchingCard(s.thfilter2,tp,LOCATION_DECK,0,1,nil,c:GetAttack())
 end
 function s.thfilter2(c,atk)
   return c:IsType(TYPE_MONSTER) and c:IsSetCard(0x998) and c:GetAttack()<atk
