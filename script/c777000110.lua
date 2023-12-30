@@ -29,7 +29,7 @@ function s.initial_effect(c)
 end
 --(1)Apply "Polymerization" effect
 function s.copfilter(c)
-	return c:IsAbleToGraveAsCost() and c:IsCode(24094653) and c:CheckActivateEffect(true,true,false)~=nil 
+	return c:IsAbleToGraveAsCost() and (c:IsCode(24094653) or c:IsRitualSpell()) and c:CheckActivateEffect(true,true,false)~=nil 
 end
 function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.copfilter,tp,LOCATION_DECK,0,1,nil) end
