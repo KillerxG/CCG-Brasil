@@ -2,7 +2,6 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	c:AddSetcodesRule(id,true,0x314)--Waifu Arch
 	--Link Materials
 	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsAttribute,ATTRIBUTE_DARK),2,2,s.lcheck)
 	c:EnableReviveLimit()
@@ -18,46 +17,45 @@ function s.initial_effect(c)
 	e1:SetTarget(s.thtg)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
-	--(2)Can treat Spirit monsters in your hand as Link Material
+	--(2)Can use 1 DARK Fiend Spirit monster in your hand as material when using this for a "Skarlet" monster
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD)
+	e2:SetRange(LOCATION_HAND)
 	e2:SetCode(EFFECT_EXTRA_MATERIAL)
-	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET|EFFECT_FLAG_SET_AVAILABLE)
-	e2:SetRange(LOCATION_MZONE)
+	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
 	e2:SetTargetRange(1,0)
-	e2:SetCountLimit(1,id+1)
-	e2:SetOperation(aux.TRUE)
-	e2:SetValue(s.extraval)
-	c:RegisterEffect(e2)
-	local e2a=Effect.CreateEffect(c)
-	e2a:SetType(EFFECT_TYPE_FIELD)
-	e2a:SetCode(EFFECT_ADD_TYPE)
-	e2a:SetRange(LOCATION_MZONE)
-	e2a:SetTargetRange(LOCATION_SZONE,0)
-	e2a:SetCondition(s.addtypecon)
-	e2a:SetTarget(aux.TargetBoolFunction(Card.IsOriginalRace,RACE_FIEND))
-	e2a:SetValue(TYPE_MONSTER)
-	c:RegisterEffect(e2a)
-	--(3)Place 1 "Curse" Spell/Trap
+	e2:SetOperation(s.extracon2)
+	e2:SetValue(s.extraval2)
 	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,5))
-	e3:SetType(EFFECT_TYPE_IGNITION)
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_GRANT)
 	e3:SetRange(LOCATION_MZONE)
-	e3:SetCountLimit(1,id+2)
-	e3:SetTarget(s.tftg)
-	e3:SetOperation(s.tfop)
+	e3:SetTargetRange(LOCATION_HAND,0)
+	e3:SetTarget(s.eftg)
+	e3:SetLabelObject(e2)
 	c:RegisterEffect(e3)
-	--(4)Pay or Destroy
+	aux.GlobalCheck(s,function()
+		s.flagmap2={}
+	end)
+	--(3)Set 1 "Curse" Trap
 	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,3))
-	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e4:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e4:SetCode(EVENT_PHASE+PHASE_END)
+	e4:SetDescription(aux.Stringid(id,5))
+	e4:SetType(EFFECT_TYPE_IGNITION)
 	e4:SetRange(LOCATION_MZONE)
-	e4:SetCountLimit(1)
-	e4:SetCondition(s.paycon)
-	e4:SetOperation(s.payop)
+	e4:SetCountLimit(1,id+2)
+	e4:SetTarget(s.settg)
+	e4:SetOperation(s.setop)
 	c:RegisterEffect(e4)
+	--(4)Pay or Destroy
+	local e5=Effect.CreateEffect(c)
+	e5:SetDescription(aux.Stringid(id,3))
+	e5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e5:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e5:SetCode(EVENT_PHASE+PHASE_END)
+	e5:SetRange(LOCATION_MZONE)
+	e5:SetCountLimit(1)
+	e5:SetCondition(s.paycon)
+	e5:SetOperation(s.payop)
+	c:RegisterEffect(e5)
 	
 end
 --Link Materials
@@ -96,41 +94,54 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 		end
 	end
 end
---(2)Can treat Spirit monsters in your hand as Link Material
-function s.matfilter(c)
-	return c:IsType(TYPE_SPIRIT)
+--(2)Can use 1 DARK Fiend Spirit monster in your hand as material when using this for a "Skarlet" monster
+function s.eftg(e,c)
+	return c:IsAttribute(ATTRIBUTE_DARK) and c:IsType(TYPE_SPIRIT) and c:IsRace(RACE_FIEND) and c:IsCanBeLinkMaterial()
 end
-function s.extraval(chk,summon_type,e,...)
+function s.extrafilter2(c,tp)
+	return c:IsLocation(LOCATION_MZONE) and c:IsControler(tp)
+end
+function s.extracon2(c,e,tp,sg,mg,lc,og,chk)
+	local ct=sg:FilterCount(Card.HasFlagEffect,nil,id+1)
+	return ct==0 or ((sg+mg):Filter(s.extrafilter2,nil,e:GetHandlerPlayer()):IsExists(Card.IsCode,1,og,id) and ct<2)
+end
+function s.extraval2(chk,summon_type,e,...)
+	local c=e:GetHandler()
 	if chk==0 then
 		local tp,sc=...
-		if summon_type~=SUMMON_TYPE_LINK or not (sc and sc:IsSetCard(0x290)) then
+		if summon_type~=SUMMON_TYPE_LINK or not sc:IsSetCard(0x290) or Duel.GetFlagEffect(tp,id+1)>0 then
 			return Group.CreateGroup()
 		else
-			Duel.RegisterFlagEffect(tp,id,0,0,1)
-			return Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_HAND,0,nil)
+			s.flagmap2[c]=c:RegisterFlagEffect(id+1,0,0,1)
+			return Group.FromCards(c)
+		end
+	elseif chk==1 then
+		local sg,sc,tp=...
+		if summon_type&SUMMON_TYPE_LINK==SUMMON_TYPE_LINK and #sg>0 and Duel.GetFlagEffect(tp,id+1)==0 then
+			Duel.Hint(HINT_CARD,tp,id)
+			Duel.RegisterFlagEffect(tp,id+1,RESET_PHASE|PHASE_END,0,1)
 		end
 	elseif chk==2 then
-		Duel.ResetFlagEffect(e:GetHandlerPlayer(),id)
+		if s.flagmap2[c] then
+			s.flagmap2[c]:Reset()
+			s.flagmap2[c]=nil
+		end
 	end
 end
-function s.addtypecon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetFlagEffect(e:GetHandlerPlayer(),id)>0
+--(3)Set 1 "Curse" Trap
+function s.setfilter(c)
+	return (c:IsSetCard(0x304b) or c:IsCode(84970821)) and c:IsTrap() and c:IsType(TYPE_CONTINUOUS) and c:IsSSetable()
 end
---(3)Place 1 "Curse" Spell/Trap
-function s.tffilter(c,tp)
-	return c:IsTrap() and c:IsSetCard(0x304b) and not c:IsForbidden() and c:CheckUniqueOnField(1-tp)
-		and not c:IsType(TYPE_FIELD)
-end
-function s.tftg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(1-tp,LOCATION_SZONE)>0
-		and Duel.IsExistingMatchingCard(s.tffilter,tp,LOCATION_GRAVE,0,1,nil,tp) end
+		and Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_GRAVE,0,1,nil) end
 end
-function s.tfop(e,tp,eg,ep,ev,re,r,rp)
+function s.setop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(1-tp,LOCATION_SZONE)<=0 then return end
-	Duel.Hint(HINT_SELECTMSG,1-tp,HINTMSG_TOFIELD)
-	local tc=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.tffilter),tp,LOCATION_GRAVE,0,1,1,nil,tp):GetFirst()
-	if tc then
-		Duel.MoveToField(tc,tp,1-tp,LOCATION_SZONE,POS_FACEUP,true)
+	Duel.Hint(HINT_SELECTMSG,1-tp,HINTMSG_SET)
+	local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+	if #g>0 then
+		Duel.SSet(1-tp,g)
 	end
 end
 --(4)Pay or Destroy

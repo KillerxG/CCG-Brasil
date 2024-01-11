@@ -2,7 +2,6 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	c:AddSetcodesRule(id,true,0x314)--Waifu Arch
 	--Link Materials
 	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsAttribute,ATTRIBUTE_DARK),2,2,s.lcheck)
 	c:EnableReviveLimit()
@@ -19,26 +18,25 @@ function s.initial_effect(c)
 	e1:SetOperation(s.eqop)
 	c:RegisterEffect(e1)
 	aux.AddEREquipLimit(c,nil,s.eqval,s.equipop,e1)
-	--(2)Can treat DARK Warrior cards in your Spell/Trap Zones as Link Material
+	--(2)Can use 1 DARK Warrior monster in your hand as material when using this for a "Skarlet" monster
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD)
+	e2:SetRange(LOCATION_SZONE)
 	e2:SetCode(EFFECT_EXTRA_MATERIAL)
-	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET|EFFECT_FLAG_SET_AVAILABLE)
-	e2:SetRange(LOCATION_MZONE)
+	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
 	e2:SetTargetRange(1,0)
-	e2:SetCountLimit(1,id+1)
-	e2:SetOperation(aux.TRUE)
-	e2:SetValue(s.extraval)
-	c:RegisterEffect(e2)
-	local e2a=Effect.CreateEffect(c)
-	e2a:SetType(EFFECT_TYPE_FIELD)
-	e2a:SetCode(EFFECT_ADD_TYPE)
-	e2a:SetRange(LOCATION_MZONE)
-	e2a:SetTargetRange(LOCATION_SZONE,0)
-	e2a:SetCondition(s.addtypecon)
-	e2a:SetTarget(aux.TargetBoolFunction(Card.IsOriginalRace,RACE_WARRIOR))
-	e2a:SetValue(TYPE_MONSTER)
-	c:RegisterEffect(e2a)
+	e2:SetOperation(s.extracon2)
+	e2:SetValue(s.extraval2)
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_GRANT)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetTargetRange(LOCATION_SZONE,0)
+	e3:SetTarget(s.eftg)
+	e3:SetLabelObject(e2)
+	c:RegisterEffect(e3)
+	aux.GlobalCheck(s,function()
+		s.flagmap2={}
+	end)
 	--(4)Pay or Destroy
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,0))
@@ -97,25 +95,39 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
 		s.equipop(c,e,tp,tc)
 	end
 end
---(2)Can treat DARK Warrior cards in your Spell/Trap Zones as Link Material
-function s.matfilter(c)
-	return c:IsFaceup() and c:GetSequence()<5 and c:IsOriginalRace(RACE_WARRIOR) and c:IsOriginalAttribute(ATTRIBUTE_DARK)
+--(2)Can use 1 DARK Warrior monster in your hand as material when using this for a "Skarlet" monster
+function s.eftg(e,c)
+	return c:IsOriginalAttribute(ATTRIBUTE_DARK) and c:IsOriginalRace(RACE_WARRIOR) and c:IsCanBeLinkMaterial()
 end
-function s.extraval(chk,summon_type,e,...)
+function s.extrafilter2(c,tp)
+	return c:IsLocation(LOCATION_MZONE) and c:IsControler(tp)
+end
+function s.extracon2(c,e,tp,sg,mg,lc,og,chk)
+	local ct=sg:FilterCount(Card.HasFlagEffect,nil,id+1)
+	return ct==0 or ((sg+mg):Filter(s.extrafilter2,nil,e:GetHandlerPlayer()):IsExists(Card.IsCode,1,og,id) and ct<2)
+end
+function s.extraval2(chk,summon_type,e,...)
+	local c=e:GetHandler()
 	if chk==0 then
 		local tp,sc=...
-		if summon_type~=SUMMON_TYPE_LINK or not (sc and sc:IsSetCard(0x290)) then
+		if summon_type~=SUMMON_TYPE_LINK or not sc:IsSetCard(0x290) or Duel.GetFlagEffect(tp,id+1)>0 then
 			return Group.CreateGroup()
 		else
-			Duel.RegisterFlagEffect(tp,id,0,0,1)
-			return Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_SZONE,0,nil)
+			s.flagmap2[c]=c:RegisterFlagEffect(id+1,0,0,1)
+			return Group.FromCards(c)
+		end
+	elseif chk==1 then
+		local sg,sc,tp=...
+		if summon_type&SUMMON_TYPE_LINK==SUMMON_TYPE_LINK and #sg>0 and Duel.GetFlagEffect(tp,id+1)==0 then
+			Duel.Hint(HINT_CARD,tp,id)
+			Duel.RegisterFlagEffect(tp,id+1,RESET_PHASE|PHASE_END,0,1)
 		end
 	elseif chk==2 then
-		Duel.ResetFlagEffect(e:GetHandlerPlayer(),id)
+		if s.flagmap2[c] then
+			s.flagmap2[c]:Reset()
+			s.flagmap2[c]=nil
+		end
 	end
-end
-function s.addtypecon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetFlagEffect(e:GetHandlerPlayer(),id)>0
 end
 --(4)Pay or Destroy
 function s.paycon(e,tp,eg,ep,ev,re,r,rp)

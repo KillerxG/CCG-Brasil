@@ -52,7 +52,7 @@ function s.tfcon(e,tp,eg,ep,ev,re,r,rp)
   return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK)
 end
 function s.tffilter(c,tp)
-	return c:IsTrap() and c:IsSetCard(0x304b) and not c:IsForbidden() and c:CheckUniqueOnField(1-tp)
+	return (c:IsSetCard(0x304b) or c:IsCode(84970821)) and c:IsTrap() and c:IsType(TYPE_CONTINUOUS) and not c:IsForbidden() and c:CheckUniqueOnField(1-tp)
 		and not c:IsType(TYPE_FIELD)
 end
 function s.spfilter(c,e,tp)
