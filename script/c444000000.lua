@@ -1,68 +1,42 @@
---Okami - Amaterasu
---Scripted by Leonardofake
+-- Okami - Amaterasu
+-- Scripted by Leonardofake & Imp
 local s,id=GetID()
 function s.initial_effect(c)
+    --Special Summon
+    local e0=Effect.CreateEffect(c)
+    e0:SetType(EFFECT_TYPE_FIELD)
+    e0:SetCode(EFFECT_SPSUMMON_PROC)
+    e0:SetProperty(EFFECT_FLAG_UNCOPYABLE)
+	e0:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
+    e0:SetRange(LOCATION_HAND)
+    e0:SetCondition(s.spcon)
+    e0:SetTarget(s.sptg)
+    e0:SetOperation(s.spop)
+    c:RegisterEffect(e0) 
     --Unaffected
-	local e0=Effect.CreateEffect(c)
-    e0:SetType(EFFECT_TYPE_SINGLE)
-    e0:SetCode(EFFECT_IMMUNE_EFFECT)
-    e0:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-    e0:SetRange(LOCATION_MZONE)
-    e0:SetValue(s.unfilter)
-    c:RegisterEffect(e0)
-    --ATK Change
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e1:SetRange(LOCATION_MZONE)
-	e1:SetCode(EFFECT_UPDATE_ATTACK)
-	e1:SetValue(s.atkval)
-	c:RegisterEffect(e1)
+    e1:SetType(EFFECT_TYPE_SINGLE)
+    e1:SetCode(EFFECT_IMMUNE_EFFECT)
+    e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+    e1:SetRange(LOCATION_MZONE)
+    e1:SetValue(s.unfilter)
+    c:RegisterEffect(e1)
+    --ATK Change
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetCode(EFFECT_UPDATE_ATTACK)
-	e2:SetValue(s.atkval2)
+	e2:SetValue(s.atkval)
 	c:RegisterEffect(e2)
-	--Special summon
-    local e3=Effect.CreateEffect(c)
-    e3:SetType(EFFECT_TYPE_FIELD)
-    e3:SetCode(EFFECT_SPSUMMON_PROC)
-    e3:SetProperty(EFFECT_FLAG_UNCOPYABLE)
-	e3:SetCountLimit(1,id)
-    e3:SetRange(LOCATION_HAND)
-    e3:SetCondition(s.spcon)
-    e3:SetTarget(s.sptg)
-    e3:SetOperation(s.spop)
-    c:RegisterEffect(e3) 
-	--[[level
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,0))
-	e4:SetType(EFFECT_TYPE_IGNITION)
-	e4:SetCountLimit(1)
-	e4:SetRange(LOCATION_MZONE)
-	e4:SetTarget(s.tg)
-	e4:SetOperation(s.op)
-	c:RegisterEffect(e4)]]
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_SINGLE)
+	e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetCode(EFFECT_UPDATE_ATTACK)
+	e3:SetValue(s.atkval2)
+	c:RegisterEffect(e3)
 end
---Unaffected
-function s.unfilter(e,te)
-    return te:IsActiveType(TYPE_SPELL+TYPE_TRAP) and te:GetOwnerPlayer()~=e:GetHandlerPlayer()
-end
---ATK Change
-function s.atkfilter(c)
-    return (c:IsSpell() or c:IsTrap())
-end
-function s.atkval(e,c)
-	return Duel.GetMatchingGroupCount(s.atkfilter,c:GetControler(),LOCATION_GRAVE,LOCATION_GRAVE,nil)*100
-end
-function s.atkfilter2(c)
-    return (c:IsSpell() or c:IsTrap()) and c:IsSetCard(0x444) and c:IsFaceup()
-end
-function s.atkval2(e,c)
-    return Duel.GetMatchingGroupCount(s.atkfilter2,c:GetControler(),LOCATION_REMOVED,LOCATION_REMOVED,nil)*200
-end 
 --Special Summon
 function s.spfilter(c,ft)
     return c:IsAbleToGraveAsCost() and (ft>0 or c:GetSequence()<5)
@@ -92,21 +66,20 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
     Duel.SendtoGrave(g,REASON_COST)
     g:DeleteGroup()
 end 
---level
-function s.tg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
-	local lv=e:GetHandler():GetLevel()
-	Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,1))
-	e:SetLabel(Duel.AnnounceLevel(tp,3,6,lv))
+--Unaffected
+function s.unfilter(e,te)
+    return te:IsActiveType(TYPE_SPELL+TYPE_TRAP) and te:GetOwnerPlayer()~=e:GetHandlerPlayer()
 end
-function s.op(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsFaceup() and c:IsRelateToEffect(e) then
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_CHANGE_LEVEL)
-		e1:SetValue(e:GetLabel())
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE+RESET_PHASE+PHASE_END)
-		c:RegisterEffect(e1)
-	end
+--ATK Change
+function s.atkfilter(c)
+    return (c:IsSpell() or c:IsTrap())
 end
+function s.atkval(e,c)
+	return Duel.GetMatchingGroupCount(s.atkfilter,c:GetControler(),LOCATION_GRAVE,LOCATION_GRAVE,nil)*100
+end
+function s.atkfilter2(c)
+    return (c:IsSpell() or c:IsTrap()) and c:IsSetCard(0x444) and c:IsFaceup()
+end
+function s.atkval2(e,c)
+    return Duel.GetMatchingGroupCount(s.atkfilter2,c:GetControler(),LOCATION_REMOVED,LOCATION_REMOVED,nil)*200
+end 

@@ -1,10 +1,10 @@
---Okami - Kasugami
---Scripted by Leonardofake
+-- Okami - Kasugami
+-- Scripted by Leonardofake & Imp
 local s,id=GetID()
 function s.initial_effect(c)
 	--Pendulum Effect
 	Pendulum.AddProcedure(c)
-	--Copy "Okami" Continuous Spell/Trap
+	--Copy "Okami" Continuous Trap
 	local e0=Effect.CreateEffect(c)
 	e0:SetDescription(aux.Stringid(id,0))
 	e0:SetType(EFFECT_TYPE_IGNITION)
@@ -35,9 +35,9 @@ function s.initial_effect(c)
 	e2:SetOperation(s.penop)
 	c:RegisterEffect(e2)
 end
---Copy "Okami" Spell/Trap
+--Copy "Okami" Continuous Trap
 function s.cpfilter(c)
-	return c:IsSetCard(0x444) and c:IsType(TYPE_CONTINUOUS) and (c:IsSpell() or c:IsTrap()) and c:IsAbleToGraveAsCost()
+	return c:IsSetCard(0x444) and c:IsType(TYPE_CONTINUOUS) and c:IsTrap() and c:IsAbleToGraveAsCost()
 end
 function s.cpcost(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.cpfilter,tp,LOCATION_DECK,0,1,e:GetHandler()) end

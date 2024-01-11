@@ -1,90 +1,56 @@
---Okami - Sei-an City of Nippon
---Scripted by Leonardofake
+-- Okami - Sei-an City of Nippon
+-- Scripted by Leonardofake & Imp
 local s,id=GetID()
 function s.initial_effect(c)
     --Activate
 	local e0=Effect.CreateEffect(c)
-	e0:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
 	e0:SetDescription(aux.Stringid(id,0))
+	e0:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
 	e0:SetType(EFFECT_TYPE_ACTIVATE)
 	e0:SetCode(EVENT_FREE_CHAIN)
 	e0:SetCountLimit(1,id)
 	e0:SetOperation(s.activate)
 	c:RegisterEffect(e0)
-	--Shuffle
+	--Excavate
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,1))
-	e1:SetCategory(CATEGORY_TODECK)
+	e1:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_DECKDES)
 	e1:SetType(EFFECT_TYPE_IGNITION)
-	e1:SetRange(LOCATION_FZONE+LOCATION_GRAVE)
-	e1:SetCountLimit(1,id+1)
+	e1:SetRange(LOCATION_GRAVE)
+	e1:SetCountLimit(1,id)
+	e1:SetCondition(s.condition)
 	e1:SetCost(aux.bfgcost)
-	e1:SetCondition(s.tdcon)
-	e1:SetTarget(s.tdtg)
-	e1:SetOperation(s.tdop)
+	e1:SetTarget(s.target)
+	e1:SetOperation(s.operation)
 	c:RegisterEffect(e1)
-	--excavate
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,2))
-	e2:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_DECKDES)
-	e2:SetType(EFFECT_TYPE_IGNITION)
-	e2:SetRange(LOCATION_FZONE)
-	e2:SetCountLimit(1,id+2)
-	e2:SetCost(s.cost)
-	e2:SetTarget(s.target)
-	e2:SetOperation(s.operation)
-	c:RegisterEffect(e2)
 end
 --Activate
 function s.thfilter(c)
-	return c:IsSetCard(0x444) and c:IsMonster() and c:IsAbleToHand()
+	return (c:IsCode(444000000) or c:IsCode(444000050)) and c:IsAbleToHand()
 end
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	if not e:GetHandler():IsRelateToEffect(e) then return end
 	local g=Duel.GetMatchingGroup(s.thfilter,tp,LOCATION_DECK,0,nil)
-	if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
+	if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 		local sg=g:Select(tp,1,1,nil)
 		Duel.SendtoHand(sg,nil,REASON_EFFECT)
 		Duel.ConfirmCards(1-tp,sg)
 	end
 end
---Shuffle
-function s.cfilter(c)
-	return c:IsFaceup() and c:IsCode(444000000)
-end
-function s.tdcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0)>0
-		and Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
-end
-function s.tdfilter(c) 
-	return c:IsSetCard(0x444) and c:IsFaceup() and c:IsAbleToDeck()
-end
-function s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.tdfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,e:GetHandler()) end
-	local g=Duel.GetMatchingGroup(Card.IsAbleToDeck,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,e:GetHandler())
-	Duel.SetOperationInfo(0,CATEGORY_TODECK,g,1,0,0)
-	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
-end
-function s.tdop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
-	local g=Duel.SelectMatchingCard(tp,s.tdfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,3,e:GetHandler())
-	if #g>0 and	Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT) then
-		Duel.ShuffleDeck(tp)
-	end
-end
 --Excavate
-function s.cfilter2(c,tp)
-	return Duel.GetMZoneCount(tp,c)>0 and c:IsSetCard(0x444)
-end
 function s.sumfilter(c)
     return c:IsSummonableCard() and c:IsSetCard(0x444) and c:IsMonster()
 end
-function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
-	e:SetLabel(1)
-	if chk==0 then return Duel.CheckReleaseGroupCost(tp,s.cfilter2,1,false,nil,nil,tp) end
-	local g=Duel.SelectReleaseGroupCost(tp,s.cfilter2,1,1,false,nil,nil,tp)
-	Duel.Release(g,REASON_COST)
+function s.cfilter2(c,tp)
+	return Duel.GetMZoneCount(tp,c)>0 and c:IsSetCard(0x444)
+end
+function s.cfilter(c)
+	return c:IsFaceup() and (c:IsCode(444000000) or c:IsCode(444000050))
+end
+function s.condition(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0)>0
+		and Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return (e:GetLabel()==1 or Duel.GetLocationCount(tp,LOCATION_MZONE)>0) and Duel.IsPlayerCanSpecialSummon(tp)

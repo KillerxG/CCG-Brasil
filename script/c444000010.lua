@@ -1,5 +1,5 @@
---Okami - Mist Warp
---Scripted by Leonardofake
+-- Okami - Mist Warp
+-- Scripted by Leonardofake & Imp
 local s,id=GetID()
 function s.initial_effect(c)
 	--Activate
@@ -31,28 +31,27 @@ function s.initial_effect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
 	e3:SetType(EFFECT_TYPE_IGNITION)
-	e3:SetRange(LOCATION_GRAVE+LOCATION_SZONE)
-	e3:SetCountLimit(1,{id,1})
-	e3:SetCondition(s.spcon)
+	e3:SetRange(LOCATION_GRAVE)
+	e3:SetCountLimit(1,id)
+	e3:SetCondition(s.thcon)
 	e3:SetCost(aux.bfgcost)
 	e3:SetTarget(s.thtg)
 	e3:SetOperation(s.thop)
 	c:RegisterEffect(e3)
 end
 --Decrease Tribute
-s.listed_series={0x444}
 function s.ntcon(e,c,minc)
 	if c==nil then return true end
 	return minc==0 and Duel.GetLocationCount(c:GetControler(),LOCATION_MZONE)>0
 end
 function s.nttg(e,c)
-	return c:IsLevel(8) and c:IsSetCard(0x444)
+	return c:IsLevel(6) and c:IsSetCard(0x444)
 end
 --Search
 function s.cfilter(c)
-	return c:IsFaceup() and c:IsCode(444000000)
+	return c:IsFaceup() and (c:IsCode(444000000) or c:IsCode(444000050))
 end
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
+function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0)>0
 		and Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
 end

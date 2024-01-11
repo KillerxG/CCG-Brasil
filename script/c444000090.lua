@@ -1,10 +1,10 @@
---Okami - Kazegami
---Scripted by Leonardofake
+-- Okami - Kazegami
+-- Scripted by Leonardofake & Imp
 local s,id=GetID()
 function s.initial_effect(c)
 	--Pendulum Effect
 	Pendulum.AddProcedure(c)
-	--Copy "Okami" Continuous Spell/Trap
+	--Copy "Okami" Continuous Spell
 	local e0=Effect.CreateEffect(c)
 	e0:SetDescription(aux.Stringid(id,0))
 	e0:SetType(EFFECT_TYPE_IGNITION)
@@ -13,41 +13,30 @@ function s.initial_effect(c)
 	e0:SetCost(s.cpcost)
 	e0:SetOperation(s.cpop)
 	c:RegisterEffect(e0)
-	--Monster Effect
-    --[[Change Level
+	--Place "Okami" Continuous Spell/Trap
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,1))
-	e1:SetType(EFFECT_TYPE_IGNITION)
-	e1:SetRange(LOCATION_MZONE)
-	e1:SetCountLimit(1)
-	e1:SetCondition(s.con)
-	e1:SetTarget(s.tg)
-	e1:SetOperation(s.op)
-	c:RegisterEffect(e1)]]
-	--Place "Okami" Spell/Trap
+    e1:SetType(EFFECT_TYPE_IGNITION)
+    e1:SetRange(LOCATION_MZONE)
+	e1:SetCountLimit(1,id+1)
+	e1:SetTarget(s.tftg)
+	e1:SetOperation(s.tfop)
+	c:RegisterEffect(e1)
+	--Place itself into Pendulum Zone
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,2))
-    e2:SetType(EFFECT_TYPE_IGNITION)
-    e2:SetRange(LOCATION_MZONE)
-	e2:SetCountLimit(1,id+1)
-	e2:SetTarget(s.tftg)
-	e2:SetOperation(s.tfop)
+	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e2:SetCode(EVENT_PHASE+PHASE_STANDBY)
+    e2:SetRange(LOCATION_EXTRA)
+	e2:SetCountLimit(1,id+2)
+	e2:SetCost(s.pencost)
+	e2:SetTarget(s.pentg)
+	e2:SetOperation(s.penop)
 	c:RegisterEffect(e2)
-	--Place itself into Pendulum Zone
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,3))
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e3:SetCode(EVENT_PHASE+PHASE_STANDBY)
-    e3:SetRange(LOCATION_EXTRA)
-	e3:SetCountLimit(1,id+2)
-	e3:SetCost(s.cost)
-	e3:SetTarget(s.pentg)
-	e3:SetOperation(s.penop)
-	c:RegisterEffect(e3)
 end
---Copy "Okami" Spell/Trap
+--Copy "Okami" Continuous Spell
 function s.cpfilter(c)
-	return c:IsSetCard(0x444) and c:IsType(TYPE_CONTINUOUS) and (c:IsSpell() or c:IsTrap()) and c:IsAbleToGraveAsCost()
+	return c:IsSetCard(0x444) and c:IsType(TYPE_CONTINUOUS) and c:IsSpell() and c:IsAbleToGraveAsCost()
 end
 function s.cpcost(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.cpfilter,tp,LOCATION_DECK,0,1,e:GetHandler()) end
@@ -71,35 +60,9 @@ function s.cpop(e,tp,eg,ep,ev,re,r,rp)
 		c:CopyEffect(code,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,1)
 	end
 end
---Change level
-function s.cfilter(c)
-	return c:IsFaceup() and c:IsCode(444000000)
-end
-function s.con(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0)>0
-		and Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
-end
-function s.tg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
-	local lv=e:GetHandler():GetLevel()
-	Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,1))
-	e:SetLabel(Duel.AnnounceLevel(tp,3,6,lv))
-end
-function s.op(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsFaceup() and c:IsRelateToEffect(e) then
-		local e5=Effect.CreateEffect(c)
-		e5:SetType(EFFECT_TYPE_SINGLE)
-		e5:SetCode(EFFECT_CHANGE_LEVEL)
-		e5:SetValue(e:GetLabel())
-		e5:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE+RESET_PHASE+PHASE_END)
-		c:RegisterEffect(e5)
-	end
-end
---Place "Okami" Spell/Trap
+--Place "Okami" Continuous Spell/Trap
 function s.tffilter(c,tp)
 	return c:IsSpellTrap() and c:IsType(TYPE_CONTINUOUS) and c:IsSetCard(0x444) and not c:IsForbidden() and c:CheckUniqueOnField(tp)
-	and not Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,c:GetCode()),tp,LOCATION_ONFIELD,0,1,nil)
 end
 function s.tftg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_SZONE)>0
@@ -114,7 +77,7 @@ function s.tfop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 --Place itself into Pendulum Zone
-function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.pencost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.CheckLPCost(tp,1000) end
 	Duel.PayLPCost(tp,1000)
 end
