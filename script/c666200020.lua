@@ -5,12 +5,10 @@ function s.initial_effect(c)
 	--Prevent Attack
 	local e0=Effect.CreateEffect(c)
 	e0:SetDescription(aux.Stringid(id,0))
-	e0:SetType(EFFECT_TYPE_QUICK_O)
-	e0:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e0:SetCode(EVENT_FREE_CHAIN)
+	e0:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e0:SetCode(EVENT_ATTACK_ANNOUNCE)
 	e0:SetRange(LOCATION_HAND+LOCATION_MZONE)
 	e0:SetCost(s.nacost)
-	e0:SetTarget(s.natg)
 	e0:SetOperation(s.naop)
 	c:RegisterEffect(e0)
 	--Special Summon 
@@ -33,28 +31,12 @@ function s.nacost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return e:GetHandler():IsReleasable() and Duel.GetFlagEffect(0,id)==0 end
 	Duel.Release(e:GetHandler(),REASON_COST)
 end
-function s.natg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() end
-	if chk==0 then return Duel.IsExistingTarget(Card.IsFaceup,tp,LOCATION_MZONE,LOCATION_MZONE,1,e:GetHandler()) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	Duel.SelectTarget(tp,Card.IsFaceup,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,e:GetHandler())
-end
 function s.naop(e,tp,eg,ep,ev,re,r,rp)
-    	local c=e:GetHandler()
-	local tc=Duel.GetFirstTarget()
-	if tc:IsRelateToEffect(e) then
-		local e2=Effect.CreateEffect(e:GetHandler())
-		e2:SetDescription(3206)
-		e2:SetType(EFFECT_TYPE_SINGLE)
-		e2:SetProperty(EFFECT_FLAG_CLIENT_HINT)
-		e2:SetCode(EFFECT_CANNOT_ATTACK)
-		e2:SetReset(RESET_EVENT|RESETS_STANDARD|RESET_PHASE|PHASE_END)
-		tc:RegisterEffect(e2)
-		if Duel.IsExistingMatchingCard(s.exmfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) then
+	Duel.NegateAttack()
+	if Duel.IsExistingMatchingCard(s.exmfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) then
 			Duel.BreakEffect()
-			Duel.Recover(tp,tc:GetAttack(),REASON_EFFECT)
+			Duel.Recover(tp,Duel.GetAttacker():GetAttack(),REASON_EFFECT)
 		end
-	end
 end
 --Special Summon
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -62,10 +44,10 @@ function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	return true
 end
 function s.cfilter(c)
-	return c:IsSetCard(0x352) and c:IsMonster() and c:IsAbleToRemoveAsCost()
+	return c:IsRace(RACE_CYBERSE) and c:IsMonster() and c:IsAbleToRemoveAsCost()
 end
 function s.spfilter(c,e,tp,lv)
-	return c:IsSetCard(0x352) and c:IsMonster() and c:IsLevelBelow(lv) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+	return c:IsSetCard(0x352) and c:IsMonster() and c:IsLevelBelow(lv) and c:IsCanBeSpecialSummoned(e,0,tp,false,false) and not c:IsCode(id)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
@@ -104,7 +86,7 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_DECK)
 end
 function s.sfilter(c,e,tp,lv)
-	return c:IsSetCard(0x352) and c:IsMonster() and c:GetLevel()==lv and c:IsCanBeSpecialSummoned(e,0,tp,false,false)  and not c:IsCode(id)
+	return c:IsSetCard(0x352) and c:IsMonster() and c:GetLevel()==lv and c:IsCanBeSpecialSummoned(e,0,tp,false,false) and not c:IsCode(id)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
@@ -112,7 +94,16 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 	local g=Duel.SelectMatchingCard(tp,s.sfilter,tp,LOCATION_DECK,0,1,1,nil,e,tp,lv)
 	local tc=g:GetFirst()
-	if tc then
-    Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
+	if tc and Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP) then
+	--Banish it if it leaves the field
+		local e2=Effect.CreateEffect(e:GetHandler())
+		e2:SetDescription(3300)
+		e2:SetType(EFFECT_TYPE_SINGLE)
+		e2:SetCode(EFFECT_LEAVE_FIELD_REDIRECT)
+		e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_CLIENT_HINT)
+		e2:SetReset(RESET_EVENT+RESETS_REDIRECT)
+		e2:SetValue(LOCATION_REMOVED)
+		tc:RegisterEffect(e2,true)
 	end
+	Duel.SpecialSummonComplete()
 end

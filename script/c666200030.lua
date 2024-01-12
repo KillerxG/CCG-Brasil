@@ -2,82 +2,84 @@
 --Scripted by Imp
 local s,id=GetID()
 function s.initial_effect(c)
-	--Send to GY or Banish
+	--Send to GY
 	local e0=Effect.CreateEffect(c)
 	e0:SetDescription(aux.Stringid(id,0))
-	e0:SetCategory(CATEGORY_TOGRAVE+CATEGORY_REMOVE)
+	e0:SetCategory(CATEGORY_TOGRAVE)
 	e0:SetType(EFFECT_TYPE_ACTIVATE)
 	e0:SetCode(EVENT_FREE_CHAIN)
 	e0:SetCountLimit(1,id)
-	e0:SetTarget(s.tgtg)
-	e0:SetOperation(s.tgop)
+	e0:SetTarget(s.target)
+	e0:SetOperation(s.activate)
 	c:RegisterEffect(e0)
-	--Draw
+	--Send to Hand
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,1))
-	e1:SetCategory(CATEGORY_DRAW)
+	e1:SetCategory(CATEGORY_TOHAND)
 	e1:SetType(EFFECT_TYPE_IGNITION)
 	e1:SetRange(LOCATION_GRAVE)
 	e1:SetCountLimit(1,id)
-	e1:SetCost(s.drcost)
-	e1:SetTarget(s.drtg)
-	e1:SetOperation(s.drop)
+	e1:SetCost(aux.bfgcost)
+	e1:SetTarget(s.thtg)
+	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 end
---Send to GY or Banish
-function s.tgfilter(c,e,tp)
-	return c:IsAttribute(ATTRIBUTE_DARK) and c:IsRace(RACE_CYBERSE) and (c:IsAbleToGrave() or c:IsAbleToRemove())
+--Send to GY
+function s.ctfilter(c)
+	return c:IsSetCard(0x352) and c:IsType(TYPE_FUSION) or c:IsType(TYPE_LINK)
 end
-function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.thfilter(c)
+	return c:IsLevelBelow(4) and c:IsRace(RACE_CYBERSE) and c:IsMonster() and c:IsAbleToGrave()
+end
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
-	local g=Duel.GetMatchingGroup(Card.IsType,0,LOCATION_MZONE,LOCATION_MZONE,nil,TYPE_LINK)
-	local ct=g:GetSum(Card.GetLink)+2
-		return ct>0 and Duel.GetFieldGroupCount(tp,LOCATION_DECK,0)>=ct
+		local ct=Duel.GetMatchingGroupCount(s.ctfilter,tp,LOCATION_MZONE,0,nil)+4
+		if Duel.GetFieldGroupCount(tp,LOCATION_DECK,0)<ct then return false end
+		local g=Duel.GetDecktopGroup(tp,ct)
+		return g:FilterCount(Card.IsAbleToGrave,nil)>0
 	end
 	Duel.SetPossibleOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_DECK)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,LOCATION_DECK)
 end
-function s.tgop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(Card.IsType,0,LOCATION_MZONE,LOCATION_MZONE,nil,TYPE_LINK)
-	local ct=g:GetSum(Card.GetLink)+2
-	if Duel.GetFieldGroupCount(tp,LOCATION_DECK,0)==0 then return end
+function s.activate(e,tp,eg,ep,ev,re,r,rp)
+	local ct=Duel.GetMatchingGroupCount(s.ctfilter,tp,LOCATION_MZONE,0,nil)+4
+	if Duel.GetFieldGroupCount(tp,LOCATION_DECK,0)<ct then return end
 	Duel.ConfirmDecktop(tp,ct)
-	local g=Duel.GetDecktopGroup(tp,ct):Filter(s.tgfilter,nil,e,tp)
-      if #g>0 then 
-	Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,2))
-	local sg=g:Select(tp,1,1,nil)
-	Duel.DisableShuffleCheck()
-	if sg:GetFirst():IsAbleToGrave() and (not sg:GetFirst():IsAbleToRemove() or Duel.SelectYesNo(tp,aux.Stringid(id,3))) then
-			Duel.SendtoGrave(sg,REASON_EFFECT)
-		else
-			Duel.Remove(sg,POS_FACEUP,REASON_EFFECT)
-		end
-	ct=ct-1
-	if ct>0 then
-		Duel.MoveToDeckBottom(ct,tp)
-		Duel.SortDeckbottom(tp,tp,ct)
+	local g=Duel.GetDecktopGroup(tp,ct)
+	local db=0
+	local dc=g:Filter(s.thfilter,nil,ct)
+	if #dc>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+		Duel.DisableShuffleCheck()
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+		local sg=dc:Select(tp,1,1,nil)
+		Duel.SendtoGrave(sg,REASON_EFFECT)
+		db=1
+	end
+	local ac=ct-db
+	if ac>0 then
+		Duel.MoveToDeckBottom(ac,tp)
+		Duel.SortDeckbottom(tp,tp,ac)
 	end
 end
+--Send to Hand
+function s.exmfilter(c)
+	return c:GetSequence()>=5
 end
---Draw
-function s.cfilter(c)
-	return c:IsSetCard(0x352) and c:IsMonster() and c:IsAbleToRemoveAsCost()
+function s.thfilter(c)
+	return c:IsSetCard(0x352) and c:IsAbleToHand() and not c:IsCode(id)
 end
-function s.drcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return e:GetHandler():IsAbleToRemoveAsCost()
-		and Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_GRAVE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-	g:AddCard(e:GetHandler())
-	Duel.Remove(g,POS_FACEUP,REASON_COST)
+function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	local ct=Duel.GetMatchingGroupCount(s.exmfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
+	local g=Duel.GetMatchingGroup(s.thfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,nil)
+	if chk==0 then return ct>0 and aux.SelectUnselectGroup(g,e,tp,1,ct,aux.dncheck,0) end
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED)
 end
-function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsPlayerCanDraw(tp,1) end
-	Duel.SetTargetPlayer(tp)
-	Duel.SetTargetParam(1)
-	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
-end
-function s.drop(e,tp,eg,ep,ev,re,r,rp)
-	local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
-	Duel.Draw(p,d,REASON_EFFECT)
+function s.thop(e,tp,eg,ep,ev,re,r,rp)
+	local ct=Duel.GetMatchingGroupCount(s.exmfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
+	local g=Duel.GetMatchingGroup(s.thfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,nil)
+	if not (ct>0 and #g>0) then return end
+	local sg=aux.SelectUnselectGroup(g,e,tp,1,ct,aux.dncheck,1,tp,HINTMSG_ATOHAND)
+	if #sg>0 then
+		Duel.SendtoHand(sg,tp,REASON_EFFECT)
+		Duel.ConfirmCards(1-tp,sg)
+	end
 end

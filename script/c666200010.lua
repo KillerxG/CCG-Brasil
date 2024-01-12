@@ -2,74 +2,82 @@
 --Scripted by Imp
 local s,id=GetID()
 function s.initial_effect(c)
+    c:SetSPSummonOnce(id)
 	--Link Summon
-	Link.AddProcedure(c,nil,2,3,s.lcheck)
+	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsRace,RACE_CYBERSE),2,nil,s.lcheck)
 	c:EnableReviveLimit()
-	--Immune
-    local e0=Effect.CreateEffect(c)
-    e0:SetType(EFFECT_TYPE_SINGLE)
-    e0:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
-    e0:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-    e0:SetRange(LOCATION_EMZONE)
-    e0:SetValue(aux.tgoval)
-    c:RegisterEffect(e0)
-    local e1=e0:Clone()
-    e1:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
-    e1:SetValue(aux.indoval)
-    c:RegisterEffect(e1)
-	--Destroy
+	--Cyberse monsters become "Cheat Code" monsters
+	local e0=Effect.CreateEffect(c)
+	e0:SetType(EFFECT_TYPE_FIELD)
+	e0:SetCode(EFFECT_ADD_SETCODE)
+	e0:SetRange(LOCATION_EMZONE)
+	e0:SetTargetRange(LOCATION_MZONE,0)
+	e0:SetTarget(aux.TargetBoolFunction(Card.IsRace,RACE_CYBERSE))
+	e0:SetValue(0x352)
+	c:RegisterEffect(e0)
+	--Cyberse monsters become "Cheat Code" monsters
+	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetCategory(CATEGORY_TOGRAVE)
+    e1:SetType(EFFECT_TYPE_QUICK_O)
+	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetRange(LOCATION_REMOVED)
+	e1:SetCountLimit(1)
+	e1:SetTarget(s.tgtg)
+	e1:SetOperation(s.tgop)
+	c:RegisterEffect(e1)
+	--Change Control
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetCategory(CATEGORY_DESTROY)
-	e2:SetType(EFFECT_TYPE_QUICK_O)
-	e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_NO_TURN_RESET)
-	e2:SetCode(EVENT_FREE_CHAIN)
-	e2:SetRange(LOCATION_MZONE)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_CONTROL)
+	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e2:SetProperty(EFFECT_FLAG_DELAY)
+	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
 	e2:SetCountLimit(1,id)
-	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
-	e2:SetCost(s.cost)
-	e2:SetTarget(s.target)
-	e2:SetOperation(s.operation)
+	e2:SetTarget(s.cttg)
+	e2:SetOperation(s.ctop)
 	c:RegisterEffect(e2)
 end
 --Link Summon
 function s.lcheck(g,lc,sumtype,tp)
 	return g:IsExists(Card.IsSetCard,1,nil,0x352,lc,sumtype,tp)
 end
---Destroy
-function s.costfilter(c)
-	return c:IsLinkMonster() and c:IsAbleToRemoveAsCost()
+--Cyberse monsters become "Cheat Code" monsters
+function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
+	if chk==0 then return c:IsAbleToGrave() end
+	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,c,1,0,0)
 end
-function s.spcheck(sg,tp,exg,dg)
-	local a=0
-	for c in aux.Next(sg) do
-		if dg:IsContains(c) then a=a+1 end
-		for tc in aux.Next(c:GetEquipGroup()) do
-			if dg:IsContains(tc) then a=a+1 end
-		end
-	end
-	return #dg-a>0
+function s.tgop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	if c:IsRelateToEffect(e) and Duel.SendtoGrave(c,REASON_EFFECT)~=0 and c:IsLocation(LOCATION_GRAVE) then
+		local mg=Duel.GetMatchingGroup(Card.IsRace,tp,LOCATION_MZONE,0,nil,RACE_CYBERSE)
+		for tc in aux.Next(mg) do
+		local e3=Effect.CreateEffect(c)
+        e3:SetType(EFFECT_TYPE_SINGLE)
+        e3:SetCode(EFFECT_ADD_SETCODE)
+		e3:SetValue(0x352)
+		e3:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+		tc:RegisterEffect(e3)
+    end
 end
-function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
-	local dg=Duel.GetMatchingGroup(Card.IsCanBeEffectTarget,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil,e)
-	local sg=Duel.GetMatchingGroup(s.costfilter,tp,LOCATION_GRAVE,0,nil)
-	if chk==0 then return #sg>0 and s.spcheck end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local rmg=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-	Duel.Remove(rmg,nil,REASON_COST)
-	local link=rmg:GetFirst():GetLink()
-	e:SetLabel(link)
 end
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return false end
-	if chk==0 then return true end
-	local lnk=e:GetLabel()
-	local dg=Duel.SelectTarget(tp,nil,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,lnk,nil)
-	Duel.SetOperationInfo(0,CATEGORY_DESTROY,dg,#dg,tp,0)
+--Change Control
+function s.cttg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and chkc:IsFaceup() and chkc:IsControlerCanBeChanged() end
+	if chk==0 then return Duel.IsExistingTarget(aux.FaceupFilter(Card.IsControlerCanBeChanged),tp,0,LOCATION_MZONE,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONTROL)
+	local g=Duel.SelectTarget(tp,aux.FaceupFilter(Card.IsControlerCanBeChanged),tp,0,LOCATION_MZONE,1,1,nil)
+	Duel.SetOperationInfo(0,CATEGORY_CONTROL,g,1,0,0)
 end
-function s.operation(e,tp,eg,ep,ev,re,r,rp)
-	local dg=Duel.GetTargetCards(e)
-	if #dg>0 then
-		Duel.Destroy(dg,REASON_EFFECT)
+function s.ctop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	if tc:IsRelateToEffect(e) and Duel.GetControl(tc,tp,PHASE_END,1) then
+        local e4=Effect.CreateEffect(e:GetHandler())
+        e4:SetType(EFFECT_TYPE_SINGLE)
+        e4:SetCode(EFFECT_CHANGE_RACE)
+		e4:SetValue(RACE_CYBERSE)
+		e4:SetReset(RESET_EVENT|RESETS_STANDARD)
+		tc:RegisterEffect(e4)
 	end
 end
