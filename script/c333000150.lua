@@ -84,7 +84,7 @@ function s.filter(c)
     return c:IsSetCard(0x311) and c:IsType(TYPE_MONSTER) and c:IsFaceup()
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsCanAddCounter(0x311,1) end
+	if chkc then return chkc:IsCanAddCounter(0x311,2) end
 	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,LOCATION_MZONE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
 	Duel.SelectTarget(tp,s.filter,tp,LOCATION_MZONE,0,1,1,nil)
@@ -93,8 +93,8 @@ end
 function s.operation(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	local ct=Duel.GetMatchingGroupCount(s.ctfilter,tp,LOCATION_GRAVE,0,nil)
-	if tc and tc:IsRelateToEffect(e) and tc:IsCanAddCounter(0x311,ct) then
-		tc:AddCounter(0x311,ct)
+	if tc and tc:IsRelateToEffect(e) and tc:IsCanAddCounter(0x311,ct*2) then
+		tc:AddCounter(0x311,ct*2)
 	end
 end
 function s.ctfilter(c)

@@ -75,6 +75,7 @@ function s.initial_effect(c)
 	e6:SetOperation(s.negop)
 	c:RegisterEffect(e6)
 end
+s.listed_card_types={TYPE_GEMINI}
 --(2)Special Summon Procedure
 function s.spfilter(c)
 	return c:IsMonster() and c:IsSetCard(0x311) and c:IsAbleToGraveAsCost()
@@ -115,7 +116,7 @@ function s.addc(e,tp,eg,ep,ev,re,r,rp)
 end
 --(4)Place Machine Part Counters on monsters
 function s.acxfilter(c,e,tp)
-	return c:IsRace(RACE_MACHINE) and c:IsControler(tp) --and c:IsLocation(LOCATION_GRAVE)
+	return c:IsType(TYPE_GEMINI) and c:IsControler(tp) --and c:IsLocation(LOCATION_GRAVE)
 end
 function s.actarget(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return  eg:IsExists(s.acxfilter,1,nil,e,tp) end
@@ -162,21 +163,21 @@ function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsCanRemoveCounter(tp,1,0,0x311,2,REASON_COST) end
 	Duel.RemoveCounter(tp,1,0,0x311,2,REASON_COST)
 end
-function s.spfilter(c,e,tp)
+function s.sp2filter(c,e,tp)
 	return c:IsType(TYPE_NORMAL) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.filters2(c,e,tp)
 	return c:IsType(TYPE_SPELL) and c:IsType(TYPE_EQUIP)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) and Duel.IsExistingMatchingCard(s.filters2,tp,LOCATION_DECK,0,1,nil) end
+	if chk==0 then return Duel.IsExistingMatchingCard(s.sp2filter,tp,LOCATION_GRAVE,0,1,nil,e,tp) and Duel.IsExistingMatchingCard(s.filters2,tp,LOCATION_DECK,0,1,nil) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,0,LOCATION_GRAVE)
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
+	local g=Duel.SelectMatchingCard(tp,s.sp2filter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
 	if #g>0 and
 	Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP) then
 	 local ag=Duel.SelectMatchingCard(tp,s.filters2,tp,LOCATION_DECK,0,1,1,nil,e,tp)

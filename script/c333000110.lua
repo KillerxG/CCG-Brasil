@@ -1,6 +1,7 @@
 --Festos Tools -  Gear Core
 local s,id=GetID()
 function s.initial_effect(c)
+	aux.AddEquipProcedure(c,nil,aux.FilterBoolFunction(Card.IsSetCard,0x311))
 	--(1)Search
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))

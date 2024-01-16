@@ -38,6 +38,7 @@ function s.initial_effect(c)
 	e5:SetOperation(s.spop)
 	c:RegisterEffect(e5)
 end
+s.listed_card_types={TYPE_GEMINI}
 --atk/def up
 function s.atkval(e,c)
     return Duel.GetCounter(0,1,1,0x311)*100
@@ -50,7 +51,7 @@ function s.counfilter(c)
     return c:IsSetCard(0x311) and c:IsFaceup()
 end
 function s.acxfilter(c,e,tp)
-	return c:IsRace(RACE_MACHINE) and c:IsControler(tp) --and c:IsLocation(LOCATION_GRAVE)
+	return c:IsType(TYPE_GEMINI) and c:IsControler(tp) --and c:IsLocation(LOCATION_GRAVE)
 end
 function s.actarget(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return  eg:IsExists(s.acxfilter,1,nil,e,tp) end

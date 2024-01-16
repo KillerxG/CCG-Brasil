@@ -3,8 +3,8 @@ local s,id=GetID()
 function s.initial_effect(c)
 	Gemini.AddProcedure(c)
 	c:EnableCounterPermit(0x311)
-		--Xyz summon
-	Xyz.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x311),8,2)
+	--Xyz summon
+	Xyz.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsType,TYPE_GEMINI),8,2)
 	---xyz alternative
 	local e0=Effect.CreateEffect(c)
 	e0:SetDescription(aux.Stringid(id,0))
@@ -51,6 +51,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.spop)
 	c:RegisterEffect(e3,false,REGISTER_FLAG_DETACH_XMAT)
 end
+s.listed_card_types={TYPE_GEMINI}
 --alternative summon
 function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsCanRemoveCounter(tp,1,0,0x311,16,REASON_COST) end
