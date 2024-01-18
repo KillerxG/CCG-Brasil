@@ -1,4 +1,4 @@
---Timerx Huntress - Izayoi
+--Timerx Detective - Emilya
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -74,7 +74,7 @@ end
 function s.th2tg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	local c=e:GetHandler()
 	if chk==0 then return c:IsAbleToDeck()
-		and Duel.IsExistingMatchingCard(s.tdfilter,tp,LOCATION_HAND,0,1,nil)
+		and Duel.IsExistingMatchingCard(s.tdfilter,tp,LOCATION_HAND,0,1,c)
 		and Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
 	Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,2,tp,LOCATION_HAND)
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
