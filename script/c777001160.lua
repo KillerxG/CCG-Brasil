@@ -1,4 +1,4 @@
---Timerx Traveller - Alisha
+--Timerx Scientist
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -23,6 +23,15 @@ function s.initial_effect(c)
 	e2:SetTarget(s.copytg)
 	e2:SetOperation(s.copyop)
 	c:RegisterEffect(e2)
+	--(3)Change its Type and Attribute
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,3))
+	e3:SetType(EFFECT_TYPE_IGNITION)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetCountLimit(1,id+1)
+	e3:SetTarget(s.artg)
+	e3:SetOperation(s.arop)
+	c:RegisterEffect(e3)
 end
 --(1)Special summon itself
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -87,4 +96,37 @@ end
 --(2.4)Lizard check
 function s.lizfilter(e,c)
 	return not c:IsOriginalType(TYPE_FUSION)
+end
+--(3)Change its Type and Attribute
+function s.artg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return true end
+	local c=e:GetHandler()
+	local rc=c:AnnounceAnotherRace(tp)
+	local att=c:AnnounceAnotherAttribute(tp)
+	e:SetLabel(rc,att)
+end
+function s.arop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	if (not c:IsFaceup() and c:IsRelateToEffect(e)) then return end
+	local rc,att=e:GetLabel()
+	if c:IsDifferentRace(rc) then
+		-- Change monster type
+		local e1=Effect.CreateEffect(c)
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_CHANGE_RACE)
+		e1:SetProperty(EFFECT_FLAG_COPY_INHERIT)
+		e1:SetValue(rc)
+		e1:SetReset(RESET_EVENT|RESETS_STANDARD_DISABLE|RESET_PHASE|PHASE_END,2)
+		c:RegisterEffect(e1)
+	end
+	if c:IsAttributeExcept(att) then
+		-- Change Attribute
+		local e2=Effect.CreateEffect(c)
+		e2:SetType(EFFECT_TYPE_SINGLE)
+		e2:SetCode(EFFECT_CHANGE_ATTRIBUTE)
+		e2:SetProperty(EFFECT_FLAG_COPY_INHERIT)
+		e2:SetValue(att)
+		e2:SetReset(RESET_EVENT|RESETS_STANDARD_DISABLE|RESET_PHASE|PHASE_END,2)
+		c:RegisterEffect(e2)
+	end
 end

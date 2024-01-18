@@ -1,4 +1,4 @@
--- Timerx Fallen Meknight
+--Timerx Mekhunter
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -16,12 +16,16 @@ function s.initial_effect(c)
 	e1:SetTarget(s.tdtg)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
-	--(2)Gain effect this turn
+	--(2)Draw
 	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
-	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_DRAW)
+	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
-	e2:SetOperation(s.geop)
+	e2:SetCountLimit(1,id+1)
+	e2:SetCondition(s.drcon)
+	e2:SetTarget(s.drtg)
+	e2:SetOperation(s.drop)
 	c:RegisterEffect(e2)
 	--(3)Cannot Special Summon monsters from Extra Deck, except Synchro Monsters
 	local e3=Effect.CreateEffect(c)
@@ -62,41 +66,26 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 	Duel.SpecialSummonComplete()
 end
---(2) Gain effect this turn
-function s.geop(e,tp,eg,ep,ev,re,r,rp)
-  --(2.1) Draw
-  local e1=Effect.CreateEffect(e:GetHandler())
-  e1:SetDescription(aux.Stringid(id,1))
-  e1:SetCategory(CATEGORY_DRAW+CATEGORY_SPECIAL_SUMMON)
-  e1:SetType(EFFECT_TYPE_IGNITION)
-  e1:SetRange(LOCATION_MZONE)
-  e1:SetCountLimit(1,id)
-  e1:SetTarget(s.drtg)
-  e1:SetOperation(s.drop)
-  e1:SetReset(RESET_EVENT+0x16c0000+RESET_PHASE+PHASE_END)
-  e:GetHandler():RegisterEffect(e1)
+--(2)Draw
+function s.drcon(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	return c:IsSummonType(SUMMON_TYPE_FUSION)
 end
---(2.1) Draw
 function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
-  if chk==0 then return Duel.IsPlayerCanDraw(tp,1) end
-  Duel.SetTargetPlayer(tp)
-  Duel.SetTargetParam(1)
-  Duel.Hint(HINT_OPSELECTED,1-tp,aux.Stringid(id,1))
-  Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
+	if chk==0 then return Duel.IsPlayerCanDraw(tp,2) end
+	Duel.SetTargetPlayer(tp)
+	Duel.SetTargetParam(2)
+	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,2)
+	Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,0,tp,1)
 end
 function s.drop(e,tp,eg,ep,ev,re,r,rp)
-  local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
-  if Duel.Draw(p,d,REASON_EFFECT)~=0 then
-    local tc=Duel.GetOperatedGroup():GetFirst()
-    Duel.ConfirmCards(1-tp,tc)
-    Duel.BreakEffect()
-    if tc:IsType(TYPE_MONSTER) and tc:IsSetCard(0x305) then
-      if Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and tc:IsCanBeSpecialSummoned(e,0,tp,false,false)
-      and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
-        Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
-      end
-    end
-    Duel.ShuffleHand(tp)
-  end
+	local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
+	if Duel.Draw(p,d,REASON_EFFECT)==2 then
+		local g=Duel.GetMatchingGroup(Card.IsAbleToDeck,p,LOCATION_HAND,0,nil)
+		if #g==0 then return end
+		Duel.BreakEffect()
+		Duel.Hint(HINT_SELECTMSG,p,HINTMSG_TODECK)
+		local sg=g:Select(p,1,1,nil)
+		Duel.SendtoDeck(sg,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
+	end
 end
-

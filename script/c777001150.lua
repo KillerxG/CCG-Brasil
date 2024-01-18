@@ -44,6 +44,19 @@ function s.initial_effect(c)
 	e4:SetTarget(s.reptg)
 	e4:SetValue(s.repval)
 	c:RegisterEffect(e4)
+	--(5)Draw 1
+	local e5=Effect.CreateEffect(c)
+	e5:SetDescription(aux.Stringid(id,1))
+	e5:SetCategory(CATEGORY_DRAW)
+	e5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e5:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e5:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e5:SetProperty(EFFECT_FLAG_DELAY)
+	e5:SetRange(LOCATION_MZONE)
+	e5:SetCondition(s.con)
+	e5:SetTarget(s.tg)
+	e5:SetOperation(s.op)
+	c:RegisterEffect(e5)
 end
 --(2)Special Summon Procedure
 function s.spfilter(c)
@@ -75,7 +88,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
 end
 --(3)Shuffle
 function s.costfilter(c)
-	return c:IsAbleToDeckOrExtraAsCost()
+	return c:IsAbleToDeckOrExtraAsCost() and c:IsSetCard(0x305)
 end
 function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_HAND+LOCATION_GRAVE+LOCATION_MZONE,0,1,e:GetHandler()) end
@@ -121,4 +134,22 @@ function s.reptg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.repval(e,c)
 	return s.repfilter(c,e:GetHandlerPlayer())
+end
+--(5)Draw 1
+function s.gfilter(c,tp)
+	return c:IsPreviousLocation(LOCATION_DECK) and c:IsPreviousControler(tp)
+end
+function s.con(e,tp,eg,ep,ev,re,r,rp)
+	return eg:IsExists(s.gfilter,1,nil,tp)
+end
+function s.tg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsPlayerCanDraw(tp,1) end
+	Duel.SetTargetPlayer(tp)
+	Duel.SetTargetParam(1)
+	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
+end
+function s.op(e,tp,eg,ep,ev,re,r,rp)
+	if not e:GetHandler():IsRelateToEffect(e) then return end
+	local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
+	Duel.Draw(p,d,REASON_EFFECT)
 end
