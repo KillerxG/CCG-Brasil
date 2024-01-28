@@ -2,11 +2,10 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	c:AddSetcodesRule(id,true,0x314a)--Husband Arch
 	--Link Materials
 	c:EnableReviveLimit()
 	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsAttribute,ATTRIBUTE_DARK),2,nil,s.matcheck)
-	--(1)Place "Curse" and Special
+	--(1)Set "Curse" and Special
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -47,12 +46,12 @@ end
 function s.matcheck(g,lc,sumtype,tp)
 	return g:IsExists(Card.IsRace,1,nil,RACE_FIEND,lc,sumtype,tp)
 end
---(1)Place "Curse" and Special
+--(1)Set "Curse" and Special
 function s.tfcon(e,tp,eg,ep,ev,re,r,rp)
   return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK)
 end
 function s.tffilter(c,tp)
-	return (c:IsSetCard(0x304b) or c:IsCode(84970821)) and c:IsTrap() and c:IsType(TYPE_CONTINUOUS) and not c:IsForbidden() and c:CheckUniqueOnField(1-tp)
+	return (c:IsSetCard(0x304b) or c:IsCode(84970821)) and c:IsTrap() and c:IsType(TYPE_CONTINUOUS) and c:IsSSetable()
 		and not c:IsType(TYPE_FIELD)
 end
 function s.spfilter(c,e,tp)
@@ -64,9 +63,9 @@ function s.tftg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.tfop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(1-tp,LOCATION_SZONE)<=0 then return end
-	Duel.Hint(HINT_SELECTMSG,1-tp,HINTMSG_TOFIELD)
-	local tc=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.tffilter),tp,LOCATION_DECK,0,1,1,nil,tp):GetFirst()
-	if tc and Duel.MoveToField(tc,tp,1-tp,LOCATION_SZONE,POS_FACEUP,true) 
+	Duel.Hint(HINT_SELECTMSG,1-tp,HINTMSG_SET)
+	local tc=Duel.SelectMatchingCard(tp,s.tffilter,tp,LOCATION_DECK,0,1,1,nil,tp):GetFirst()
+	if tc and Duel.SSet(1-tp,tc)
 		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
 		local g=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_DECK,0,nil,e,tp)
 		if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
