@@ -3,6 +3,8 @@
 local s,id=GetID()
 local COUNTER_WG=0x77b
 function s.initial_effect(c)
+	--Must be properly summoned before reviving
+	c:EnableReviveLimit()
 	c:AddSetcodesRule(id,true,0x314a)--Husband Arch
 	c:EnableCounterPermit(COUNTER_WG)
 	--(1)Gain ATK when destroys a monster by battle

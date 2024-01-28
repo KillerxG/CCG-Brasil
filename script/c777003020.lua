@@ -2,6 +2,8 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
+	--Must be properly summoned before reviving
+	c:EnableReviveLimit()
 	--(1)Destroy
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,1))

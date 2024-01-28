@@ -3,6 +3,7 @@
 Duel.LoadScript("c419.lua")
 local s,id=GetID()
 function s.initial_effect(c)
+	--Must be properly summoned before reviving
 	c:EnableReviveLimit()
 	--(1)Force Battle Destruction
 	local e1=Effect.CreateEffect(c)
