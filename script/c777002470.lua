@@ -6,13 +6,13 @@ function s.initial_effect(c)
 	--Link Summon
 	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsType,TYPE_EFFECT),3)
 	c:EnableReviveLimit()
-	--Check materials for a Link Monster
+	--(1)Check materials for a Link Monster
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetCode(EFFECT_MATERIAL_CHECK)
 	e0:SetValue(s.valcheck)
 	c:RegisterEffect(e0)
-	--Increase ATK
+	--(2)Increase ATK
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_ATKCHANGE)
@@ -24,7 +24,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.atkop)
 	e1:SetLabelObject(e0)
 	c:RegisterEffect(e1)
-	--Destroy 1 card the opponent controls
+	--(3)Destroy 1 card the opponent controls
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DESTROY)
@@ -34,7 +34,7 @@ function s.initial_effect(c)
 	e2:SetTarget(s.destg)
 	e2:SetOperation(s.desop)
 	c:RegisterEffect(e2)
-	--Register Attributes used
+	--(3.1)Register Attributes used
 	aux.GlobalCheck(s,function()
 		s.attr_list={}
 		s.attr_list[0]=0
@@ -47,18 +47,15 @@ function s.initial_effect(c)
 		Duel.RegisterEffect(ge1,0)
 	end)
 end
+--(1)Check materials for a Link Monster
 function s.valcheck(e,c)
 	local g=c:GetMaterial()
 	e:SetLabel(0)
-	if g:IsExists(Card.IsLinkMonster,1,nil) then
+	if g:IsExists(Card.IsMonster,1,nil) then
 		e:SetLabel(1)
 	end
 end
-function s.resetop(e,tp,eg,ep,ev,re,r,rp)
-	s.attr_list[0]=0
-	s.attr_list[1]=0
-	return false
-end
+--(2)Increase ATK
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsSummonType(SUMMON_TYPE_LINK) and e:GetLabelObject():GetLabel()==1
@@ -88,6 +85,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 		c:RegisterEffect(e1)
 	end
 end
+--(3)Destroy 1 card the opponent controls
 function s.costfilter(c,e,tp)
 	local attr=c:GetAttribute()
 	return c:IsType(TYPES) and c:IsAbleToRemoveAsCost() and s.attr_list[tp]&attr==0
@@ -116,4 +114,10 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	for _,str in aux.GetAttributeStrings(att) do
 		e:GetHandler():RegisterFlagEffect(0,RESET_EVENT|RESETS_STANDARD|RESET_PHASE|PHASE_END,EFFECT_FLAG_CLIENT_HINT,1,0,str)
 	end
+end
+--(3.1)Register Attributes used
+function s.resetop(e,tp,eg,ep,ev,re,r,rp)
+	s.attr_list[0]=0
+	s.attr_list[1]=0
+	return false
 end
