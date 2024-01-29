@@ -46,13 +46,21 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.spfilter),tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil,e,tp)
 	local tc=g:GetFirst()
-	if tc then
-		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
+	if tc and Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP) then
+	--Banish it if it leaves the field
+		local e2=Effect.CreateEffect(e:GetHandler())
+		e2:SetDescription(3300)
+		e2:SetType(EFFECT_TYPE_SINGLE)
+		e2:SetCode(EFFECT_LEAVE_FIELD_REDIRECT)
+		e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_CLIENT_HINT)
+		e2:SetReset(RESET_EVENT+RESETS_REDIRECT)
+		e2:SetValue(LOCATION_REMOVED)
+		tc:RegisterEffect(e2,true)
 	end
 end
 --Send to Hand
 function s.thfilter(c,tp)
-	return c:IsType(TYPE_FUSION) or c:IsType(TYPE_LINK)
+	return c:IsRace(RACE_CYBERSE) and (c:IsType(TYPE_FUSION) or c:IsType(TYPE_LINK))
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()

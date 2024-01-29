@@ -46,7 +46,7 @@ function s.operation(e,tp,eg,ep,ev,re,r,rp)
 end
 --Send to Hand
 function s.thfilter(c,tp)
-	return c:IsType(TYPE_FUSION) or c:IsType(TYPE_LINK)
+	return c:IsSetCard(RACE_CYBERSE) and (c:IsType(TYPE_FUSION) or c:IsType(TYPE_LINK))
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
