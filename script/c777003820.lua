@@ -2,9 +2,8 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	--xyz summon
+	--Xyz Summon
 	c:EnableReviveLimit()
-	--Xyz.AddProcedure(c,s.xyzfilter,nil,2,nil,nil,99,nil,false,s.xyzcheck)
 	Xyz.AddProcedure(c,nil,nil,2,nil,nil,99,nil,false,s.xyzcheck)
 	--(1)Attach monsters from your opponent extra
 	local e1=Effect.CreateEffect(c)
@@ -12,6 +11,7 @@ function s.initial_effect(c)
 	e1:SetCategory(CATEGORY_DESTROY)
 	e1:SetType(EFFECT_TYPE_IGNITION)
 	e1:SetRange(LOCATION_MZONE)
+	e1:SetCountLimit(1,id)
 	e1:SetCondition(s.ctcon)
 	e1:SetCost(s.descost)
 	e1:SetTarget(s.destg)
@@ -44,11 +44,12 @@ function s.xyzcheck(g,tp)
   return mg:GetClassCount(Card.GetAttack)==1 
 end
 --(1)Attach monsters from your opponent extra
-function s.attfilter(c)
+function s.exattfilter(c)
 	return c:IsLevelAbove(6)
 end
 function s.ctcon(e,tp,eg,ep,ev,re,r,rp)
-	return e:GetHandler():GetOverlayGroup():IsExists(s.attfilter,1,nil)
+	return e:GetHandler():GetOverlayGroup():IsExists(s.exattfilter,1,nil)
+		and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsType,TYPE_RITUAL),tp,LOCATION_MZONE,0,1,nil)
 end
 function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
@@ -65,7 +66,7 @@ end
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	local ct=e:GetLabel()
 	local c=e:GetHandler()
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATTACH)
 	local g=Duel.SelectMatchingCard(tp,nil,tp,0,LOCATION_EXTRA,ct,ct,nil)
 	if #g>0 then
 		Duel.HintSelection(g,true)

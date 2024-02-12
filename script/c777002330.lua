@@ -41,26 +41,16 @@ function s.filter(c)
 end
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local g=Duel.GetFieldGroup(tp,0,LOCATION_EXTRA)
-	if chk==0 then return g:FilterCount(s.filter,nil)>=2 end
+	if chk==0 then return g:FilterCount(s.filter,nil)>=3 end
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local g=Duel.GetMatchingGroup(Card.IsType,1-tp,LOCATION_EXTRA+TYPE_PENDULUM,0,nil,TYPE_EXTRA+TYPE_PENDULUM)
-	if #g<2 then return end
-	local rg=g:RandomSelect(tp,2)
+	if #g<3 then return end
+	local rg=g:RandomSelect(tp,3)
 	if Duel.SendtoGrave(rg,REASON_EFFECT) then		
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_FIELD)
-		e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-		e1:SetCode(EFFECT_CANNOT_ACTIVATE)
-		e1:SetTargetRange(0,1)
-		e1:SetValue(s.aclimit)
-		e1:SetReset(RESET_PHASE+PHASE_END)
-		Duel.RegisterEffect(e1,tp)
+		
 	end	
-end
-function s.aclimit(e,re,tp)
-	return re:GetActivateLocation()==LOCATION_GRAVE
 end
 --(2)ATK Down
 function s.atkfilter(c)

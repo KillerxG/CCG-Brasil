@@ -11,6 +11,7 @@ function s.initial_effect(c)
 	e1:SetRange(LOCATION_HAND)
 	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e1:SetCountLimit(1,id)
+	e1:SetCondition(s.trcon)
 	e1:SetCost(s.trcost)
 	e1:SetTarget(s.trtg)
 	e1:SetOperation(s.trop)
@@ -29,6 +30,12 @@ function s.initial_effect(c)
 end
 s.listed_names={777002340}
 --(1)Tribute a target
+function s.cfilter(c)
+	return c:IsFaceup() and c:IsSetCard(0x293)
+end
+function s.trcon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
+end
 function s.trcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.CheckReleaseGroupCost(tp,Card.IsType,1,true,nil,e:GetHandler(),TYPE_MONSTER) end
 	local g=Duel.SelectReleaseGroupCost(tp,Card.IsType,1,1,true,nil,e:GetHandler(),TYPE_MONSTER)

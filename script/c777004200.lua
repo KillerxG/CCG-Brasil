@@ -10,6 +10,7 @@ function s.initial_effect(c)
 	e1:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_DAMAGE_STEP)
 	e1:SetCode(EVENT_SUMMON_SUCCESS)
 	e1:SetCountLimit(1,id)
+	e1:SetCost(s.spcost)
 	e1:SetTarget(s.sptg)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
@@ -29,6 +30,13 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 --(1)Special Summon
+function s.drfilter(c)
+	return c:IsSetCard(0x281) and c:IsMonster() and c:IsDiscardable()
+end
+function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.drfilter,tp,LOCATION_HAND,0,1,nil) end
+	Duel.DiscardHand(tp,s.drfilter,1,1,REASON_COST+REASON_DISCARD)
+end
 function s.thfilter1(c)
 	return c:IsCode(CARD_POLYMERIZATION) and c:IsAbleToHand()
 end
