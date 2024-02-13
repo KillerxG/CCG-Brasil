@@ -5,9 +5,10 @@ function s.initial_effect(c)
 	--XYZ Materials
 	c:EnableReviveLimit()
 	Xyz.AddProcedure(c,s.xyzfilter,nil,2,nil,nil,nil,nil,false,s.xyzcheck)
-	--(1)Set 
+	--(1)Set then you can Draw
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetCategory(CATEGORY_DRAW)
 	e1:SetType(EFFECT_TYPE_IGNITION)
 	e1:SetRange(LOCATION_MZONE)
 	e1:SetCountLimit(1,id)
@@ -36,9 +37,9 @@ function s.xyzcheck(g,tp,xyz)
     local mg=g:Filter(function(c) return not c:IsHasEffect(511001175) end,nil)
     return #mg==2 and math.abs(mg:GetFirst():GetLevel()-mg:GetNext():GetLevel())==2
 end
---(1)Set
+--(1)Set then you can Draw
 function s.setfilter(c)
-	return c:IsSetCard(0x283) and (c:IsSpell() or c:IsTrap()) and c:IsSSetable()
+	return c:IsSetCard(0x283) and c:IsSpell() and c:IsSSetable()
 end
 function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
@@ -49,9 +50,13 @@ function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
-	local tc=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_DECK,0,1,1,nil):GetFirst()
-	if tc then
-		Duel.SSet(tp,tc)
+	local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_DECK,0,1,1,nil)
+	if #g>0 and Duel.SSet(tp,g)>0 then
+		if Duel.IsPlayerCanDraw(tp,1) and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+			Duel.ShuffleDeck(tp)
+			Duel.BreakEffect()
+			Duel.Draw(tp,1,REASON_EFFECT)
+		end
 	end
 end
 --(2)Shuffle into the Deck
