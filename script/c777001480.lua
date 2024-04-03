@@ -1,16 +1,19 @@
---Rockslash Stone Witch - Emma
+--Rockslash Guardian
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
 	--(1)Special Summon
 	local e1=Effect.CreateEffect(c)
-	e1:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_DAMAGE)
-	e1:SetType(EFFECT_TYPE_IGNITION)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e1:SetRange(LOCATION_HAND)
-	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e1:SetCode(EVENT_DAMAGE)
+	e1:SetProperty(EFFECT_FLAG_DELAY)
 	e1:SetCountLimit(1,id)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
+	e1:SetCondition(s.sumcon)
+	e1:SetTarget(s.sumtg)
+	e1:SetOperation(s.sumop)
 	c:RegisterEffect(e1)
 	--(2)Destroy 1 S/T your opponent controls
 	local e2=Effect.CreateEffect(c)
@@ -27,37 +30,18 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 --(1)Special Summon
-function s.cfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x309) and c:GetAttack()~=0 and c:GetDefense()~=0
+function s.sumcon(e,tp,eg,ep,ev,re,r,rp)
+	return r&REASON_EFFECT~=0 and ep~=tp
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.cfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
-		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+function s.sumtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 		and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-	local g=Duel.SelectTarget(tp,s.cfilter,tp,LOCATION_MZONE,0,1,1,nil)
-	local tc=g:GetFirst()
-	local atk=tc:GetAttack()
-	local def=tc:GetDefense()
-	local val=math.min(atk,def)
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
-	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,0,0,tp,val)
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
+function s.sumop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local tc=Duel.GetFirstTarget()
-	if tc:IsFacedown() or not tc:IsRelateToEffect(e) then return end
-	local atk=tc:GetAttack()
-	local def=tc:GetDefense()
-	local lv=tc:GetLevel()
-	local val=math.min(atk,def)
-	if Duel.Damage(tp,val,REASON_EFFECT)~=0 and c:IsRelateToEffect(e) then
-		if Duel.SpecialSummonStep(c,0,tp,tp,false,false,POS_FACEUP) then
-			Duel.Damage(1-tp,lv*200,REASON_EFFECT)
-		end
-		Duel.SpecialSummonComplete()
-	end
+	if not c:IsRelateToEffect(e) then return end
+	Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
 end
 --(2)Destroy 1 S/T your opponent controls
 function s.dmgfilter(c)

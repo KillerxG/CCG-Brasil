@@ -21,17 +21,20 @@ function s.initial_effect(c)
 	e1:SetTarget(s.sptg)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
-    --(3)Damage Conversion
+    --(3)Foolish and damage
 	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetCode(EFFECT_BATTLE_DAMAGE_TO_EFFECT)
+	e2:SetDescription(aux.Stringid(id,0))
+	e2:SetCategory(CATEGORY_DAMAGE+CATEGORY_DECKDES)
+	e2:SetType(EFFECT_TYPE_IGNITION)
+	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
 	e2:SetRange(LOCATION_MZONE)
-	e2:SetTargetRange(LOCATION_MZONE,0)
-	e2:SetTarget(s.target)
+	e2:SetCountLimit(1)
+	e2:SetTarget(s.dam1tg)
+	e2:SetOperation(s.dam1op)
 	c:RegisterEffect(e2)
 	--(4)Damage
 	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,0))
+	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e3:SetCode(EVENT_CHAINING)
 	e3:SetRange(LOCATION_SZONE)
@@ -39,7 +42,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.regop)
 	c:RegisterEffect(e3)
 	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,0))
+	e4:SetDescription(aux.Stringid(id,1))
 	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e4:SetCode(EVENT_CHAIN_SOLVED)
 	e4:SetRange(LOCATION_SZONE)
@@ -48,7 +51,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 	--(5)Make your opponent send 1 monster to GY
 	local e5=Effect.CreateEffect(c)
-	e5:SetDescription(aux.Stringid(id,1))
+	e5:SetDescription(aux.Stringid(id,2))
 	e5:SetCategory(CATEGORY_TOGRAVE)
 	e5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e5:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DELAY)
@@ -95,9 +98,32 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
 	Duel.SendtoGrave(g,REASON_COST)
 	g:DeleteGroup()
 end
---(3)Damage Conversion
-function s.target(e,c)
-	return c:IsFaceup() and c:IsType(TYPE_MONSTER) and c:IsSetCard(0x309)
+--(3)Foolish and damage
+function s.fil1ter(c)
+	return c:IsSetCard(0x1047) and c:IsMonster() and c:IsAbleToGrave()
+end
+function s.ctfilter(c)
+	return c:IsSummonType(SUMMON_TYPE_SPECIAL)
+end
+function s.dam1tg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.fil1ter,tp,LOCATION_DECK+LOCATION_HAND,0,1,nil)
+		and Duel.IsExistingMatchingCard(s.ctfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
+	local ct=Duel.GetMatchingGroupCount(s.ctfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
+	Duel.SetTargetPlayer(1-tp)
+	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,ct*600)
+end
+function s.dam1op(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+	local g=Duel.SelectMatchingCard(tp,s.fil1ter,tp,LOCATION_DECK+LOCATION_HAND,0,1,1,nil)
+	if #g>0 then
+		Duel.SendtoGrave(g,REASON_EFFECT)
+			local ct=Duel.GetOperatedGroup():FilterCount(Card.IsLocation,nil,LOCATION_GRAVE)
+			if ct>0 then
+				local p=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER)
+				local ct=Duel.GetMatchingGroupCount(s.ctfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
+				Duel.Damage(p,ct*600,REASON_EFFECT)
+			end
+	end
 end
 --(4)Damage
 function s.damcon(e,tp,eg,ep,ev,re,r,rp)
@@ -109,7 +135,7 @@ function s.regop(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.damop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_CARD,0,id)
-	Duel.Damage(1-tp,700,REASON_EFFECT)
+	Duel.Damage(1-tp,600,REASON_EFFECT)
 end
 --(5)Make your opponent send 1 monster to GY
 function s.rtcon(e,tp,eg,ep,ev,re,r,rp)
