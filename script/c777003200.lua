@@ -7,69 +7,78 @@ function s.initial_effect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	c:RegisterEffect(e1)
-	--(1)ATK Up
+	--(1)Cannot Attack
 	local e2=Effect.CreateEffect(c)
-	e2:SetCategory(CATEGORY_ATKCHANGE)
-	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
-	e2:SetCode(EVENT_PHASE+PHASE_BATTLE_START)
-	e2:SetRange(LOCATION_SZONE)
-	e2:SetCountLimit(1,id)
-	e2:SetTarget(s.target)
-	e2:SetOperation(s.activate)
+	e2:SetType(EFFECT_TYPE_FIELD)
+	e2:SetCode(EFFECT_CANNOT_ATTACK)
+	e2:SetRange(LOCATION_FZONE)
+	e2:SetTargetRange(LOCATION_MZONE,LOCATION_MZONE)
+	e2:SetTarget(s.atktarget)
 	c:RegisterEffect(e2)
-	--(2)Change die result
+	--(2)Prevent effect target
+	local e2=Effect.CreateEffect(c)
+	e2:SetType(EFFECT_TYPE_FIELD)
+	e2:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
+	e2:SetRange(LOCATION_FZONE)
+	e2:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_SET_AVAILABLE)
+	e2:SetTargetRange(LOCATION_MZONE,0)
+	e2:SetTarget(s.immtg)
+	e2:SetValue(aux.tgoval)
+	c:RegisterEffect(e2)
+	--(3)If Special: You can Rearrange Monsters
 	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e3:SetCode(EVENT_TOSS_DICE_NEGATE)
-	e3:SetRange(LOCATION_SZONE)
-	e3:SetCountLimit(1,id+1)
-	e3:SetOperation(s.diceop)
+	e3:SetDescription(aux.Stringid(id,0))
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e3:SetProperty(EFFECT_FLAG_DELAY)
+	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e3:SetRange(LOCATION_FZONE)
+	e3:SetCondition(function(e,tp,eg) return eg:IsExists(Card.IsSummonPlayer,1,nil,1-tp) end)
+	e3:SetTarget(s.reatg)
+	e3:SetOperation(s.reaop)
 	c:RegisterEffect(e3)
+	--(4)When Monster effect activate: You can Rearrange Monsters
+	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,0))
+	e4:SetType(EFFECT_TYPE_QUICK_O)
+	e4:SetCode(EVENT_CHAINING)
+	e4:SetRange(LOCATION_FZONE)
+	e4:SetCondition(s.discon)
+	e4:SetTarget(s.reatg)
+	e4:SetOperation(s.reaop)
+	c:RegisterEffect(e4)
+	--(5)Pos Change
+	local e5=Effect.CreateEffect(c)
+	e5:SetType(EFFECT_TYPE_FIELD)
+	e5:SetCode(EFFECT_SET_POSITION)
+	e5:SetRange(LOCATION_FZONE)
+	e5:SetTargetRange(LOCATION_MZONE,0)	
+	e5:SetTarget(s.target)
+	e5:SetValue(POS_FACEUP_DEFENSE)
+	c:RegisterEffect(e5)
 end
-s.roll_dice=true
---(1)ATK Up
-function s.atkfilter(c)
-	return c:IsSetCard(0x310)
+--(1)Cannot Attack
+function s.atktarget(e,c)
+	return (c:GetLevel()>=4 and not c:IsCode(777003130)) or c:GetRank()>=1 or c:GetLink()>=1 
 end
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.atkfilter,tp,LOCATION_MZONE,0,1,nil) end
+--(2)Prevent effect target
+function s.immtg(e,c)
+	return (c:IsSetCard(0x310) and c:IsFaceup()) or c:IsFacedown()
 end
-function s.activate(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(s.atkfilter,tp,LOCATION_MZONE,0,nil)
-	if #g>0 then
-		local d=Duel.TossDice(tp,1)
-		for sc in aux.Next(g) do
-			local e1=Effect.CreateEffect(e:GetHandler())
-			e1:SetType(EFFECT_TYPE_SINGLE)
-			e1:SetCode(EFFECT_UPDATE_ATTACK)
-			e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-			e1:SetValue(d*300)
-			sc:RegisterEffect(e1)
-			local e2=e1:Clone()
-			e2:SetCode(EFFECT_UPDATE_DEFENSE)
-			sc:RegisterEffect(e2)
-		end
-	end
+--(3)Rearrange Monsters
+function s.reatg(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
+	if chk==0 then return not c:HasFlagEffect(id) and Duel.IsExistingMatchingCard(Card.IsFacedown,tp,LOCATION_MMZONE,0,2,nil) end
+	c:RegisterFlagEffect(id,RESET_EVENT|RESETS_STANDARD|RESET_CHAIN,0,1)
 end
---(2)Change die result
-function s.diceop(e,tp,eg,ep,ev,re,r,rp)
-	local cc=Duel.GetCurrentChain()
-	local cid=Duel.GetChainInfo(cc,CHAININFO_CHAIN_ID)
-	if s[0]~=cid  and Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
-			local dc={Duel.GetDiceResult()}
-			local ac=1
-			local ct=(ev&0xff)+(ev>>16)
-			Duel.Hint(HINT_CARD,0,id)
-			if ct>1 then
-				local val,idx=Duel.AnnounceNumber(tp,table.unpack(dc,1,ct))
-				ac=idx+1
-			end
-			if dc[ac]==1 then dc[ac]=4
-			elseif dc[ac]==2 then dc[ac]=6 
-			elseif dc[ac]==3 or dc[ac]==4 then dc[ac]=6
-			elseif dc[ac]==5 or dc[ac]==6 then dc[ac]=4
-			end
-		Duel.SetDiceResult(table.unpack(dc))
-		s[0]=cid
-	end
+--(3)If Special: You can Rearrange Monsters
+function s.reaop(e,tp,eg,ep,ev,re,r,rp)
+	local g=Duel.GetMatchingGroup(Card.IsFacedown,tp,LOCATION_MMZONE,0,nil)
+	Duel.ShuffleSetCard(g)
+end
+function s.discon(e,tp,eg,ep,ev,re,r,rp)
+	return not e:GetHandler():IsStatus(STATUS_BATTLE_DESTROYED) and rp==1-tp and re:IsMonsterEffect()
+end
+--(5)Pos Change
+function s.target(e,c)
+	return c:IsLevel(3) and c:IsFaceup() and c:IsSetCard(0x310)
 end
