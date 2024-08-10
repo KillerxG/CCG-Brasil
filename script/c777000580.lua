@@ -11,7 +11,7 @@ function s.initial_effect(c)
 	e1:SetCode(EFFECT_EXTRA_ATTACK)
 	e1:SetValue(1)
 	c:RegisterEffect(e1)
-	--(2)Send to GY
+	--(2)Destroy cards
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DESTROY)
@@ -35,13 +35,13 @@ end
 function s.matcheck(g,lc,sumtype,tp)
 	return g:IsExists(Card.IsSetCard,1,nil,0x289,lc,sumtype,tp)
 end
---(2)Send to GY
+--(2)Destroy cards
 function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
 	return rp==1-tp and re:IsActiveType(TYPE_MONSTER) and re:GetHandler():IsRelateToEffect(re)
 end
 function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.CheckLPCost(tp,2000) end
-	Duel.PayLPCost(tp,2000)
+	if chk==0 then return Duel.CheckLPCost(tp,1000) end
+	Duel.PayLPCost(tp,1000)
 end
 function s.valcheck(e,c)
 	local ct=e:GetHandler():GetMaterial():FilterCount(Card.IsSetCard,nil,0x289)
