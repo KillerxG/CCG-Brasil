@@ -1,9 +1,7 @@
---Dragonborn Dark Knight
+--Dragonborn of the Dark Moon
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	c:AddSetcodesRule(id,true,0x314)--Waifu Arch
-	c:AddSetcodesRule(id,true,0x314d)--Furry Arch
 	--Xyz Summon
 	Xyz.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsRace,RACE_DRAGON),4,2)
 	c:EnableReviveLimit()
@@ -28,6 +26,17 @@ function s.initial_effect(c)
 	e2:SetTarget(s.sptg)
 	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
+	--(3)Attach
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,3))
+	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e3:SetProperty(EFFECT_FLAG_DELAY)
+	e3:SetCountLimit(1,id+2)
+	e3:SetCondition(s.attcon)
+	e3:SetTarget(s.atttg)
+	e3:SetOperation(s.attop)
+	c:RegisterEffect(e3)
 end
 --(1)Set
 function s.setfilter(c)
@@ -72,4 +81,24 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		end,
 		aux.Stringid(id,2)
 	)
+end
+--(3)Attach
+function s.attcon(e,tp,eg,ep,ev,re,r,rp)
+	return re and re:IsActiveType(TYPE_MONSTER) and re:GetHandler():IsSetCard(0x295)
+end
+function s.attfilter(c,e)
+	return not c:IsImmuneToEffect(e) and c:IsRace(RACE_DRAGON) and c:IsFaceup()
+end
+function s.atttg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.attfilter,tp,LOCATION_HAND+LOCATION_DECK,0,1,nil,e)
+		and e:GetHandler():IsType(TYPE_XYZ) end
+end
+function s.attop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	if not c:IsRelateToEffect(e) or c:IsFacedown() then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_XMATERIAL)
+	local tc=Duel.SelectMatchingCard(tp,s.attfilter,tp,LOCATION_HAND+LOCATION_DECK,0,1,1,nil,e):GetFirst()
+	if tc then
+		Duel.Overlay(c,tc,true)
+	end
 end

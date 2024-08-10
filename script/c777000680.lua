@@ -44,10 +44,11 @@ function s.initial_effect(c)
 	--(5)Type Dragon
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_SINGLE)
+	e4:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
 	e4:SetCode(EFFECT_ADD_RACE)
-	e4:SetCondition(s.con)
+	e4:SetRange(LOCATION_MZONE+LOCATION_GRAVE)
 	e4:SetValue(RACE_DRAGON)
-	c:RegisterEffect(e4)
+	c:RegisterEffect(e4)	
 	--(6)Disable
 	local e5=Effect.CreateEffect(c)
 	e5:SetType(EFFECT_TYPE_FIELD)	
@@ -57,6 +58,14 @@ function s.initial_effect(c)
 	e5:SetCondition(s.condition)
 	e5:SetTarget(s.disable)
 	c:RegisterEffect(e5)
+	--(7)Disable banishment
+	local e6=Effect.CreateEffect(c)
+	e6:SetType(EFFECT_TYPE_FIELD)	
+	e6:SetCode(EFFECT_DISABLE)
+	e6:SetRange(LOCATION_MZONE)
+	e6:SetTargetRange(0,LOCATION_REMOVED)
+	e6:SetTarget(s.di2sable)
+	c:RegisterEffect(e6)
 end
 --(2)Special Summon Procedure
 function s.spfilter(c)
@@ -112,7 +121,7 @@ function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(s.dfilter,tp,0,LOCATION_MZONE,nil,e:GetLabel())
-	Duel.Remove(g,POS_FACEDOWN,REASON_EFFECT)
+	Duel.Remove(g,POS_FACEUP,REASON_EFFECT)
 end
 --(4)Protect Draconic monsters
 function s.repfilter(c,tp)
@@ -136,10 +145,6 @@ end
 function s.repval(e,c)
 	return s.repfilter(c,e:GetHandlerPlayer())
 end
---(5)Type Dragon
-function s.con(e)
-	return e:GetHandler():IsLocation(LOCATION_GRAVE+LOCATION_MZONE)
-end
 --(6)Disable
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
 	local ph=Duel.GetCurrentPhase()
@@ -147,4 +152,8 @@ function s.condition(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.disable(e,c)
 	return c:IsFaceup() and not c:IsType(TYPE_NORMAL)
+end
+--(7)Disable banishment
+function s.di2sable(e,c)
+	return not c:IsType(TYPE_NORMAL)
 end

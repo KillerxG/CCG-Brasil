@@ -1,9 +1,7 @@
---Dragonborn Fighter
+--Dragonborn Dark Blade
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	c:AddSetcodesRule(id,true,0x314)--Waifu Arch
-	c:AddSetcodesRule(id,true,0x314d)--Furry Arch
 	--Link Summon
 	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsType,TYPE_EFFECT),2,2,s.lcheck)
 	c:EnableReviveLimit()
@@ -14,8 +12,8 @@ function s.initial_effect(c)
 	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e1:SetRange(LOCATION_MZONE)
 	e1:SetCountLimit(1,id)
-	e1:SetTarget(s.target)
-	e1:SetOperation(s.activate)
+	e1:SetTarget(s.sptg)
+	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 	--(2)Return to Extra Deck
 	local e2=Effect.CreateEffect(c)
@@ -34,21 +32,31 @@ function s.lcheck(g,lc,sumtype,tp)
 	return g:IsExists(Card.IsRace,1,nil,RACE_DRAGON,lc,sumtype,tp)
 end
 --(1)Special Summon
-function s.filter(c,e,tp)
-	return c:IsRace(RACE_DRAGON) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP)
+function s.spfilter(c,e,tp)
+	return c:IsSetCard(0x295) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.filter(chkc,e,tp) end
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and Duel.IsExistingTarget(s.filter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectTarget(tp,s.filter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,g,1,0,0)
+		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
-function s.activate(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc:IsRelateToEffect(e) then
-		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
+function s.attafilter(c)
+	return c:IsRace(RACE_DRAGON) and c:IsFaceup()
+end
+function s.spop(e,tp,eg,ep,ev,re,r,rp)	
+	local c=e:GetHandler()
+	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_EXTRA,0,1,1,nil,e,tp)
+	local sc=g:GetFirst()
+	if #g>0 and Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)>0
+		and Duel.IsExistingMatchingCard(s.attafilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil)
+		and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+		local pg=Duel.SelectMatchingCard(tp,s.attafilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil)
+		if #pg>0 then
+			Duel.BreakEffect()
+			Duel.Overlay(sc,pg)
+		end
 	end
 end
 --(2)Return to Extra Deck
