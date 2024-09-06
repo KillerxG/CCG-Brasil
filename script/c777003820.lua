@@ -41,7 +41,7 @@ end
 --Xyz Summon
 function s.xyzcheck(g,tp)
   local mg=g:Filter(function(c) return not c:IsHasEffect(511001175) end,nil)
-  return mg:GetClassCount(Card.GetAttack)==1 
+  return mg:GetClassCount(Card.GetDefense)==1 
 end
 --(1)Attach monsters from your opponent extra
 function s.exattfilter(c)
