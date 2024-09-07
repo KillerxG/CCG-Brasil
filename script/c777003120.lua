@@ -1,104 +1,161 @@
---Super Star Vesperbell Combination
+--U.P.E. Flying Manta
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	--(1)Act in Hand
+	--(1)Special Summon this card
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_TRAP_ACT_IN_HAND)
-	e1:SetCondition(s.actcon)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e1:SetType(EFFECT_TYPE_IGNITION)
+	e1:SetRange(LOCATION_HAND+LOCATION_SZONE)
+	e1:SetCountLimit(1,id)
+	e1:SetCondition(s.spcon)
+	e1:SetTarget(s.sptg)
+	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
-	--(2)Return Ritual or Super Star to destroy opp cards
+	--(2)Place 1 "U.P.E." monster from your Deck in S/T Zone
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetCategory(CATEGORY_DESTROY)
-	e2:SetType(EFFECT_TYPE_ACTIVATE)
-	e2:SetCode(EVENT_FREE_CHAIN)
-	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e2:SetCountLimit(1,id)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetType(EFFECT_TYPE_IGNITION)
+	e2:SetRange(LOCATION_MZONE)
+	e2:SetCountLimit(1,id+1)
 	e2:SetTarget(s.target)
 	e2:SetOperation(s.operation)
 	c:RegisterEffect(e2)
-	--(3)Increase Scale
+	--(3)Place this card in S/T Zone
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
-	e3:SetType(EFFECT_TYPE_IGNITION)
-	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e3:SetRange(LOCATION_GRAVE)
-	e3:SetCountLimit(1,id+1)
-	e3:SetCost(s.lvcost)
-	e3:SetTarget(s.lvtg)
-	e3:SetOperation(s.lvop)
+	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e3:SetProperty(EFFECT_FLAG_DELAY)
+	e3:SetCountLimit(1,id+2)
+	e3:SetCode(EVENT_DESTROYED)
+	e3:SetTarget(s.rectg)
+	e3:SetOperation(s.recop)
 	c:RegisterEffect(e3)
 end
---(1)Act in Hand
-function s.actfilter(c)
-	return c:IsFaceup() and (c:IsCode(777003070) or c:IsCode(777003080))
+--(1)Special Summon this card
+function s.spcon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsType,TYPE_FIELD),tp,LOCATION_ONFIELD,0,1,nil)
 end
-function s.actcon(e)
-	return Duel.IsExistingMatchingCard(s.actfilter,e:GetHandlerPlayer(),LOCATION_PZONE,0,1,nil)
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+		and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
 end
---(2)Return Ritual or Super Star to destroy opp cards
-function s.filter1(c,tp)
-	return c:IsLocation(LOCATION_ONFIELD) and (c:IsRitualMonster() or (c:IsSetCard(0x315) and c:IsFaceup())) and c:IsAbleToHand()
+function s.spop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	if not c:IsRelateToEffect(e) then return end
+	Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
 end
-function s.disfilter3(c,tp)
-	return c:IsDestructable()
+--(2)Place 1 "U.P.E." monster from your Deck in S/T Zone
+function s.filter(c)
+	return c:IsSetCard(0x274) and c:IsMonster() and not c:IsForbidden()
 end
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	local ct=Duel.GetMatchingGroupCount(s.disfilter3,tp,0,LOCATION_ONFIELD,nil)
-	if chkc then return chkc:IsLocation(LOCATION_ONFIELD) and chkc:IsControler(tp) and s.filter1(chkc) end
-	if chk==0 then return ct>0 and Duel.IsExistingTarget(s.filter1,tp,LOCATION_ONFIELD,0,1,e:GetHandler(),tp) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
-	local g=Duel.SelectTarget(tp,s.filter1,tp,LOCATION_ONFIELD,0,1,ct,e:GetHandler())
-	Duel.SetOperationInfo(0,CATEGORY_TODECK,g,#g,0,0)
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK,0,1,nil)
+		and Duel.GetLocationCount(tp,LOCATION_SZONE)>0 end
 end
 function s.operation(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local tg=Duel.GetTargetCards(e)
-	if #tg>0 and Duel.SendtoHand(tg,nil,REASON_EFFECT)>0 then
-		local ct=#(Duel.GetOperatedGroup())
-		local cg=Duel.GetMatchingGroup(Card.IsDestructable,tp,0,LOCATION_ONFIELD,nil)
-		if ct>0 and #cg>0 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-			local sg=cg:Select(tp,1,ct,nil)
-			Duel.BreakEffect()
-			for tc in aux.Next(sg) do
-				Duel.Destroy(tc,REASON_EFFECT)
-			end
-		end
-	end
-end
---(3)Increase Scale
-function s.cfilter(c,tp)
-	return c:IsLevelBelow(7) and c:IsAbleToGraveAsCost() and Duel.IsExistingTarget(Card.IsFaceup,tp,LOCATION_PZONE,0,1,c)
-end
-function s.lvcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	local f=e:GetHandler()
-	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_EXTRA,0,1,nil,tp) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_EXTRA,0,1,1,nil,tp)
-	Duel.Remove(f,POS_FACEUP,REASON_COST)
-	Duel.SendtoGrave(g,REASON_EFFECT,REASON_COST)
-	e:SetLabel(g:GetFirst():GetLevel())
-end
-function s.lvtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() and chkc:HasLevel() end
-	if chk==0 then return true end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-	local g=Duel.SelectTarget(tp,Card.IsFaceup,tp,LOCATION_PZONE,0,1,1,nil)
-	Duel.SetOperationInfo(0,0,g,1,0,0)
-end
-function s.lvop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc:IsRelateToEffect(e) and tc:IsFaceup() then
-		--Increase Level
-		local e1=Effect.CreateEffect(e:GetHandler())
+	if Duel.GetLocationCount(tp,LOCATION_SZONE)<=0 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
+	local tc=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil):GetFirst()
+	if tc and Duel.MoveToField(tc,tp,tp,LOCATION_SZONE,POS_FACEUP,true) then
+		local e1=Effect.CreateEffect(c)
+		e1:SetCode(EFFECT_CHANGE_TYPE)
 		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_UPDATE_RSCALE)
 		e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-		e1:SetValue(e:GetLabel())
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-		tc:RegisterEffect(e1)
+		e1:SetReset(RESET_EVENT|RESETS_STANDARD&~RESET_TURN_SET)
+		e1:SetValue(TYPE_SPELL|TYPE_CONTINUOUS)
+		c:RegisterEffect(e1)
 	end
+end
+--(3)Place this card in S/T Zone
+function s.rectg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_SZONE)>0 end
+	Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,e:GetHandler(),1,0,0)
+end
+function s.recop(e,tp,eg,ep,ev,re,r,rp)
+	if not e:GetHandler():IsRelateToEffect(e) then return end
+	local c=e:GetHandler()
+	if Duel.MoveToField(c,tp,tp,LOCATION_SZONE,POS_FACEUP,true) then
+		--(3.1)Becomes Continuous Spell
+		local e1=Effect.CreateEffect(c)
+		e1:SetCode(EFFECT_CHANGE_TYPE)
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+		e1:SetReset(RESET_EVENT|RESETS_STANDARD&~RESET_TURN_SET)
+		e1:SetValue(TYPE_SPELL|TYPE_CONTINUOUS)
+		c:RegisterEffect(e1)
+		--(3.2)Place 1 random card in your opponent's Extra Deck in your S/T Zone
+		local e2=Effect.CreateEffect(c)
+		e2:SetDescription(aux.Stringid(id,3))
+		e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+		e2:SetProperty(EFFECT_FLAG_DELAY)
+		e2:SetCode(EVENT_SPSUMMON_SUCCESS)
+		e2:SetRange(LOCATION_SZONE)
+		e2:SetCountLimit(1,id+3)
+		e2:SetCondition(s.extcon)
+		e2:SetTarget(s.exttg)
+		e2:SetOperation(s.extop)
+		c:RegisterEffect(e2)
+	end
+end
+--(3.2)Place 1 random card in your opponent's Extra Deck in your S/T Zone
+function s.cfilter(c,tp,sumt)
+	return c:IsFaceup() and c:IsSetCard(0x274) and c:IsSummonType(sumt) and c:IsSummonPlayer(tp)
+end
+function s.extcon(e,tp,eg,ep,ev,re,r,rp)
+	return eg:IsExists(s.cfilter,1,nil,tp,SUMMON_TYPE_FUSION)
+end
+function s.extfilter(c)
+	return c:IsMonster() and not c:IsForbidden()
+end
+function s.exttg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.extfilter,tp,0,LOCATION_EXTRA,1,nil) 
+		and Duel.GetLocationCount(tp,LOCATION_SZONE)>0 end
+end
+function s.extop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local g=Duel.GetMatchingGroup(s.extfilter,tp,0,LOCATION_EXTRA,nil)
+	if #g==0 or Duel.GetLocationCount(tp,LOCATION_SZONE)<=0 then return end
+	local tc=g:RandomSelect(tp,1):GetFirst()
+	if Duel.MoveToField(tc,tp,tp,LOCATION_SZONE,POS_FACEUP,true) then
+		--(3.2.1)Becomes Continuous Spell
+		local e1=Effect.CreateEffect(c)
+		e1:SetCode(EFFECT_CHANGE_TYPE)
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+		e1:SetReset(RESET_EVENT|RESETS_STANDARD&~RESET_TURN_SET)
+		e1:SetValue(TYPE_SPELL|TYPE_CONTINUOUS)
+		tc:RegisterEffect(e1)
+		--(3.2.2)Treated as "U.P.E."
+		local e2=Effect.CreateEffect(c)
+		e2:SetType(EFFECT_TYPE_SINGLE)
+		e2:SetCode(EFFECT_ADD_SETCODE)
+		e2:SetReset(RESET_EVENT|RESETS_STANDARD&~RESET_TURN_SET)
+		e2:SetRange(LOCATION_SZONE)
+		e2:SetValue(0x274)
+		tc:RegisterEffect(e2)
+		--(3.2.3)ATK Up
+		local e3=Effect.CreateEffect(c)
+		e3:SetType(EFFECT_TYPE_FIELD)
+		e3:SetCode(EFFECT_UPDATE_ATTACK)
+		e3:SetRange(LOCATION_SZONE)
+		e3:SetTargetRange(LOCATION_MZONE,0)
+		e3:SetReset(RESET_EVENT|RESETS_STANDARD&~RESET_TURN_SET)
+		e3:SetTarget(s.tg)
+		e3:SetValue(s.val)
+		tc:RegisterEffect(e3)
+	end	
+end
+--(3.2.3)ATK Up
+function s.tg(e,c)
+	return c:IsSetCard(0x274)
+end
+function s.atkfilter(c)
+	return c:IsFaceup() and c:IsSetCard(0x274)
+end
+function s.val(e,c)
+	return Duel.GetMatchingGroupCount(s.atkfilter,c:GetControler(),LOCATION_SZONE,0,nil)*200
 end
