@@ -1,47 +1,73 @@
---HN Transcending Shares
+--Burning Knight - Prometheus
 --Scripted by Raivost
 local s,id=GetID()
 function s.initial_effect(c)
-  --(1) Return to Extra Deck
-  local e1=Effect.CreateEffect(c)
-  e1:SetDescription(aux.Stringid(id,0))
-  e1:SetCategory(CATEGORY_DRAW+CATEGORY_TODECK)
-  e1:SetType(EFFECT_TYPE_ACTIVATE)
-  e1:SetCode(EVENT_FREE_CHAIN)
-  e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-  e1:SetCountLimit(1,id+EFFECT_COUNT_CODE_OATH)
-  e1:SetTarget(s.rtdtg)
-  e1:SetOperation(s.rtdop)
-  c:RegisterEffect(e1)
+	--(1)Special Summon
+	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_DAMAGE)
+	e1:SetType(EFFECT_TYPE_IGNITION)
+	e1:SetRange(LOCATION_HAND)
+	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e1:SetCountLimit(1,id)
+	e1:SetTarget(s.sptg)
+	e1:SetOperation(s.spop)
+	c:RegisterEffect(e1)
+	--(2)ATK Up
+	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_ATKCHANGE)
+	e2:SetType(EFFECT_TYPE_IGNITION)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e2:SetRange(LOCATION_GRAVE)
+	e2:SetCost(aux.bfgcost)
+	e2:SetTarget(s.atktg)
+	e2:SetOperation(s.atkop)
+	c:RegisterEffect(e2)
 end
---(1) Return to Extra Deck
-function s.rtdfilter(c,tp)
-  local rk=c:GetRank()
-  return c:IsType(TYPE_MONSTER) and c:IsSetCard(0x998) and c:IsType(TYPE_XYZ) and c:IsAbleToExtra() and Duel.IsPlayerCanDraw(tp,rk+1)
+--(1)Special Summon
+function s.cfilter(c)
+	return c:IsFaceup() and c:GetAttack()~=0
 end
-function s.rtdtg(e,tp,eg,ep,ev,re,r,rp,chk)
-  if chk==0 then return Duel.IsExistingTarget(s.rtdfilter,tp,LOCATION_MZONE,0,1,nil,tp) end
-  Duel.Hint(HINT_OPSELECTED,1-tp,aux.Stringid(id,0))
-  Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
-  local g=Duel.SelectTarget(tp,s.rtdfilter,tp,LOCATION_MZONE,0,1,1,nil,tp)
-  Duel.SetOperationInfo(0,CATEGORY_TODECK,g,1,0,0)
-  Duel.SetTargetPlayer(tp)
-  local rk=g:GetFirst():GetRank()
-  Duel.SetTargetParam(rk+1)
-  Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,rk+1)
-  Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,0,tp,rk)
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.cfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
+		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+		and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
+	local g=Duel.SelectTarget(tp,s.cfilter,tp,LOCATION_MZONE,0,1,1,nil)
+	local tc=g:GetFirst()
+	local atk=tc:GetAttack()
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
+	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,0,0,tp,atk)
 end
-function s.rtdop(e,tp,eg,ep,ev,re,r,rp)
-  local p=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER)
-  local tc=Duel.GetFirstTarget()
-  local rk=tc:GetRank()
-  if tc:IsRelateToEffect(e) and Duel.SendtoDeck(tc,nil,2,REASON_EFFECT)~=0 and tc:IsLocation(LOCATION_EXTRA) then
-    if rk>0 and Duel.Draw(p,rk+1,REASON_EFFECT)==rk+1 then
-      local g2=Duel.GetMatchingGroup(Card.IsAbleToDeck,p,LOCATION_HAND,0,nil)
-      if #g2==0 then return end
-      Duel.Hint(HINT_SELECTMSG,p,HINTMSG_TODECK)
-      local sg=g2:Select(p,rk,rk,nil)
-      Duel.SendtoDeck(sg,nil,2,REASON_EFFECT)
-    end
-  end
+function s.spop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local tc=Duel.GetFirstTarget()
+	if tc:IsFacedown() or not tc:IsRelateToEffect(e) then return end
+	local atk=tc:GetAttack()
+	if Duel.Damage(tp,atk,REASON_EFFECT)~=0 and c:IsRelateToEffect(e) then
+		if Duel.SpecialSummonStep(c,0,tp,tp,false,false,POS_FACEUP) and not tc:IsSetCard(0x273) then
+			Duel.Damage(tp,atk,REASON_EFFECT)
+		end
+		Duel.SpecialSummonComplete()
+	end
+end
+--(2)ATK Up
+function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and chkc:IsFaceup() end
+	if chk==0 then return Duel.IsExistingTarget(Card.IsFaceup,tp,LOCATION_MZONE,0,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+	Duel.SelectTarget(tp,Card.IsFaceup,tp,LOCATION_MZONE,0,1,1,nil)
+end
+function s.atkop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() then
+		local e1=Effect.CreateEffect(e:GetHandler())
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_UPDATE_ATTACK)
+		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+		e1:SetValue(1000)
+		tc:RegisterEffect(e1)
+	end
 end
