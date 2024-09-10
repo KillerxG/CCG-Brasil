@@ -2,6 +2,9 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
+	--Link Summon
+	c:EnableReviveLimit()
+	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsType,TYPE_EFFECT),2,nil,s.matcheck)
 	--(1)Special Summon
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
@@ -40,6 +43,10 @@ function s.initial_effect(c)
 	e3:SetValue(s.immval)
 	e3:SetLabelObject(e3a)
 	c:RegisterEffect(e3)
+end
+--Link Summon
+function s.matcheck(g,lc,sumtype,tp)
+	return g:IsExists(Card.IsSetCard,1,nil,0x280,lc,sumtype,tp)
 end
 --(1)Special Summon
 function s.atkfilter(c)
