@@ -1,147 +1,135 @@
---Black Order Paladin - Xy
+--Captain Crystal Predator
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	c:EnableReviveLimit()	
-	--Link Summon procedure
-	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsType,TYPE_EFFECT),2)
-	--(1)Banish 1 card from the opponent's field
+	--Synchro summon
+	Synchro.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x272),1,1,Synchro.NonTuner(nil),1,99)
+	c:EnableReviveLimit()
+	--(1)Flip then, either destroy or flip it again
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_REMOVE)
-	e1:SetType(EFFECT_TYPE_QUICK_O)
-	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e1:SetCode(EVENT_FREE_CHAIN)
-	e1:SetRange(LOCATION_MZONE)
-	e1:SetHintTiming(0,TIMING_MAIN_END+TIMING_END_PHASE)
-	e1:SetCountLimit(1,id)
-	e1:SetCost(s.rmcost)
-	e1:SetTarget(s.rmtg)
-	e1:SetOperation(s.rmop)
+	e1:SetCategory(CATEGORY_POSITION+CATEGORY_ATKCHANGE+CATEGORY_DEFCHANGE)
+	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e1:SetProperty(EFFECT_FLAG_DELAY)
+	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
+	--e1:SetCondition(s.flipcon)
+	e1:SetTarget(s.fliptg)
+	e1:SetOperation(s.flipop)
 	c:RegisterEffect(e1)
-	--(2)Destroy non-Light monsters
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_DESTROY+CATEGORY_RECOVER)
-	e2:SetType(EFFECT_TYPE_QUICK_O)
-	e2:SetCode(EVENT_FREE_CHAIN)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetHintTiming(0,TIMING_MAIN_END+TIMING_END_PHASE)
-	e2:SetCountLimit(1,id)
-	e2:SetCost(s.descost)
-	e2:SetTarget(s.destg)
-	e2:SetOperation(s.desop)
+	local e2=e1:Clone()
+	e2:SetCode(EVENT_FLIP)
 	c:RegisterEffect(e2)
-	--(1)Alternative Link Summon
-	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_FIELD)
-	e3:SetRange(LOCATION_EXTRA)
-	e3:SetCode(EFFECT_EXTRA_MATERIAL)
-	e3:SetProperty(EFFECT_FLAG_PLAYER_TARGET|EFFECT_FLAG_CANNOT_DISABLE|EFFECT_FLAG_SET_AVAILABLE)
-	e3:SetTargetRange(1,1)
-	e3:SetOperation(s.extracon)
-	e3:SetValue(s.extraval)
+	--(2)ATK/DEF Changes
+	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(id,3))
+	e2:SetCategory(CATEGORY_POSITION)
+	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
+	e2:SetCode(EVENT_FLIP)
+	e2:SetRange(LOCATION_MZONE)
+	e2:SetCost(s.spcost)
+	e2:SetTarget(s.sptg)
+	e2:SetOperation(s.spop)
+	c:RegisterEffect(e2)
+	local e3=e2:Clone()
+	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
 	c:RegisterEffect(e3)
-	aux.GlobalCheck(s,function()
-		local ge1=Effect.CreateEffect(c)
-		ge1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-		ge1:SetCode(EVENT_BATTLED)
-		ge1:SetOperation(s.checkop)
-		Duel.RegisterEffect(ge1,0)
-	end)
+	--(3)Destruction Replacement
+	local e5=Effect.CreateEffect(c)
+	e5:SetType(EFFECT_TYPE_CONTINUOUS+EFFECT_TYPE_SINGLE)
+	e5:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e5:SetCode(EFFECT_DESTROY_REPLACE)
+	e5:SetRange(LOCATION_MZONE)
+	e5:SetCountLimit(1,id)
+	e5:SetTarget(s.desreptg)
+	c:RegisterEffect(e5)
 end
---(1)Alternative Link Summon
-function s.extracon(c,e,tp,sg,mg,lc,og,chk)
-	local tp=e:GetHandlerPlayer()
-	return not s.curgroup or #(sg&s.curgroup)<2 and Duel.GetFlagEffect(tp,id)==0 and Duel.GetFlagEffect(0,id+1)>0 
-	--Duel.RegisterFlagEffect(tp,id,RESET_PHASE+PHASE_END,0,1)
+--(1)Flip then, either destroy or flip it again
+function s.flipcon(e,tp,eg,ep,ev,re,r,rp)
+	return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
 end
-function s.extraval(chk,summon_type,e,...)
-	if chk==0 then
-		local tp,sc=...
-		if summon_type~=SUMMON_TYPE_LINK or sc~=e:GetHandler() then
-			return Group.CreateGroup()
-		else
-			s.curgroup=Duel.GetMatchingGroup(Card.IsFaceup,tp,0,LOCATION_MZONE,nil)
-			s.curgroup:KeepAlive()
-			return s.curgroup
-		end
-	elseif chk==2 then
-		if s.curgroup then
-			s.curgroup:DeleteGroup()
-		end
-		s.curgroup=nil
-	end
-end
-function s.checkop(e,tp,eg,ep,ev,re,r,rp)
-	local a=Duel.GetAttacker()
-	local d=Duel.GetAttackTarget()
-	if (a and a:IsType(TYPE_XYZ)) or (d and d:IsType(TYPE_XYZ)) then
-		Duel.RegisterFlagEffect(0,id+1,RESET_PHASE+PHASE_END,0,1)
-	end
-end
---[[
-function s.xyzop(e,tp,chk)
-	if chk==0 then return Duel.GetFlagEffect(tp,id)==0 and Duel.GetFlagEffect(0,id+1)>0 end
-	Duel.RegisterFlagEffect(tp,id,RESET_PHASE+PHASE_END,0,1)
-	return true
-end]]
---(1)Banish 1 card from the opponent's field
 function s.filter(c)
-	return c:IsAttribute(ATTRIBUTE_DARK) and c:IsAbleToRemoveAsCost() and aux.SpElimFilter(c,true)
+	return c:IsFaceup() and c:IsCanTurnSet()
 end
-function s.rmcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_MZONE+LOCATION_GRAVE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_MZONE+LOCATION_GRAVE,0,1,1,nil)
-	Duel.Remove(g,POS_FACEUP,REASON_COST)
+function s.desfilter(c,g,tc)
+	return c==tc or g:IsContains(c)
 end
-function s.rmfilter(c)
-	return c:IsAbleToRemove()
+function s.fliptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.filter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+	local g=Duel.SelectTarget(tp,s.filter,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,nil)
+	Duel.SetOperationInfo(0,CATEGORY_POSITION,g,1,0,0)
 end
-function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_ONFIELD) and s.rmfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.rmfilter,tp,0,LOCATION_ONFIELD,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectTarget(tp,s.rmfilter,tp,0,LOCATION_ONFIELD,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
-end
-function s.rmop(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.flipop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
-	if tc:IsRelateToEffect(e) then
-		Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)
+	if tc and tc:IsRelateToEffect(e) and tc:IsLocation(LOCATION_MZONE) and tc:IsFaceup() then
+		if Duel.ChangePosition(tc,POS_FACEDOWN_DEFENSE) then
+		local g=Duel.GetMatchingGroup(s.desfilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,c,tc:GetColumnGroup())
+		local op=Duel.SelectEffect(tp,
+			{#g>0,aux.Stringid(id,1)},
+			{tc:IsFacedown(),aux.Stringid(id,2)})	
+			if op==1 then
+			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+			local dg=Duel.SelectMatchingCard(tp,s.desfilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil,tc:GetColumnGroup(),tc)
+				if #dg>0 then
+					Duel.Destroy(dg,REASON_EFFECT)
+				end
+			else
+				Duel.ChangePosition(tc,POS_FACEUP_ATTACK)		
+			end
+		end
 	end
 end
---(2)Destroy non-Light monsters
-function s.descostfilter(c)
-	return c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsAbleToRemoveAsCost() and aux.SpElimFilter(c,true)
+--(2)ATK/DEF Changes
+function s.atkfilter(c)
+	return c:IsFaceup() and c:IsCanTurnSet()
 end
-function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.descostfilter,tp,LOCATION_MZONE+LOCATION_GRAVE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectMatchingCard(tp,s.descostfilter,tp,LOCATION_MZONE+LOCATION_GRAVE,0,1,1,nil)
-	Duel.Remove(g,POS_FACEUP,REASON_COST)
+function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingTarget(s.atkfilter,tp,LOCATION_MZONE,0,1,e:GetHandler()) end
+	local g=Duel.SelectTarget(tp,s.filter,tp,LOCATION_MZONE,0,1,1,e:GetHandler())
+	Duel.SetOperationInfo(0,CATEGORY_POSITION,g,1,0,0)
+	Duel.ChangePosition(g,POS_FACEDOWN_DEFENSE)
 end
-function s.desfilter(c,def)
-	return c:IsFaceup() and c:IsAttackBelow(def)
+function s.anfilter(c,tp)
+	return c:IsFaceup() and c:IsLocation(LOCATION_MZONE)
 end
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
-	local c=e:GetHandler()
-	local g=Duel.GetMatchingGroup(s.desfilter,tp,0,LOCATION_MZONE,c,c:GetDefense())
-	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,#g,0,0)
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return eg:IsExists(s.anfilter,1,nil,tp) end
+	Duel.SetTargetCard(eg)
 end
-function s.desop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsFacedown() or not c:IsRelateToEffect(e) then return end
-	local g=Duel.GetMatchingGroup(s.desfilter,tp,0,LOCATION_MZONE,c,c:GetDefense())
-	local ct=Duel.Destroy(g,REASON_EFFECT)
-	if ct>0 then
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_UPDATE_DEFENSE)
-		e1:SetValue(ct*100)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
-		c:RegisterEffect(e1)
+function s.spop(e,tp,eg,ep,ev,re,r,rp)
+	local tg=Duel.GetTargetCards(e):Match(s.anfilter,nil,tp)
+	for tc in aux.Next(tg) do
+		local op=Duel.SelectEffect(tp,
+			{tc:IsMonster(),aux.Stringid(id,4)},
+			{tc:GetAttack()~=0,aux.Stringid(id,5)})	
+		if op==1 then
+				local e1=Effect.CreateEffect(e:GetHandler())
+				e1:SetType(EFFECT_TYPE_SINGLE)
+				e1:SetCode(EFFECT_UPDATE_ATTACK)
+				e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+				e1:SetValue(1000)
+				tc:RegisterEffect(e1)
+			else
+				--Halve its original ATK
+				local e2=Effect.CreateEffect(e:GetHandler())
+				e2:SetType(EFFECT_TYPE_SINGLE)
+				e2:SetCode(EFFECT_SET_BASE_ATTACK)
+				e2:SetValue(tc:GetBaseAttack()/2)
+				e2:SetReset(RESET_EVENT+RESETS_STANDARD)
+				tc:RegisterEffect(e2)	
+			end
 	end
+end
+--(3)Destruction Replacement
+function s.desreptg(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
+	if chk==0 then return not c:IsReason(REASON_REPLACE)
+		and c:IsCanTurnSet() end
+	if Duel.SelectYesNo(tp,aux.Stringid(id,6)) then
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESREPLACE)
+		Duel.ChangePosition(c,POS_FACEDOWN_DEFENSE)
+		return true
+	else return false end
 end

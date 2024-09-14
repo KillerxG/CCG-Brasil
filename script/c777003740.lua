@@ -67,7 +67,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 								Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 								local sg=spg:Select(tp,1,1,nil):GetFirst()
 									if sg then
-										if Duel.SpecialSummon(sg,SUMMON_TYPE_RITUAL,tp,tp,false,true,POS_FACEUP) and sg:IsCode(777003710) then 
+										if Duel.SpecialSummon(sg,SUMMON_TYPE_RITUAL,tp,tp,false,true,POS_FACEUP) and sg:IsRace(RACE_DRAGON) then 
 										local e1=Effect.CreateEffect(c)
 										e1:SetType(EFFECT_TYPE_SINGLE)
 										e1:SetCode(EFFECT_UPDATE_ATTACK)

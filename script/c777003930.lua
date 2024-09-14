@@ -56,19 +56,19 @@ function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.ShuffleHand(tp)
 end
 function s.tgfilter(c)
-	return c:IsSetCard(0x288) and c:IsSpell() and c:IsAbleToGrave()
+	return c:IsSetCard(0x288) and c:IsAbleToGrave() and not c:IsCode(id)
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsPlayerCanDiscardDeck(tp,5) end
+	if chk==0 then return Duel.IsPlayerCanDiscardDeck(tp,6) end
 	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
 end
 function s.thfilter(c)
 	return c:IsAbleToHand() and (c:IsRitualMonster() or c:IsRitualSpell())
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
-	if not Duel.IsPlayerCanDiscardDeck(tp,5) then return end
-	Duel.ConfirmDecktop(tp,5)
-	local g=Duel.GetDecktopGroup(tp,5)
+	if not Duel.IsPlayerCanDiscardDeck(tp,6) then return end
+	Duel.ConfirmDecktop(tp,6)
+	local g=Duel.GetDecktopGroup(tp,6)
 	if #g>0 then
 		Duel.DisableShuffleCheck()
 		if g:IsExists(s.thfilter,1,nil) and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then

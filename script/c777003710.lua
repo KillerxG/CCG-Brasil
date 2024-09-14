@@ -26,7 +26,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.seqop)
 	c:RegisterEffect(e3)
 end
-s.listed_names={777003720,777003740,id}
+s.listed_names={777003720,id}
 --(1)Direct Attack
 function s.dircon(e)
 	local p=1-e:GetHandlerPlayer()

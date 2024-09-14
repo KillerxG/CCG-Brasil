@@ -35,16 +35,8 @@ function s.initial_effect(c)
 	e3:SetTarget(s.thtg)
 	e3:SetOperation(s.thop)
 	c:RegisterEffect(e3)
-	--(4)Set Race
-	local e4=Effect.CreateEffect(c)
-	e4:SetType(EFFECT_TYPE_SINGLE)
-	e4:SetCode(EFFECT_ADD_RACE)
-	e4:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e4:SetRange(LOCATION_MZONE+LOCATION_GRAVE+LOCATION_HAND)
-	e4:SetValue(RACE_DRAGON)
-	c:RegisterEffect(e4)
 end
-s.listed_names={777003920,id}
+s.listed_names={777003920,777003710,id}
 --(1)Destroy and Recover
 function s.filter(c)
 	return c:IsMonster() or c:IsSpellTrap()

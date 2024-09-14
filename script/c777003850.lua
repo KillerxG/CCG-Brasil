@@ -7,19 +7,22 @@ function s.initial_effect(c)
 	Synchro.AddProcedure(c,nil,1,1,Synchro.NonTunerEx(Card.IsRace,RACE_DRAGON),1,99)
 	--(1)Change Name
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
-	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
-	e1:SetCondition(s.tncon)
-	e1:SetOperation(s.tnop)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e1:SetCode(EFFECT_CHANGE_CODE)
+	e1:SetRange(LOCATION_MZONE+LOCATION_GRAVE)
+	e1:SetValue(777003710)
 	c:RegisterEffect(e1)
+	--(2)Reflect Damage
 	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_SINGLE)
-	e2:SetCode(EFFECT_MATERIAL_CHECK)
-	e2:SetValue(s.valcheck)
-	e2:SetLabelObject(e1)
+	e2:SetType(EFFECT_TYPE_FIELD)
+	e2:SetCode(EFFECT_REFLECT_DAMAGE)
+	e2:SetRange(LOCATION_MZONE)
+	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e2:SetTargetRange(1,0)
+	e2:SetValue(s.refcon)
 	c:RegisterEffect(e2)
-	--(2)Conduct Battle 
+	--(3)Conduct Battle 
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,0))
 	e3:SetCategory(CATEGORY_DESTROY)
@@ -32,7 +35,7 @@ function s.initial_effect(c)
 	e3:SetTarget(s.destg)
 	e3:SetOperation(s.desop)
 	c:RegisterEffect(e3)
-	--(3)Take Control
+	--(4)Take Control
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,1))
 	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
@@ -47,29 +50,12 @@ function s.initial_effect(c)
 	e5:SetCode(EVENT_SPSUMMON_SUCCESS)
 	c:RegisterEffect(e5)
 end
---(1)Change Name
-function s.valcheck(e,c)
-	local g=c:GetMaterial()
-	if g:IsExists(Card.IsCode,1,nil,777003710) then
-		e:GetLabelObject():SetLabel(1)
-	else
-		e:GetLabelObject():SetLabel(0)
-	end
+s.listed_names={777003710}
+--(2)Reflect Damage
+function s.refcon(e,re,val,r,rp,rc)
+	return (r&REASON_BATTLE)~=0
 end
-function s.tncon(e,tp,eg,ep,ev,re,r,rp)
-	return e:GetHandler():GetSummonType()==SUMMON_TYPE_SYNCHRO and e:GetLabel()==1
-end
-function s.tnop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-	e1:SetCode(EFFECT_CHANGE_CODE)
-	e1:SetValue(777003710)
-	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-	c:RegisterEffect(e1)
-end
---(2)Conduct Battle 
+--(3)Conduct Battle 
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsFaceup,tp,0,LOCATION_MZONE,1,nil) end
 end
@@ -79,7 +65,7 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.CalculateDamage(e:GetHandler(),g2:GetFirst())
 	end
 end
---(3)Take Control
+--(4)Take Control
 function s.ainzfiler(c,seq,p)
   return c:IsFaceup() and c:IsCode(id) and c:IsColumn(seq,p,LOCATION_MZONE)
 end
@@ -104,7 +90,7 @@ function s.seqop(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOZONE)
 	Duel.MoveSequence(c,seq)
 	local dg=c:GetColumnGroup():Filter(Card.IsControlerCanBeChanged,c,nil)
-	if #dg>0 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
+	if #dg>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
 		Duel.BreakEffect()
 		Duel.GetControl(dg,tp,PHASE_END,99)
 	end
