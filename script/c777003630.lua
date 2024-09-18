@@ -27,9 +27,9 @@ function s.initial_effect(c)
 	e1:SetCountLimit(1)
 	e1:SetTarget(s.negtg)
 	e1:SetOperation(s.negop)
-	c:RegisterEffect(e1)
-	
+	c:RegisterEffect(e1)	
 end
+s.listed_card_types={TYPE_SPIRIT}
 --(2)Negate your own monster
 function s.filter(c)
 	return c:IsFaceup() and c:IsType(TYPE_EFFECT) and not c:IsDisabled()

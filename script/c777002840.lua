@@ -62,6 +62,7 @@ function s.initial_effect(c)
 	soe:SetTarget(s.orettg)
 	soe:SetOperation(s.retop)
 end
+s.listed_card_types={TYPE_SPIRIT}
 --(1)To GY and if you do add
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_RITUAL)

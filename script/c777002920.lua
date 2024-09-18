@@ -42,6 +42,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.payop)
 	c:RegisterEffect(e3)
 end
+s.listed_card_types={TYPE_SPIRIT}
 --Link Materials
 function s.matcheck(g,lc,sumtype,tp)
 	return g:IsExists(Card.IsRace,1,nil,RACE_FIEND,lc,sumtype,tp)

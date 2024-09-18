@@ -2,9 +2,6 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	c:AddSetcodesRule(id,true,0x314a)--Husband Arch
-	c:AddSetcodesRule(id,true,0x290)--Skarlet Warrior Arch
-	Card.Alias(c,id)
 	--Fusion Material
 	c:EnableReviveLimit()
 	Fusion.AddProcMix(c,true,true,s.mfilter,s.mfilter2)
@@ -45,6 +42,7 @@ function s.initial_effect(c)
 	e4:SetOperation(s.payop)
 	c:RegisterEffect(e4)
 end
+s.listed_card_types={TYPE_SPIRIT}
 --Fusion Material
 function s.mfilter(c,sc,st,tp)
 	return c:IsAttribute(ATTRIBUTE_DARK,sc,st,tp) and c:IsType(TYPE_LINK,sc,st,tp)

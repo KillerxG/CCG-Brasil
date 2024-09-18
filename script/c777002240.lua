@@ -55,9 +55,9 @@ function s.initial_effect(c)
 	e5:SetCountLimit(1)
 	e5:SetCondition(s.paycon)
 	e5:SetOperation(s.payop)
-	c:RegisterEffect(e5)
-	
+	c:RegisterEffect(e5)	
 end
+s.listed_card_types={TYPE_SPIRIT}
 --Link Materials
 function s.lcheck(g,lc,sumtype,tp)
 	return g:IsExists(Card.IsRace,1,nil,RACE_FIEND,lc,sumtype,tp)

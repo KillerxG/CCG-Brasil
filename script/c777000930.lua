@@ -1,4 +1,4 @@
---Quetzalcoalt the West Savage Star
+--Tribal Warrior of the Savage Star
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -13,12 +13,16 @@ function s.initial_effect(c)
 	e1:SetTarget(s.thtg)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
-	--(2)Give Effect
+	--(2)Add bottom card
 	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
-	e2:SetCode(EVENT_BE_MATERIAL)
-	e2:SetCondition(s.efgcon)
-	e2:SetOperation(s.efgop)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
+	e2:SetType(EFFECT_TYPE_IGNITION)
+	e2:SetRange(LOCATION_GRAVE)
+	e2:SetCountLimit(1,id+1)
+	e2:SetCondition(s.th2con)
+	e2:SetTarget(s.th2tg)
+	e2:SetOperation(s.th2op)
 	c:RegisterEffect(e2)
 end
 --(1)Search Feast of the Wild LV5
@@ -41,59 +45,29 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp,chk)
 		Duel.ConfirmCards(1-tp,tg)
 	end
 end
---(2)Give Effect
-function s.efgcon(e,tp,eg,ep,ev,re,r,rp)
-  local c=e:GetHandler()
-  return r==REASON_LINK or r==REASON_FUSION and c:GetReasonCard():IsRace(RACE_WARRIOR)
+--(2)Add bottom card
+function s.cfilter(c)
+	return c:IsFaceup() and c:IsRace(RACE_WARRIOR) and (c:IsType(TYPE_FUSION) or c:IsType(TYPE_LINK))
 end
-function s.efgop(e,tp,eg,ep,ev,re,r,rp)
-  if Duel.GetFlagEffect(tp,id)~=0 then return end
-  local c=e:GetHandler()
-  local rc=c:GetReasonCard()
-  if not rc then return end
-	--(2.1)Indes by card effects
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e1:SetRange(LOCATION_MZONE)
-	e1:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
-	e1:SetValue(s.indesval)
-	e1:SetReset(RESET_EVENT+0x1fe0000)
-	rc:RegisterEffect(e1,true)
-	--(2.2)Cannot be tributed
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_SINGLE)
-	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetCode(EFFECT_UNRELEASABLE_NONSUM)
-	e2:SetValue(1)
-	e2:SetReset(RESET_EVENT+0x1fe0000)
-	rc:RegisterEffect(e2,true)
-	local e3=e2:Clone()
-	e3:SetCode(EFFECT_UNRELEASABLE_SUM)
-	e3:SetValue(s.sumval)
-	e3:SetReset(RESET_EVENT+0x1fe0000)
-	rc:RegisterEffect(e3,true)
-	--(2.3)Register The Hint
-	local e4=Effect.CreateEffect(rc)
-	e4:SetDescription(aux.Stringid(id,1))
-	e4:SetType(EFFECT_TYPE_SINGLE)
-	e4:SetProperty(EFFECT_FLAG_SINGLE_RANGE+EFFECT_FLAG_CLIENT_HINT)
-	e4:SetReset(RESET_EVENT+RESETS_STANDARD)
-	rc:RegisterEffect(e4,true)
-	--(2.4)Add Type Effect
-	if not rc:IsType(TYPE_EFFECT) then
-    local e5=Effect.CreateEffect(c)
-    e5:SetType(EFFECT_TYPE_SINGLE)
-    e5:SetCode(EFFECT_ADD_TYPE)
-    e5:SetValue(TYPE_EFFECT)
-    e5:SetReset(RESET_EVENT+0x1fe0000)
-    rc:RegisterEffect(e5,true)
-  end  
+function s.th2con(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
 end
-function s.indesval(e,re)
-	return re:IsActiveType(TYPE_SPELL+TYPE_TRAP+TYPE_MONSTER)
+function s.th2tg(e,tp,eg,ep,ev,re,r,rp,chk)
+	local sc=Duel.GetMatchingGroup(Card.IsSequence,tp,LOCATION_DECK,0,nil,0):GetFirst()
+	if chk==0 then return Duel.GetFieldGroupCount(tp,LOCATION_DECK,0)>=2 and sc and sc:IsAbleToHand() end
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
 end
-function s.sumval(e,c)
-	return not c:IsSetCard(0x9999)
+function s.th2op(e,tp,eg,ep,ev,re,r,rp)
+	local sc=Duel.GetMatchingGroup(Card.IsSequence,tp,LOCATION_DECK,0,nil,0):GetFirst()
+	if sc:IsAbleToHand() and Duel.SendtoHand(sc,nil,REASON_EFFECT)>0 then
+		local dg=Duel.GetFieldGroup(tp,LOCATION_DECK,0)
+		if #dg<=1 then return end
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
+		local bg=dg:Select(tp,1,1,nil)
+		Duel.ShuffleDeck(tp)
+		Duel.BreakEffect()
+		Duel.MoveToDeckBottom(bg)
+	else
+		Duel.SendtoGrave(sc,REASON_RULE)
+	end
 end

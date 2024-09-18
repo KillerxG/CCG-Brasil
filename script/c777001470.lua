@@ -65,6 +65,7 @@ function s.initial_effect(c)
 	e6:SetOperation(s.relop)
 	c:RegisterEffect(e6)
 end
+s.listed_card_types={TYPE_SPIRIT}
 --(2)Special Summon Procedure
 function s.spfilter(c)
 	return c:IsMonster() and c:IsSetCard(0x304) and c:IsAbleToGraveAsCost()
