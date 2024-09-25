@@ -1,102 +1,126 @@
---Warbeast Allies
+--Mecha Cardeal - Weast Tiger
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	--Activate
-	local e0=Effect.CreateEffect(c)
-	e0:SetType(EFFECT_TYPE_ACTIVATE)
-	e0:SetCode(EVENT_FREE_CHAIN)
-	c:RegisterEffect(e0)
-	--(1)Special Summon
+	c:EnableReviveLimit()
+	--Synchro Summon
+	Synchro.AddProcedure(c,nil,1,1,Synchro.NonTuner(nil),1,99)
+	--(1)Gain Effect: Attack in Defense
 	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e1:SetType(EFFECT_TYPE_IGNITION)
-	e1:SetCountLimit(1,id)
-	e1:SetRange(LOCATION_SZONE)
-	e1:SetTarget(s.target)
-	e1:SetOperation(s.operation)
+	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e1:SetCondition(s.tncon)
+	e1:SetOperation(s.tnop)
 	c:RegisterEffect(e1)
-	--(2)Protect "Warbeast" monsters
 	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
-	e2:SetRange(LOCATION_SZONE)
-	e2:SetTargetRange(LOCATION_MZONE,0)
-	e2:SetCondition(s.protcon)
-	e2:SetTarget(s.indtg)
-	e2:SetValue(1)
+	e2:SetType(EFFECT_TYPE_SINGLE)
+	e2:SetCode(EFFECT_MATERIAL_CHECK)
+	e2:SetValue(s.valcheck)
+	e2:SetLabelObject(e1)
 	c:RegisterEffect(e2)
-	--(3)Change Level
+	--(2)ATK gain on battle
 	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_IGNITION)
+	e3:SetDescription(aux.Stringid(id,1))
+	e3:SetCategory(CATEGORY_ATKCHANGE)
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e3:SetCode(EVENT_BATTLE_START)
 	e3:SetRange(LOCATION_MZONE)
-	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e3:SetCountLimit(1,id+1)
-	e3:SetCost(aux.bfgcost)
-	e3:SetTarget(s.lvtg)
-	e3:SetOperation(s.lvop)
+	e3:SetCondition(s.atkcon)
+	e3:SetOperation(s.atkop)
 	c:RegisterEffect(e3)
+	--(3)Indestructionable
+	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,2))
+	e4:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e4:SetType(EFFECT_TYPE_QUICK_O)
+	e4:SetCode(EVENT_FREE_CHAIN)
+	e4:SetRange(LOCATION_MZONE)
+	e4:SetCountLimit(1,id)
+	e4:SetCondition(s.con)
+	e4:SetTarget(s.target)
+	e4:SetOperation(s.operation)
+	c:RegisterEffect(e4)
 end
---(1)Special Summon
-function s.filter(c,e,sp)
-	return c:IsSetCard(0x308) and c:IsCanBeSpecialSummoned(e,0,sp,false,false)
+--(1)Gain Effect: Attack in Defense
+function s.filter(c)
+	return c:IsMonster() and c:IsLevelAbove(5) and c:IsType(TYPE_TUNER)
 end
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_HAND,0,1,nil,e,tp) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND)
-end
-function s.operation(e,tp,eg,ep,ev,re,r,rp)
-	if not e:GetHandler():IsRelateToEffect(e) then return end
-	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	if Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0)>0 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_HAND,0,1,1,nil,e,tp)
-	if #g>0 then
-		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+function s.valcheck(e,c)
+	local g=c:GetMaterial()
+	if g:IsExists(s.filter,1,nil) then
+		e:GetLabelObject():SetLabel(1)
+	else
+		e:GetLabelObject():SetLabel(0)
 	end
 end
---(2)Protect "Warbeast" monsters
-function s.cfilter(c)
-	return c:IsFaceup() and c:IsType(TYPE_TOKEN)
+function s.tncon(e,tp,eg,ep,ev,re,r,rp)
+	return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO) and e:GetLabel()==1
 end
-function s.protcon(e)
-	return Duel.IsExistingMatchingCard(s.cfilter,e:GetHandlerPlayer(),LOCATION_MZONE,0,1,e:GetHandler())
+function s.tnop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	--Attack in Defense
+	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetProperty(EFFECT_FLAG_CLIENT_HINT)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetCode(EFFECT_DEFENSE_ATTACK)
+	e1:SetValue(1)
+	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+	c:RegisterEffect(e1)
 end
-function s.indtg(e,c)
-	return c:IsFaceup() and c:IsSetCard(0x308)
+--(2)ATK gain on battle
+function s.atkcon(e,tp,eg,ep,ev,re,r,rp,chk)
+	local tc=Duel.GetAttacker()
+	if Duel.GetAttackTarget() and Duel.GetAttackTarget():IsControler(tp) and e:GetHandler():IsAttackAbove(800) then
+		tc=Duel.GetAttackTarget()
+	end
+	return not e:GetHandler():IsRelateToBattle() and tc:IsFaceup() and e:GetHandler():IsAttackAbove(800)
 end
---(3)Change Level
-function s.levfilter(c)
-	return c:IsFaceup() and c:HasLevel() and c:IsSetCard(0x308) and not c:IsCode(777001840)
+function s.atkop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local tc=Duel.GetAttackTarget()
+	if Duel.GetAttacker():IsControler(tp) then
+		tc=Duel.GetAttacker()
+	end
+	if tc and tc:IsFaceup() and tc:IsRelateToBattle() then
+		local e1=Effect.CreateEffect(c)
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_UPDATE_ATTACK)
+		e1:SetValue(-800)
+		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+		c:RegisterEffect(e1)
+		local e2=Effect.CreateEffect(c)
+		e2:SetType(EFFECT_TYPE_SINGLE)
+		e2:SetCode(EFFECT_UPDATE_ATTACK)
+		e2:SetValue(800)
+		e2:SetReset(RESET_EVENT+RESETS_STANDARD)
+		tc:RegisterEffect(e2)
+	end
 end
-function s.lvtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.levfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.levfilter,tp,LOCATION_MZONE,0,1,nil) end
+--(3)Indestructionable
+function s.con(e)
+	return e:GetHandler():IsDefensePos()
+end
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsControler(tp) and chkc:IsOnField() and chkc:IsFaceup() end
+	if chk==0 then return Duel.IsExistingTarget(Card.IsFaceup,tp,LOCATION_MZONE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local g=Duel.SelectTarget(tp,s.levfilter,tp,LOCATION_MZONE,0,1,1,nil)
-	local lv1=g:GetFirst():GetLevel()
-	local lv2=0
-	local tc2=g:GetNext()
-	if tc2 then lv2=tc2:GetLevel() end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_LVRANK)
-	local lv=Duel.AnnounceLevel(tp,2,6,lv1,lv2)
-	Duel.SetTargetParam(lv)
+	Duel.SelectTarget(tp,Card.IsFaceup,tp,LOCATION_MZONE,0,1,1,nil)
 end
-function s.lvfilter(c,e)
-	return c:IsFaceup() and c:IsRelateToEffect(e)
-end
-function s.lvop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS):Filter(s.lvfilter,nil,e)
-	local lv=Duel.GetChainInfo(0,CHAININFO_TARGET_PARAM)
-	for tc in aux.Next(g) do
+function s.operation(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	if tc:IsRelateToEffect(e) and tc:IsFaceup() then
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_CHANGE_LEVEL)
+		e1:SetCode(EFFECT_INDESTRUCTABLE_COUNT)
 		e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-		e1:SetValue(lv)
+		e1:SetCountLimit(999)
+		e1:SetValue(s.valcon)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 		tc:RegisterEffect(e1)
 	end
+end
+function s.valcon(e,re,r,rp)
+	return (r&REASON_BATTLE+REASON_EFFECT)~=0
 end
