@@ -1,65 +1,74 @@
---HSR - Topaz
+--Furious Rodent - Frenezy Mouse
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	--special summon
+	c:EnableReviveLimit()
+	Xyz.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsRace,RACE_BEAST),3,2)
+	--(1)Change name while in GY
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetCode(EFFECT_SPSUMMON_PROC)
-	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
-	e1:SetRange(LOCATION_HAND)
-	e1:SetCondition(s.spcon)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e1:SetCode(EFFECT_CHANGE_CODE)
+	e1:SetRange(LOCATION_GRAVE)
+	e1:SetValue(777003240)
 	c:RegisterEffect(e1)
-	--All "Dogmatika" monsters gain 500 ATK
+	--(2)Place Frenezy Counter
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_ATKCHANGE)
-	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e2:SetCode(EVENT_DAMAGE_STEP_END)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetCountLimit(99)
-	e2:SetCondition(s.atkcon)
-	--e2:SetTarget(s.atktg)
-	e2:SetOperation(s.atkop)
+	e2:SetDescription(aux.Stringid(id,0))
+	e2:SetCategory(CATEGORY_COUNTER)
+	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e2:SetProperty(EFFECT_FLAG_DELAY)
+	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e2:SetTarget(s.cotg)
+	e2:SetOperation(s.coop)
 	c:RegisterEffect(e2)
+	--(3)Destroy monster with Frenezy Counter
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,1))
+	e3:SetCategory(CATEGORY_DESTROY+CATEGORY_DAMAGE)
+	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e3:SetCode(EVENT_BATTLE_START)
+	e3:SetCondition(s.descon)
+	e3:SetTarget(s.destg)
+	e3:SetOperation(s.desop)
+	c:RegisterEffect(e3)
+	--(4)Can attack all monsters
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_SINGLE)
+	e4:SetCode(EFFECT_ATTACK_ALL)
+	e4:SetValue(1)
+	c:RegisterEffect(e4)
 end
-
-function s.spcon(e,c)
-	if c==nil then return true end
-	local tp=c:GetControler()
-	local rg=Duel.GetMatchingGroup(Card.IsDiscardable,tp,LOCATION_HAND,0,e:GetHandler())
-	return aux.SelectUnselectGroup(rg,e,tp,1,1,aux.ChkfMMZ(1),0,c)
+--(2)Place Counter
+function s.cotg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(aux.FaceupFilter,tp,0,LOCATION_MZONE,1,nil) end
+	local sg=Duel.GetMatchingGroup(aux.FaceupFilter,tp,0,LOCATION_MZONE,nil)
+	Duel.SetOperationInfo(0,CATEGORY_COUNTER,sg,#sg,0,0)
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,c)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DISCARD)
-	local rg=Duel.GetMatchingGroup(Card.IsDiscardable,tp,LOCATION_HAND,0,e:GetHandler())
-	local g=aux.SelectUnselectGroup(rg,e,tp,1,1,aux.ChkfMMZ(1),1,tp,HINTMSG_DISCARD,nil,nil,true)
-	if #g>0 then
-		g:KeepAlive()
-		e:SetLabelObject(g)
-		return true
+function s.coop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,0,LOCATION_MZONE,nil)
+	for tc in aux.Next(g) do
+		tc:AddCounter(0x1270,1)
 	end
-	return false
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
-	local g=e:GetLabelObject()
-	if not g then return end
-	Duel.SendtoGrave(g,REASON_DISCARD+REASON_COST)
-	g:DeleteGroup()
+--(3)Destroy monster with Frenezy Counter
+function s.descon(e,tp,eg,ep,ev,re,r,rp)
+	local bc=e:GetHandler():GetBattleTarget()
+	return bc and bc:HasCounter(0x1270) and bc:IsControler(1-tp)
+end
+function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
+	local bc=c:GetBattleTarget()
+	if chk==0 then return bc:IsRelateToBattle() end
+	Duel.SetOperationInfo(0,CATEGORY_DESTROY,bc,1,tp,0)
+end
+function s.desop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local bc=c:GetBattleTarget()
+	if bc:IsRelateToBattle() and bc:IsControler(1-tp) then
+		Duel.Destroy(bc,REASON_EFFECT)
+	end
 end
 
-	--If your "Dogmatika" monster declares an attack
-function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
-	local at=Duel.GetAttacker()
-	return at:IsControler(tp) or at:IsControler(1-tp)
-end
-	--Activation legality
-function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,0x146),tp,LOCATION_MZONE,0,1,nil) end
-end
-	--All "Dogmatika" monsters gain 500 ATK
-function s.atkop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.ChainAttack()
-end
