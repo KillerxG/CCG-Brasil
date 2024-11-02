@@ -29,7 +29,7 @@ function s.initial_effect(c)
 	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e3:SetType(EFFECT_TYPE_QUICK_O)
 	e3:SetCode(EVENT_FREE_CHAIN)
-	e3:SetRange(LOCATION_FZONE)
+	e3:SetRange(LOCATION_MZONE)
 	e3:SetHintTiming(0,TIMING_BATTLE_START+TIMING_ATTACK+TIMING_BATTLE_END)
 	e3:SetCountLimit(1,id)
 	e3:SetTarget(s.destg)
@@ -62,7 +62,7 @@ end
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	local g2=Duel.SelectMatchingCard(tp,Card.IsFaceup,tp,0,LOCATION_MZONE,1,1,nil)
 	if #g2>0 then
-		Duel.CalculateDamage(e:GetHandler(),g2:GetFirst())
+		Duel.CalculateDamage(e:GetHandler(),g2:GetFirst(),true)
 	end
 end
 --(4)Take Control
