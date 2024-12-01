@@ -60,7 +60,6 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 		sc:SetMaterial(tc)
 		Duel.Overlay(sc,tc)
 		if Duel.SpecialSummon(sc,SUMMON_TYPE_XYZ,tp,tp,false,false,POS_FACEUP) and Duel.IsExistingMatchingCard(s.disfilter,tp,LOCATION_EXTRA,0,1,nil) and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
-		sc:CompleteProcedure()
 		local g1=Duel.SelectMatchingCard(tp,s.disfilter,tp,LOCATION_EXTRA,0,1,1,nil,e,tp)
 			if c:IsStatus(STATUS_LEAVE_CONFIRMED) then g1:RemoveCard(c) end
 				if #g1>0 then
@@ -68,6 +67,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 					Duel.Remove(g1,POS_FACEUP,REASON_EFFECT)
 				end
 		end
+		sc:CompleteProcedure()
 	end
 end
 --(2)Recycle

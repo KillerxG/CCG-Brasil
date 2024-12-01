@@ -70,6 +70,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 			Duel.BreakEffect()
 			Duel.Overlay(sc,pg)
 		end
+		sc:CompleteProcedure()
 	end
 end
 --(2)Attach this card as material	
