@@ -41,6 +41,7 @@ function s.extraop(mat,e,tp,eg,ep,ev,re,r,rp,tc)
 			Duel.ReleaseRitualMaterial(mat)
             Duel.SpecialSummon(tc,SUMMON_TYPE_RITUAL,tp,tp,true,true,POS_FACEUP)
         end
+		tc:CompleteProcedure()
     else
         --If at least one of them is not "Hate Hat"
 		Duel.ReleaseRitualMaterial(mat)

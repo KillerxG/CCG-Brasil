@@ -48,12 +48,10 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local rg=aux.SelectUnselectGroup(g,e,tp,1,1,s.rescon,1,tp,HINTMSG_RELEASE)
 	if Duel.Release(rg,REASON_EFFECT)==1 and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,1,nil,e,tp)
-		if #g>0 then
-			if Duel.SpecialSummon(g,SUMMON_TYPE_RITUAL,tp,tp,false,true,POS_FACEUP) then
-			--Duel.SendtoGrave(e:GetHandler(),REASON_EFFECT+REASON_DISCARD)
-			end
-		end
+	local tc=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_HAND,0,1,1,nil,e,tp):GetFirst()
+	if tc and Duel.SpecialSummon(tc,SUMMON_TYPE_RITUAL,tp,tp,true,false,POS_FACEUP)>0 then
+		tc:CompleteProcedure()
+	end
 	end
 end
 --(2)To your GY

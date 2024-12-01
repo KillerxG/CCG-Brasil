@@ -57,13 +57,13 @@ function s.thfilter(c)
 	return (c:IsRace(RACE_ILLUSION) or c:IsRitualMonster()) and c:IsAbleToHand()
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,SUMMON_TYPE_RITUAL,tp,tp,true,false,POS_FACEUP)~=0
-		and Duel.IsPlayerCanDraw(tp,1) and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
-		c:CompleteProcedure()
-		Duel.BreakEffect()
-		Duel.Draw(tp,1,REASON_EFFECT)
-	end
+    local c=e:GetHandler()
+    if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,SUMMON_TYPE_RITUAL,tp,tp,true,false,POS_FACEUP)>0 
+        and Duel.IsPlayerCanDraw(tp,1) and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
+        Duel.BreakEffect()
+        Duel.Draw(tp,1,REASON_EFFECT)
+    end
+    c:CompleteProcedure()
 end
 --(2)Neither monster can be destroyed by battle
 function s.indestg(e,c)

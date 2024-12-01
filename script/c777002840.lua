@@ -62,7 +62,6 @@ function s.initial_effect(c)
 	soe:SetTarget(s.orettg)
 	soe:SetOperation(s.retop)
 end
-s.listed_card_types={TYPE_SPIRIT}
 --(1)To GY and if you do add
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_RITUAL)
@@ -92,7 +91,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 		end
 	end
 end
---(2)Special Summon itself from the hand
+--(2)ATK Up and Negate other monsters
 function s.spcostfilter(c)
 	return c:IsRitualMonster() and not c:IsPublic()
 end
@@ -161,7 +160,7 @@ function s.spfilter(c,e,tp)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_HAND,0,1,nil,e,tp) end
+		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_HAND,0,2,nil,e,tp) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)

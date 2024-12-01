@@ -94,7 +94,10 @@ function s.exop1(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 		local sg=g:Select(tp,1,1,nil)
 		Duel.DisableShuffleCheck()
-		Duel.SpecialSummon(sg,SUMMON_TYPE_RITUAL,tp,tp,true,false,POS_FACEUP)
+		local tc=sg:GetFirst()
+			if tc and Duel.SpecialSummon(tc,SUMMON_TYPE_RITUAL,tp,tp,true,false,POS_FACEUP)>0 then
+				tc:CompleteProcedure()
+			end
 		ct=1
 	end
 	local ac=1-ct
@@ -123,7 +126,10 @@ function s.exop2(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 		local sg=g:Select(tp,1,1,nil)
 		Duel.DisableShuffleCheck()
-		Duel.SpecialSummon(sg,SUMMON_TYPE_RITUAL,tp,tp,true,false,POS_FACEUP)
+		local tc=sg:GetFirst()
+			if tc and Duel.SpecialSummon(tc,SUMMON_TYPE_RITUAL,tp,tp,true,false,POS_FACEUP)>0 then
+				tc:CompleteProcedure()
+			end
 		ct=1
 	end
 	local ac=5-ct
@@ -155,7 +161,10 @@ function s.exop3(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 		local sg=g:Select(tp,1,ft,nil)
 		Duel.DisableShuffleCheck()
-		Duel.SpecialSummon(sg,SUMMON_TYPE_RITUAL,tp,tp,true,false,POS_FACEUP)
+		for sc in sg:Iter() do
+			Duel.SpecialSummon(sg,SUMMON_TYPE_RITUAL,tp,tp,true,false,POS_FACEUP)
+		    sc:CompleteProcedure()
+		end
 		ct=1
 	end
 	local ac=10-ct
@@ -164,3 +173,6 @@ function s.exop3(e,tp,eg,ep,ev,re,r,rp)
 		Duel.SortDeckbottom(tp,tp,ac)
 	end
 end
+
+
+

@@ -68,13 +68,13 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,SUMMON_TYPE_RITUAL,tp,tp,true,false,POS_FACEUP)~=0
 		and Duel.GetFieldGroupCount(tp,0,LOCATION_MZONE)>0 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
 		local g=Duel.GetMatchingGroup(nil,1-tp,LOCATION_MZONE,0,nil)
-		c:CompleteProcedure()
 		Duel.BreakEffect()
 		Duel.Hint(HINT_SELECTMSG,1-tp,HINTMSG_TOGRAVE)
 		local sg=g:Select(1-tp,1,1,nil)
 		Duel.HintSelection(sg)
 		Duel.SendtoGrave(sg,REASON_RULE,PLAYER_NONE,1-tp)
 	end
+	c:CompleteProcedure()
 end
 --(2)Neither monster can be destroyed by battle
 function s.indestg(e,c)

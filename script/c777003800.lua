@@ -2,6 +2,7 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
+	c:EnableReviveLimit()
 	--(1)Destroy and Recover
 	local e1=Effect.CreateEffect(c)
 	e1:SetCategory(CATEGORY_DESTROY+CATEGORY_RECOVER)
@@ -80,9 +81,10 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 	local sc=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_HAND,0,1,1,nil,e,tp):GetFirst()
-	if sc and Duel.SpecialSummon(sc,SUMMON_TYPE_RITUAL,tp,tp,false,true,POS_FACEUP)>0 and not Duel.IsExistingMatchingCard(s.iryafilter,tp,LOCATION_MZONE,0,1,nil,e,tp) then
+	if sc and Duel.SpecialSummon(sc,SUMMON_TYPE_RITUAL,tp,tp,false,true,POS_FACEUP)>0 and not Duel.IsExistingMatchingCard(s.iryafilter,tp,LOCATION_MZONE,0,1,nil,e,tp) then		
 		Duel.SendtoHand(c,nil,REASON_EFFECT)
 	end
+		sc:CompleteProcedure()
 end
 --(3)Add 1 Ritual Spell
 function s.mzthfilter(c)

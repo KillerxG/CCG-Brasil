@@ -63,11 +63,11 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		and #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
 		local g=Duel.SelectMatchingCard(tp,nil,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
-		c:CompleteProcedure()
 		Duel.BreakEffect()
 		Duel.HintSelection(g)
 		Duel.Destroy(g,REASON_EFFECT)
 	end
+	c:CompleteProcedure()
 end
 --(2)Neither monster can be destroyed by battle
 function s.indestg(e,c)

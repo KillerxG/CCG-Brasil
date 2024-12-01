@@ -61,12 +61,12 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,SUMMON_TYPE_RITUAL,tp,tp,true,false,POS_FACEUP)~=0
 		and #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
 		local ag=Duel.SelectMatchingCard(tp,s.thfilter,tp,0,LOCATION_HAND,1,1,nil)
-		c:CompleteProcedure()
 		Duel.BreakEffect()
 		Duel.SendtoHand(ag,tp,REASON_EFFECT)
 		Duel.ConfirmCards(tp,ag)
 		Duel.ShuffleHand(tp)
 	end
+	c:CompleteProcedure()
 end
 --(2)Neither monster can be destroyed by battle
 function s.indestg(e,c)

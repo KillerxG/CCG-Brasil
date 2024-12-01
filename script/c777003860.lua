@@ -78,9 +78,12 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 			and Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_HAND,0,1,nil) and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
 			Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND|LOCATION_DECK)
 			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-			local g=Duel.SelectMatchingCard(tp,s.spritfilter,tp,LOCATION_HAND|LOCATION_DECK,0,1,1,nil,e,tp)
-				if #g>0 and Duel.DiscardHand(tp,s.costfilter,1,1,REASON_EFFECT+REASON_DISCARD) then
-					Duel.SpecialSummon(g,SUMMON_TYPE_RITUAL,tp,tp,true,false,POS_FACEUP)
+				if Duel.DiscardHand(tp,s.costfilter,1,1,REASON_EFFECT+REASON_DISCARD) then
+					Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+					local tc=Duel.SelectMatchingCard(tp,s.spritfilter,tp,LOCATION_HAND|LOCATION_DECK,0,1,1,nil,e,tp):GetFirst()
+						if tc and Duel.SpecialSummon(tc,SUMMON_TYPE_RITUAL,tp,tp,true,false,POS_FACEUP)>0 then
+							tc:CompleteProcedure()
+						end
 				end
 		end
 		if tc:IsTrap() then
