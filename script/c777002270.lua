@@ -13,18 +13,13 @@ function s.initial_effect(c)
 	e1:SetTarget(s.thtg)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
-	--(2)Banish to recycle
+	--(2)Xyz Level
 	local e2=Effect.CreateEffect(c)
-	e2:SetCategory(CATEGORY_REMOVE+CATEGORY_TOGRAVE)
-	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e2:SetCode(EVENT_PHASE+PHASE_END)
-	e2:SetRange(LOCATION_REMOVED)
-	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_CARD_TARGET)
-	e2:SetCountLimit(1,id)
-	e2:SetCondition(function(_,tp) return Duel.IsTurnPlayer(1-tp) end)
-	e2:SetTarget(s.drtg)
-	e2:SetOperation(s.drop)
+	e2:SetType(EFFECT_TYPE_SINGLE)
+	e2:SetCode(EFFECT_XYZ_LEVEL)
+	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e2:SetRange(LOCATION_MZONE)
+	e2:SetValue(s.xyzlv)
 	c:RegisterEffect(e2)
 	--(3)Unaffected by monsters
 	local e5a=Effect.CreateEffect(c)
@@ -80,15 +75,6 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 		e2:SetReset(RESET_PHASE+PHASE_END)
 		e2:SetLabelObject(e1)
 		Duel.RegisterEffect(e2,tp)
-		--Banish it if it leaves the field
-		local e3=Effect.CreateEffect(c)
-		e3:SetDescription(3300)
-		e3:SetType(EFFECT_TYPE_SINGLE)
-		e3:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_CLIENT_HINT)
-		e3:SetCode(EFFECT_LEAVE_FIELD_REDIRECT)
-		e3:SetReset(RESET_EVENT|RESETS_REDIRECT)
-		e3:SetValue(LOCATION_REMOVED)
-		c:RegisterEffect(e3,true)
 	end
 end
 function s.ritfilter(c,tp)
@@ -108,24 +94,9 @@ function s.damop(e,tp,eg,ep,ev,re,r,rp)
 	local lp=Duel.GetLP(tp)
 	Duel.SetLP(tp,lp-2800)
 end
---(2)Banish to recycle
-function s.rmfilter(c)
-	return c:IsAbleToRemove() and aux.SpElimFilter(c)
-end
-function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE+LOCATION_GRAVE) and s.rmfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.rmfilter,tp,0,LOCATION_MZONE+LOCATION_GRAVE,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectTarget(tp,s.rmfilter,tp,0,LOCATION_MZONE+LOCATION_GRAVE,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,#g,0,0)
-end
-function s.drop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
-	local sg=g:Filter(Card.IsRelateToEffect,nil,e)
-	if Duel.Remove(sg,POS_FACEUP,REASON_EFFECT) then
-		Duel.SendtoGrave(c,nil,REASON_EFFECT)
-	end
+--(2)Xyz Level
+function s.xyzlv(e,c,rc)
+	return 0x80000+e:GetHandler():GetLevel()
 end
 --(3)Unaffected by monsters
 function s.immcon(e)
