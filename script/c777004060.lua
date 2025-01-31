@@ -1,109 +1,89 @@
---South Darkest Knight Gold
+--South Darkest Knight Manipulation
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	c:EnableReviveLimit()
-	--Fusion Materials
-	Fusion.AddProcMixRep(c,true,true,aux.FilterBoolFunctionEx(Card.IsRace,RACE_ILLUSION),1,99,s.mfilter)
-	--(1)Register multiple attacks effect
+	--(1)Search
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_MATERIAL_CHECK)
-	e1:SetValue(s.matcheck)
+	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
+	e1:SetType(EFFECT_TYPE_ACTIVATE)
+	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetCountLimit(1,id)
+	e1:SetTarget(s.target)
+	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
-	--(2)Neither monster can be destroyed by battle
+	--(2)Gain LP, then return to hand
 	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetTargetRange(LOCATION_MZONE,LOCATION_MZONE)
-	e2:SetTarget(s.indestg)
-	e2:SetValue(1)
-	c:RegisterEffect(e2)	
-	--(3)ATK UP
+	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_RECOVER)
+	e2:SetType(EFFECT_TYPE_IGNITION)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e2:SetRange(LOCATION_SZONE)
+	e2:SetCountLimit(1,id+1)
+	e2:SetTarget(s.lptg)
+	e2:SetOperation(s.lpop)
+	c:RegisterEffect(e2)
+	--(3)Recycle
 	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,0))
-	e3:SetCategory(CATEGORY_ATKCHANGE)
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e3:SetCode(EVENT_BATTLE_DAMAGE)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetOperation(s.atkop)
+	e3:SetCategory(CATEGORY_TOHAND)
+	e3:SetType(EFFECT_TYPE_IGNITION)
+	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e3:SetRange(LOCATION_SZONE)
+	e3:SetCountLimit(1,id+2)
+	e3:SetTarget(s.thtg)
+	e3:SetOperation(s.thop)
 	c:RegisterEffect(e3)
-	--(4)Negate activation
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,1))
-	e4:SetCategory(CATEGORY_NEGATE+CATEGORY_REMOVE)
-	e4:SetType(EFFECT_TYPE_QUICK_O)
-	e4:SetProperty(EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DAMAGE_CAL)
-	e4:SetCode(EVENT_CHAINING)
-	e4:SetRange(LOCATION_MZONE)
-	e4:SetCountLimit(1,id)
-	e4:SetCondition(s.negcon)
-	e4:SetCost(s.negcost)
-	e4:SetTarget(s.negtg)
-	e4:SetOperation(s.negop)
-	c:RegisterEffect(e4)
 end
---Fusion Materials
-function s.mfilter(c,fc,sumtype,tp)
-	return c:IsSetCard(0x287,fc,sumtype,tp)
+--(1)Search
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return true end
+	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
 end
---(1)Register multiple attacks effect
-function s.matcheck(e,c)
-	local g=c:GetMaterial()
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_EXTRA_ATTACK)
-	e1:SetValue(#g-1)
-	e1:SetReset(RESET_EVENT|RESETS_STANDARD_DISABLE&~RESET_TOFIELD)
-	c:RegisterEffect(e1)
+function s.thfilter(c)
+	return c:IsSetCard(0x287) and c:IsAbleToHand() and not c:IsCode(id)
 end
---(2)Neither monster can be destroyed by battle
-function s.indestg(e,c)
-	local handler=e:GetHandler()
-	return c==handler or c==handler:GetBattleTarget()
-end
---(3)ATK UP
-function s.atkop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) then
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_UPDATE_ATTACK)
-		e1:SetValue(ev*2)
-		c:RegisterEffect(e1)
-	end	
-end
---(4)Negate activation
-function s.negcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return re:IsActiveType(TYPE_MONSTER) and rp==1-tp and not c:IsStatus(STATUS_BATTLE_DESTROYED) and Duel.IsChainNegatable(ev)
-end
-function s.cfilter(c)
-	return c:IsRace(RACE_ILLUSION) and c:IsAbleToRemoveAsCost() and aux.SpElimFilter(c,true,false)
-end
-function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_GRAVE+LOCATION_MZONE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_GRAVE+LOCATION_MZONE,0,1,1,nil)
-	Duel.Remove(g,POS_FACEUP,REASON_COST)
-end
-function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local rc=re:GetHandler()
-	local relation=rc:IsRelateToEffect(re)
-	if chk==0 then return rc:IsAbleToRemove(tp)
-		or (not relation and Duel.IsPlayerCanRemove(tp)) end
-	Duel.SetOperationInfo(0,CATEGORY_NEGATE,eg,1,0,0)
-	if relation then
-		Duel.SetOperationInfo(0,CATEGORY_REMOVE,rc,1,rc:GetControler(),rc:GetLocation())
-	else
-		Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,0,0,rc:GetPreviousLocation())
+function s.activate(e,tp,eg,ep,ev,re,r,rp)
+	if not e:GetHandler():IsRelateToEffect(e) then return end
+	local g=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.thfilter),tp,LOCATION_DECK,0,nil)
+	if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
+		local sg=g:Select(tp,1,1,nil)
+		Duel.SendtoHand(sg,nil,REASON_EFFECT)
+		Duel.ConfirmCards(1-tp,sg)
 	end
 end
-function s.negop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	local rc=re:GetHandler()
-	if Duel.NegateActivation(ev) and rc:IsRelateToEffect(re) then
-		Duel.Remove(rc,POS_FACEUP,REASON_EFFECT)
+--(2)Gain LP, then return to hand
+function s.lpfilter(c)
+	return c:IsFaceup() and c:IsAbleToHand() and c:GetAttack()>0
+end
+function s.lptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and s.lpfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.lpfilter,tp,0,LOCATION_MZONE,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_OPPO)
+	local g=Duel.SelectTarget(tp,s.lpfilter,tp,0,LOCATION_MZONE,1,1,nil)
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,g,1,0,0)
+	Duel.SetOperationInfo(0,CATEGORY_RECOVER,nil,0,tp,0)
+end
+function s.lpop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() and tc:GetAttack()>0 then
+		Duel.Recover(tp,tc:GetAttack(),REASON_EFFECT)
+		Duel.SendtoHand(tc,nil,REASON_EFFECT)
+	end
+end
+--(3)Recycle
+function s.thgyfilter(c,e)
+	return c:IsFaceup() and c:IsRitualMonster() and c:IsAbleToHand() and c:IsCanBeEffectTarget(e)
+end
+function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE+LOCATION_REMOVED) and s.thgyfilter(chkc,e) end
+	local g=Duel.GetMatchingGroup(s.thgyfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,nil,e)
+	if chk==0 then return #g>0 end
+	local tg=aux.SelectUnselectGroup(g,e,tp,1,2,aux.dncheck,1,tp,HINTMSG_ATOHAND)
+	Duel.SetTargetCard(tg)
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,tg,#tg,tp,0)
+end
+function s.thop(e,tp,eg,ep,ev,re,r,rp)
+	local g=Duel.GetTargetCards(e)
+	if #g>0 then
+		Duel.SendtoHand(g,nil,REASON_EFFECT)
 	end
 end
