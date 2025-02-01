@@ -1,4 +1,4 @@
---East DraBladers - Yui
+--Jellycrew Monster
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -8,7 +8,7 @@ function s.initial_effect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_LVCHANGE+CATEGORY_SPECIAL_SUMMON+CATEGORY_TOKEN)
 	e1:SetType(EFFECT_TYPE_IGNITION)
-	e1:SetRange(LOCATION_HAND)
+	e1:SetRange(LOCATION_MZONE)
 	e1:SetCountLimit(1,id)
 	e1:SetCost(s.thcost)
 	e1:SetTarget(s.thtg)
@@ -55,7 +55,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	if lc:IsType(TYPE_RITUAL) then
 		local tg=Duel.GetMatchingGroup(s.thfilter2,tp,LOCATION_DECK,0,nil)
 		if #tg>0 and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-			and Duel.IsPlayerCanSpecialSummonMonster(tp,777002425,0,TYPES_TOKEN,0,0,2,RACE_DRAGON,ATTRIBUTE_DARK) 
+			and Duel.IsPlayerCanSpecialSummonMonster(tp,777002425,0,TYPES_TOKEN,0,0,4,RACE_AQUA,ATTRIBUTE_WATER) 
 				and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
 			Duel.SetOperationInfo(0,CATEGORY_TOKEN,nil,1,0,0)
 			Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,0)

@@ -1,4 +1,4 @@
---East DraBladers - Offensive
+--Jellycrew Cannon
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -21,7 +21,7 @@ function s.initial_effect(c)
 	e2:SetCode(EVENT_FREE_CHAIN)
 	e2:SetRange(LOCATION_GRAVE)
 	e2:SetHintTiming(0,TIMING_END_PHASE)
-	e2:SetCountLimit(1,id)
+	e2:SetCountLimit(1,id+1)
 	e2:SetCost(s.setcost)
 	e2:SetTarget(s.settg)
 	e2:SetOperation(s.setop)

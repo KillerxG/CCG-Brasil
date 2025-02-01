@@ -1,4 +1,4 @@
---East DraBladers - Call
+--Jellycrew Ship
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -22,16 +22,16 @@ function s.initial_effect(c)
 end
 --(1)Ritual Summon
 function s.ritualfil(c)
-	return c:GetDefense()>0 and c:IsRitualMonster()
+	return c:GetDefense()>0 and c:IsRitualMonster() and c:IsAttribute(ATTRIBUTE_WATER)
 end
 function s.filter(c)
 	return c:GetAttack()>0
 end
 function s.stage2(mat,e,tp,eg,ep,ev,re,r,rp,tc)
 	local c=e:GetHandler()
-	if not tc:IsLevel(6,9)then return end
+	if not tc:IsLevelAbove(6)then return end
 		if Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-			and Duel.IsPlayerCanSpecialSummonMonster(tp,777002425,0,TYPES_TOKEN,0,0,2,RACE_DRAGON,ATTRIBUTE_DARK) 
+			and Duel.IsPlayerCanSpecialSummonMonster(tp,777002425,0,TYPES_TOKEN,0,0,4,RACE_AQUA,ATTRIBUTE_WATER) 
 			and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
 			Duel.SetOperationInfo(0,CATEGORY_TOKEN,nil,1,0,0)
 			Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,0)
@@ -39,7 +39,7 @@ function s.stage2(mat,e,tp,eg,ep,ev,re,r,rp,tc)
 			Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP)
 			local e1=Effect.CreateEffect(c)
 			e1:SetType(EFFECT_TYPE_SINGLE)
-			e1:SetCode(EFFECT_SET_BASE_DEFENSE)
+			e1:SetCode(EFFECT_SET_BASE_ATTACK)
 			e1:SetValue(2000)
 			token:RegisterEffect(e1)
 		end

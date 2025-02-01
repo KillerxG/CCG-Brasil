@@ -1,4 +1,4 @@
---East DraBladers - Carly
+--Jellycrew Fleet Captain
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)

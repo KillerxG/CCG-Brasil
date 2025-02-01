@@ -1,4 +1,4 @@
---East DraBladers - Jake
+--Jellycrew Devil
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -41,13 +41,13 @@ function s.filter(c)
 end
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local g=Duel.GetFieldGroup(tp,0,LOCATION_EXTRA)
-	if chk==0 then return g:FilterCount(s.filter,nil)>=3 end
+	if chk==0 then return g:FilterCount(s.filter,nil)>=2 end
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local g=Duel.GetMatchingGroup(Card.IsType,1-tp,LOCATION_EXTRA+TYPE_PENDULUM,0,nil,TYPE_EXTRA+TYPE_PENDULUM)
-	if #g<3 then return end
-	local rg=g:RandomSelect(tp,3)
+	if #g<2 then return end
+	local rg=g:RandomSelect(tp,2)
 	if Duel.SendtoGrave(rg,REASON_EFFECT) then		
 		
 	end	
