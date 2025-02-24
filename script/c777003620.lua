@@ -28,7 +28,7 @@ end
 s.listed_names={777003740,id}
 --(1)Reveal
 function s.revfilter(c,e,tp,rc)
-  return c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsAttack(1400) and c:IsDefense(1000)  
+  return c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsAttack(1400)
 			and (c:IsAbleToHand() or (Duel.GetMZoneCount(tp,rc)>0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false)))
 end
 function s.revtg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -45,7 +45,7 @@ function s.revop(e,tp,eg,ep,ev,re,r,rp)
 		local tg=sg:RandomSelect(1-tp,1):GetFirst()
 			if Duel.SendtoHand(tg,nil,REASON_EFFECT) then
 				if tg:IsLevelAbove(5) and tg:IsCanBeSpecialSummoned(e,0,tp,false,false) and  Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
-					Duel.SpecialSummon(tg,0,tp,tp,false,false,POS_FACEUP_DEFENSE)
+					Duel.SpecialSummon(tg,0,tp,tp,false,false,POS_FACEUP)
 				end
 			end
 	end
