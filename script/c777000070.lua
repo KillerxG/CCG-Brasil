@@ -18,6 +18,7 @@ function s.initial_effect(c)
 	--(2)DEF Down
     local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_ATKCHANGE+CATEGORY_DESTROY)
 	e2:SetType(EFFECT_TYPE_QUICK_O)
 	e2:SetCode(EVENT_FREE_CHAIN)
 	e2:SetRange(LOCATION_MZONE)
@@ -67,7 +68,7 @@ function s.defcon(e)
 	return e:GetHandler():GetCounter(0x199)>0
 end
 function s.defilter(c)
-	return c:IsFaceup() and c:IsDefenseAbove(0)
+	return c:IsFaceup() and c:IsDefenseAbove(1)
 end
 function s.deftg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and chkc:IsFaceup() end
@@ -82,7 +83,7 @@ function s.defop(e,tp,eg,ep,ev,re,r,rp)
 	local dg=Group.CreateGroup()
 	local c=e:GetHandler()
 	for tc in aux.Next(g) do
-		local preatk=tc:GetAttack()
+		local preatk=tc:GetDefense()
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_UPDATE_DEFENSE)
