@@ -9,33 +9,38 @@ function s.initial_effect(c)
 	if not c:IsStatus(STATUS_COPYING_EFFECT) then
 		eff[1]:SetValue(s.matfilter)
 	end
-	--(1)Each player pays LP to Special from GY
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e2:SetCode(EVENT_ADJUST)
-	e2:SetRange(LOCATION_MZONE) 
-	e2:SetOperation(s.operation)
-	c:RegisterEffect(e2)
-	--(1.1)Each player pays LP to Special from GY
-	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_FIELD)
-	e3:SetCode(id)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e3:SetTargetRange(1,1)
-	c:RegisterEffect(e3)
+	--(1)Force your opponent pays 800 LP Damage when the opponent Special Summons from the GY or banishment
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e1:SetRange(LOCATION_SZONE)
+	e1:SetCondition(s.lpcon)
+	e1:SetOperation(s.lpop)
+	c:RegisterEffect(e1)
 	--(2)Recover
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,0))
-	e4:SetCategory(CATEGORY_RECOVER)
-	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
-	e4:SetCode(EVENT_PHASE+PHASE_END)
-	e4:SetRange(LOCATION_MZONE)
-	e4:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e4:SetCountLimit(1)
-	e4:SetCondition(s.reccon)
-	e4:SetTarget(s.rectg)
-	e4:SetOperation(s.recop)
+	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(id,0))
+	e2:SetCategory(CATEGORY_RECOVER)
+	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
+	e2:SetCode(EVENT_PHASE+PHASE_END)
+	e2:SetRange(LOCATION_MZONE)
+	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e2:SetCountLimit(1)
+	e2:SetCondition(s.reccon)
+	e2:SetTarget(s.rectg)
+	e2:SetOperation(s.recop)
+	c:RegisterEffect(e2)
+	--(3)Cannot be destroyed by battle or effects
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_SINGLE)
+	e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e3:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetCondition(s.fieldcon)
+	e3:SetValue(1)
+	c:RegisterEffect(e3)
+	local e4=e3:Clone()
+	e4:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
 	c:RegisterEffect(e4)
 end
 --Fusion Summon
@@ -51,54 +56,17 @@ function s.matfilter(c,fc,sub,sub2,mg,sg,tp,contact,sumtype)
 	end
 	return true
 end
---(1)Each player pays LP to Special from GY
-function s.filter(c)
-	return c:GetFlagEffect(id)==0
+--(1)Force your opponent pays 800 LP Damage when the opponent Special Summons from the GY or banishment
+function s.damfilter(c,tp)
+	return c:IsSummonPlayer(1-tp) and c:IsSummonLocation(LOCATION_GRAVE+LOCATION_REMOVED)
 end
-function s.operation(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	local g=Duel.GetMatchingGroup(s.filter,0,LOCATION_GRAVE,LOCATION_GRAVE,nil)
-	for tc in aux.Next(g) do
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_SPSUMMON_COST)
-		e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-		e1:SetCost(s.costchk)
-		e1:SetOperation(s.costop)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-		tc:RegisterEffect(e1)
-		local e4=Effect.CreateEffect(c)
-		e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-		e4:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_SET_AVAILABLE)
-		e4:SetCode(EVENT_ADJUST)
-		e4:SetRange(LOCATION_GRAVE)
-		e4:SetLabelObject(e3)
-		e4:SetOperation(s.resetop)
-		e4:SetReset(RESET_EVENT+RESETS_STANDARD)
-		tc:RegisterEffect(e4)
-		tc:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1)
-	end
+function s.lpcon(e,tp,eg,ep,ev,re,r,rp)
+	return eg:IsExists(s.damfilter,1,nil,tp)
 end
-function s.costchk(e,c,tp)
-	local atk=c:GetAttack()
-	e:SetLabel(atk)
-	return Duel.IsPlayerAffectedByEffect(c:GetControler(),id) and Duel.CheckLPCost(c:GetControler(),atk)
-end
-function s.costop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	Duel.PayLPCost(c:GetControler(),e:GetLabel())
-	e:SetLabel(0)
-end
-function s.resetop(e,tp,eg,ep,ev,re,r,rp)
-	if not Duel.IsPlayerAffectedByEffect(tp,id) then
-		local e3=e:GetLabelObject()
-		local e2=e3:GetLabelObject()
-		local e1=e2:GetLabelObject()
-		e:Reset()
-		e1:Reset()
-		e2:Reset()
-		e3:Reset()
-		e:GetHandler():ResetFlagEffect(id)
+function s.lpop(e,tp,eg,ep,ev,re,r,rp)
+	if Duel.CheckLPCost(1-tp,800) then
+		Duel.Hint(HINT_CARD,1-tp,id)
+		Duel.PayLPCost(1-tp,800)
 	end
 end
 --(2)Recover
@@ -115,4 +83,11 @@ end
 function s.recop(e,tp,eg,ep,ev,re,r,rp)
 	local ct=Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsRace,RACE_ALL),tp,LOCATION_MZONE,LOCATION_MZONE,nil)
 	Duel.Recover(tp,ct*500,REASON_EFFECT)
+end
+--(3)Cannot be destroyed by battle or effects
+function s.cfilter(c)
+	return c:IsSummonLocation(LOCATION_GRAVE+LOCATION_REMOVED)
+end
+function s.fieldcon(e)
+	return Duel.IsExistingMatchingCard(s.cfilter,e:GetHandlerPlayer(),LOCATION_MZONE,LOCATION_MZONE,1,nil)
 end
