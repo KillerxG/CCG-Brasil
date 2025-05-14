@@ -26,7 +26,7 @@ function s.initial_effect(c)
 end
 --(1)Search
 function s.thfilter(c)
-	return c:IsLevelAbove(5) and c:IsRace(RACE_WARRIOR) and c:IsAbleToHand()
+	return c:IsLevelAbove(5) and c:IsRace(RACE_WARRIOR) and c:IsAttribute(ATTRIBUTE_LIGHT|ATTRIBUTE_EARTH) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
