@@ -1,17 +1,17 @@
---Weast Royal Dragon Ascend
+--West Royal Dragon Throne
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	--(1)Special Summon Token, then Ritual Summon
+	--(1)Send cards to the GY and Special Summon 1 Dragon or Fiend Ritual Monster 
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOKEN)
+	e1:SetCategory(CATEGORY_TOGRAVE+CATEGORY_SPECIAL_SUMMON)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
-	e1:SetTarget(s.tktg)
-	e1:SetOperation(s.tkop)
+	e1:SetTarget(s.sptg)
+	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
-	--(2)Grant effect to "Weast Royal Dragon - Irya"
+	--(2)Grant effect to "West Royal Dragon - Irya"
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -26,7 +26,7 @@ function s.initial_effect(c)
 	e3:SetTarget(s.eftg)
 	e3:SetLabelObject(e2)
 	c:RegisterEffect(e3)
-	--(2.1)Grant effect to "Weast Royal Dragon - Irya"
+	--(2.1)Grant effect to "West Royal Dragon - Irya"
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_SINGLE)
 	e4:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -43,83 +43,55 @@ function s.initial_effect(c)
 	c:RegisterEffect(e5)
 end
 s.listed_names={777003710,id}
---(1)Special Summon Token, then Ritual Summon
-function s.filter(c,e,tp,m)
-	if not c:IsRitualMonster() or not c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_RITUAL,tp,false,true) then return false end
-	if c.mat_filter then
-		m=m:Filter(c.mat_filter,nil)
+--(1)Send cards to the GY and Special Summon 1 Dragon or Fiend Ritual Monster 
+function s.mmzfilter(c,tp)
+    return Duel.GetMZoneCount(tp,c)>0
+end
+function s.spfilter1(c,e,tp,tgg)
+    if not (c:IsRace(RACE_FIEND|RACE_DRAGON) and c:IsRitualMonster() and not c:IsPublic() and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_RITUAL,tp,true,false)) then return end
+    local lvl=c:GetLevel()
+    return tgg:IsExists(s.mmzfilter,1,c,tp) and tgg:FilterCount(aux.TRUE,c)>=(lvl//4)
+end
+function s.spfilter(c,e,tp,lv,g)
+	return c:IsRitualMonster() and c:IsRace(RACE_FIEND|RACE_DRAGON) and c:IsLevelAbove(4) and c:IsLevelBelow(lv) and not c:IsPublic()
+		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_RITUAL,tp,true,false) 
+end
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then
+        local tgg=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_ONFIELD|LOCATION_HAND,0,e:GetHandler())
+        return Duel.IsExistingMatchingCard(s.spfilter1,tp,LOCATION_HAND,0,1,nil,e,tp,tgg)
+    end
+    Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_ONFIELD|LOCATION_HAND)
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND)
+end
+function s.rescon(fusc)
+	return function(sg,e,tp,mg)
+		return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 	end
-	return m:CheckWithSumEqual(Card.GetRitualLevel,c:GetLevel(),1,99,c)
 end
-function s.matfilter(c)
-	return (c:IsRace(RACE_ALL) and c:IsLocation(LOCATION_HAND)) or (c:IsCode(id+5) and c:IsLocation(LOCATION_MZONE))
-end
-function s.cfilter(c,e,tp)
-	local lv=c:GetLevel()
-	return (c:IsRitualMonster() and lv>0 and not c:IsPublic())
-		and Duel.IsPlayerCanSpecialSummonMonster(tp,777003725,0,TYPES_TOKEN,c:GetAttack(),c:GetDefense(),lv,c:GetRace(),c:GetAttribute()) and Duel.GetMZoneCount(tp,nil,tp,LOCATION_REASON_TOFIELD)>0
-end
-function s.tktg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and 
-	Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND,0,1,nil,e,tp) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
-	local mg=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_MZONE+LOCATION_ALL,LOCATION_ALL,nil)
-	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_HAND,0,1,1,nil,e,tp)
-	local tc=g:GetFirst()
+function s.spop(e,tp,eg,ep,ev,re,r,rp)
+	local sg=Duel.GetMatchingGroup(s.sinfilter,tp,LOCATION_ONFIELD|LOCATION_HAND,0,e:GetHandler())
+	if #sg<=0 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+	local tc=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_HAND,0,1,1,nil,e,tp,#sg*4+3,sg):GetFirst()
+	sg:RemoveCard(tc)
+	if not tc then return end
 	Duel.ConfirmCards(1-tp,tc)
-	Duel.ShuffleHand(tp)
-	e:SetLabelObject(tc)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,0)
-	Duel.SetOperationInfo(0,CATEGORY_TOKEN,nil,1,tp,0)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND)
-end
-function s.tkop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=e:GetLabelObject()
-	if Duel.IsPlayerCanSpecialSummonMonster(tp,777003725,0,TYPES_TOKEN,tc:GetAttack(),tc:GetDefense(),tc:GetLevel(),tc:GetRace(),tc:GetAttribute()) and Duel.GetMZoneCount(tp,nil,tp,LOCATION_REASON_TOFIELD)>0 then
-		local token=Duel.CreateToken(tp,777003725)
-		local e1=Effect.CreateEffect(e:GetHandler())
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_SET_BASE_ATTACK)
-		e1:SetValue(tc:GetAttack())
-		e1:SetReset(RESET_EVENT+RESETS_REDIRECT)
-		token:RegisterEffect(e1)
-		local e2=e1:Clone()
-		e2:SetCode(EFFECT_SET_BASE_DEFENSE)
-		e2:SetValue(tc:GetDefense())
-		token:RegisterEffect(e2)
-		local e3=e1:Clone()
-		e3:SetCode(EFFECT_CHANGE_LEVEL)
-		e3:SetValue(tc:GetLevel())
-		token:RegisterEffect(e3)
-		local e4=e1:Clone()
-		e4:SetCode(EFFECT_CHANGE_RACE)
-		e4:SetValue(tc:GetRace())
-		token:RegisterEffect(e4)
-		local e5=e1:Clone()
-		e5:SetCode(EFFECT_CHANGE_ATTRIBUTE)
-		e5:SetValue(tc:GetAttribute())
-		token:RegisterEffect(e5)
-		if Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP) then
-			local mg=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_MZONE,0,nil)
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-			local tg=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_HAND,0,1,1,nil,e,tp,mg)
-			if tg:GetCount()>0 then
-			local tc=tg:GetFirst()
-			if tc.mat_filter then
-			mg=mg:Filter(tc.mat_filter,nil)
-			end
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-			local mat=mg:SelectWithSumEqual(tp,Card.GetRitualLevel,tc:GetLevel(),1,99,tc)
-			tc:SetMaterial(mat)
-			Duel.Release(mat,REASON_EFFECT+REASON_MATERIAL+REASON_RITUAL)
-			Duel.BreakEffect()
-			Duel.SpecialSummon(tc,SUMMON_TYPE_RITUAL,tp,tp,false,true,POS_FACEUP)
-			tc:CompleteProcedure()
-			end
-		end
+	local ct=tc:GetLevel()//4
+	local ssg=aux.SelectUnselectGroup(sg,e,tp,ct,ct,s.rescon(tc),1,tp,HINTMSG_TOGRAVE)
+	if #ssg==0 then return end
+	local fdg=ssg:Filter(aux.AND(Card.IsFacedown,Card.IsOnField),nil)	
+	if #fdg>0 then
+		Duel.ConfirmCards(1-tp,fdg)
+	end
+	if Duel.SendtoGrave(ssg,REASON_EFFECT)>0 and ssg:IsExists(Card.IsLocation,1,nil,LOCATION_GRAVE) then
+		tc:SetMaterial(nil)
+		Duel.BreakEffect()
+		if Duel.SpecialSummon(tc,SUMMON_TYPE_RITUAL,tp,tp,true,false,POS_FACEUP)==0 then return end
+		tc:CompleteProcedure()
 	end
 end
---(2)Grant effect to "Weast Royal Dragon - Irya"
+--(2)Grant effect to "West Royal Dragon - Irya"
 function s.eftg(e,c)
 	return c:IsType(TYPE_EFFECT) and c:IsCode(777003710)
 end

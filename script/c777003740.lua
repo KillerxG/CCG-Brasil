@@ -1,4 +1,4 @@
---Weast Royal Dragon Calling
+--West Royal Dragon Instructions
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -14,14 +14,14 @@ function s.initial_effect(c)
 	c:RegisterEffect(e1)
 	--(2)Grant effect to "Weast Royal Dragon - Irya"
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,2))
-	e2:SetCategory(CATEGORY_DESTROY)
-	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e2:SetCode(EVENT_BATTLED)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetType(EFFECT_TYPE_FIELD)
+	e2:SetCode(EFFECT_REFLECT_DAMAGE)
 	e2:SetRange(LOCATION_MZONE)
-	e2:SetCondition(s.sendcon)
-	e2:SetTarget(s.sendtg)
-	e2:SetOperation(s.sendop)
+	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e2:SetTargetRange(1,0)
+	e2:SetValue(s.refcon)
+	c:RegisterEffect(e2)
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_GRANT)
 	e3:SetRange(LOCATION_GRAVE)
@@ -88,16 +88,6 @@ end
 function s.eftg(e,c)
 	return c:IsType(TYPE_EFFECT) and c:IsCode(777003710)
 end
-function s.sendcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetAttacker()==e:GetHandler()
+function s.refcon(e,re,val,r,rp,rc)
+	return (r&REASON_BATTLE)~=0
 end
-function s.sendtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local g=Duel.GetMatchingGroup(aux.TRUE,tp,0,LOCATION_ONFIELD,nil)
-	if chk==0 then return #g>0 end
-	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,#g,0,0,LOCATION_ONFIELD)
-end
-function s.sendop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(aux.TRUE,tp,0,LOCATION_ONFIELD,nil)
-	Duel.Destroy(g,REASON_EFFECT)
-end
-

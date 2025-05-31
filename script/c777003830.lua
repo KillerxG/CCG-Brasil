@@ -1,10 +1,10 @@
---Royal Dragon Ω - Irya
+--West Royal Dragon - Devil Irya
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
-	--Fusion Summon procedure
-	Fusion.AddProcMix(c,true,true,aux.FilterBoolFunctionEx(Card.IsRace,RACE_FIEND),s.matfilter)
+	--Fusion Summon
+	Fusion.AddProcMix(c,true,true,777003710,777003750)
 	--(1)Change Name
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
@@ -13,15 +13,6 @@ function s.initial_effect(c)
 	e1:SetRange(LOCATION_MZONE+LOCATION_GRAVE)
 	e1:SetValue(777003710)
 	c:RegisterEffect(e1)
-	--(2)Reflect Damage
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetCode(EFFECT_REFLECT_DAMAGE)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e2:SetTargetRange(1,0)
-	e2:SetValue(s.refcon)
-	c:RegisterEffect(e2)
 	--(3)ATK Down
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_FIELD)
@@ -45,23 +36,14 @@ function s.initial_effect(c)
 	e4:SetOperation(s.desop)
 	c:RegisterEffect(e4)	
 end
-s.listed_names={777003710}
+s.listed_names={777003710,777003750}
 --Fusion Summon procedure
 function s.matfilter(c,fc,sumtype,tp)
 	return c:IsRace(RACE_DRAGON,fc,sumtype,tp) and c:IsLevelAbove(6)
 end
---(2)Reflect Damage
-function s.refcon(e,re,val,r,rp,rc)
-	return (r&REASON_EFFECT)~=0
-end
 --(3)ATK Down
-function s.ainzfiler(c,seq,p)
-  return c:IsFaceup() and c:IsColumn(seq,p,LOCATION_MZONE) and (c:IsSetCard(0x288) or c:IsCode(id)) 
-end
 function s.atktg2(e,c)
-	local tp=e:GetHandlerPlayer()
-	local g=e:GetHandler():GetColumnGroup()
-	return not Duel.IsExistingMatchingCard(s.ainzfiler,tp,LOCATION_MZONE,0,1,nil,c:GetSequence(),1-tp)
+	return c:IsFaceup() and not e:GetHandler():GetColumnGroup():IsContains(c)
 end
 --(4)Destroy
 function s.desfilter(c,g)

@@ -1,4 +1,4 @@
---Weast Royal Dragon Legacy
+--West Royal Dragon Legacy
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -14,14 +14,12 @@ function s.initial_effect(c)
 	--(2)Grant effect to "Weast Royal Dragon - Irya"
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_TOGRAVE)
-	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
-	e2:SetCode(EVENT_PHASE+PHASE_END)
+	e2:SetType(EFFECT_TYPE_FIELD)
+	e2:SetCode(EFFECT_REFLECT_DAMAGE)
 	e2:SetRange(LOCATION_MZONE)
-	e2:SetCountLimit(1)
-	e2:SetTarget(s.mattg)
-	e2:SetOperation(s.matop)
+	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e2:SetTargetRange(1,0)
+	e2:SetValue(s.refcon)
 	c:RegisterEffect(e2)
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_GRANT)
@@ -109,18 +107,6 @@ end
 function s.eftg(e,c)
 	return c:IsType(TYPE_EFFECT) and c:IsCode(777003710)
 end
-function s.tgfil(c)
-	return c:IsFaceup() and c:IsSpell() and c:IsAbleToGrave()
-end
-function s.tgfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x288) and c:IsAbleToGrave()
-end
-function s.mattg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_REMOVED,0,1,e:GetHandler()) end
-	local g=Duel.GetMatchingGroup(s.tgfilter,tp,LOCATION_REMOVED,0,e:GetHandler())
-	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,g,#g,0,0)
-end
-function s.matop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(s.tgfilter,tp,LOCATION_REMOVED,0,nil)
-	Duel.SendtoGrave(g,REASON_EFFECT)
+function s.refcon(e,re,val,r,rp,rc)
+	return (r&REASON_EFFECT)~=0
 end

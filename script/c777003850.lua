@@ -1,4 +1,4 @@
---Royal Dragon Δ - Irya
+--West Royal Dragon - Regent Irya
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -13,85 +13,74 @@ function s.initial_effect(c)
 	e1:SetRange(LOCATION_MZONE+LOCATION_GRAVE)
 	e1:SetValue(777003710)
 	c:RegisterEffect(e1)
-	--(2)Reflect Damage
+	--(2)Negate column
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetCode(EFFECT_REFLECT_DAMAGE)
+	e2:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
+	e2:SetCode(EFFECT_DISABLE)
 	e2:SetRange(LOCATION_MZONE)
-	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e2:SetTargetRange(1,0)
-	e2:SetValue(s.refcon)
+	e2:SetTargetRange(0,LOCATION_ONFIELD)
+	e2:SetTarget(s.coltg)
 	c:RegisterEffect(e2)
-	--(3)Conduct Battle 
+	--(3)Banish all monsters on the field, then re Special Summon
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,0))
-	e3:SetCategory(CATEGORY_DESTROY)
-	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e3:SetCategory(CATEGORY_REMOVE+CATEGORY_SPECIAL_SUMMON)
 	e3:SetType(EFFECT_TYPE_QUICK_O)
 	e3:SetCode(EVENT_FREE_CHAIN)
+	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER|TIMING_MAIN_END)
 	e3:SetRange(LOCATION_MZONE)
-	e3:SetHintTiming(0,TIMING_BATTLE_START+TIMING_ATTACK+TIMING_BATTLE_END)
 	e3:SetCountLimit(1,id)
-	e3:SetTarget(s.destg)
-	e3:SetOperation(s.desop)
+	e3:SetTarget(s.rmsptg)
+	e3:SetOperation(s.rmspop)
 	c:RegisterEffect(e3)
-	--(4)Take Control
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,1))
-	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e4:SetCode(EVENT_SUMMON_SUCCESS)
-	e4:SetRange(LOCATION_MZONE)
-	e4:SetCountLimit(1)
-	e4:SetCondition(s.reccon2)
-	e4:SetTarget(s.seqtg)
-	e4:SetOperation(s.seqop)
-	c:RegisterEffect(e4)
-	local e5=e4:Clone()
-	e5:SetCode(EVENT_SPSUMMON_SUCCESS)
-	c:RegisterEffect(e5)
 end
 s.listed_names={777003710}
---(2)Reflect Damage
-function s.refcon(e,re,val,r,rp,rc)
-	return (r&REASON_BATTLE)~=0
+--(2)Disable
+function s.coltg(e,c)
+	return e:GetHandler():GetColumnGroup():IsContains(c) and c:IsFaceup()
 end
---(3)Conduct Battle 
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsFaceup,tp,0,LOCATION_MZONE,1,nil) end
+--(3)Banish all monsters on the field, then re Special Summon
+function s.rmsptg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsAbleToRemove,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
+	Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,LOCATION_MZONE)
+	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,PLAYER_EITHER,LOCATION_REMOVED)
 end
-function s.desop(e,tp,eg,ep,ev,re,r,rp)
-	local g2=Duel.SelectMatchingCard(tp,Card.IsFaceup,tp,0,LOCATION_MZONE,1,1,nil)
-	if #g2>0 then
-		Duel.CalculateDamage(e:GetHandler(),g2:GetFirst(),true)
-	end
+function s.spfilter(c,e,tp)
+	local owner=c:GetOwner()
+	return c:IsFaceup() and c:IsLocation(LOCATION_REMOVED) and not c:IsReason(REASON_REDIRECT)
+		and (c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP,owner)
+		or c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEDOWN_DEFENSE,owner))
 end
---(4)Take Control
-function s.ainzfiler(c,seq,p)
-  return c:IsFaceup() and c:IsCode(id) and c:IsColumn(seq,p,LOCATION_MZONE)
-end
-function s.reccon2(e,tp,eg,ep,ev,re,r,rp)
-  local tc=eg:GetFirst()
-  local tp=e:GetHandlerPlayer()
-  local g=e:GetHandler():GetColumnGroup()
-  return tc:GetSummonPlayer()~=tp and not (g:IsContains(tc) 
-  or Duel.IsExistingMatchingCard(s.ainzfiler,tp,LOCATION_MZONE,0,1,nil,tc:GetSequence(),1-tp))
-end
-function s.seqtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOZONE)
-	local seq=Duel.SelectDisableField(tp,1,LOCATION_MZONE,0,0)
-	Duel.Hint(HINT_ZONE,tp,seq)
-	e:SetLabel(math.log(seq,2))
-end
-function s.seqop(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	local seq=e:GetLabel()
-	if not c:IsRelateToEffect(e) or c:IsControler(1-tp) or not Duel.CheckLocation(tp,LOCATION_MZONE,seq) then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOZONE)
-	Duel.MoveSequence(c,seq)
-	local dg=c:GetColumnGroup():Filter(Card.IsControlerCanBeChanged,c,nil)
-	if #dg>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+function s.rmspop(e,tp,eg,ep,ev,re,r,rp)
+	local g=Duel.GetMatchingGroup(Card.IsAbleToRemove,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
+	if #g>0 and Duel.Remove(g,POS_FACEUP,REASON_EFFECT)>0 then
+		local og=Duel.GetOperatedGroup()
+		local sg=og:Filter(s.spfilter,nil,e,tp)
+		if #sg==0 then return end
+		local your_sg,opp_sg=sg:Split(Card.IsOwner,nil,tp)
+		local your_ft,opp_ft=Duel.GetLocationCount(tp,LOCATION_MZONE),Duel.GetLocationCount(1-tp,LOCATION_MZONE)
+		if #your_sg>your_ft then
+			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+			your_sg=your_sg:Select(tp,your_ft,your_ft,nil)
+		end
+		if #opp_sg>opp_ft then
+			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+			opp_sg=opp_sg:Select(tp,opp_ft,opp_ft,nil)
+		end
+		sg=your_sg+opp_sg
+		for sc in sg:Iter() do
+			local sump=0
+			local owner=sc:GetOwner()
+			if sc:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP,owner) then sump=sump|POS_FACEUP end
+			if sc:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEDOWN_DEFENSE,owner) then sump=sump|POS_FACEDOWN_DEFENSE end
+			Duel.SpecialSummonStep(sc,0,tp,owner,false,false,sump)
+		end
+		local fdg=sg:Filter(Card.IsFacedown,nil)
+		if #fdg>0 then
+			Duel.ConfirmCards(1-tp,fdg)
+		end
 		Duel.BreakEffect()
-		Duel.GetControl(dg,tp,PHASE_END,99)
+		Duel.SpecialSummonComplete()
 	end
 end

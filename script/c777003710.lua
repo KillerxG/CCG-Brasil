@@ -1,4 +1,4 @@
---Weast Royal Dragon - Irya
+--West Royal Dragon - Irya
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -20,7 +20,9 @@ function s.initial_effect(c)
 	e3:SetDescription(aux.Stringid(id,0))
 	e3:SetType(EFFECT_TYPE_QUICK_O)
 	e3:SetCode(EVENT_FREE_CHAIN)
+	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E|TIMING_BATTLE_END)
 	e3:SetRange(LOCATION_MZONE)
+	e3:SetCountLimit(1,id)
 	e3:SetCost(s.seqcost)
 	e3:SetTarget(s.seqtg)
 	e3:SetOperation(s.seqop)
@@ -29,34 +31,27 @@ end
 s.listed_names={777003720,id}
 --(1)Direct Attack
 function s.dircon(e)
-	local p=1-e:GetHandlerPlayer()
-	local seq=4-e:GetHandler():GetSequence()
-	return Duel.GetFieldCard(p,LOCATION_MZONE,seq)==nil
+	return e:GetHandler():GetColumnGroup():FilterCount(Card.IsMonster,nil)==0
 end
 --(2)Cannot be battle Target
 function s.tgval(e,c)
-	return e:GetHandler():GetSequence()+c:GetSequence()~=4
+	return not e:GetHandler():GetColumnGroup():IsContains(c)
 end
 --(3)Move
-function s.archcost(c)
-  return c:IsSpell() and c:IsSetCard(0x288) and c:IsAbleToRemoveAsCost()
+function s.atkcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
+	if chk==0 then return c:GetFlagEffect(id)==0 end
+	c:RegisterFlagEffect(id,RESET_CHAIN,0,1)
 end
-function s.accostfilter(c)
-  return c:IsSpell() and not c:IsSetCard(0x288) and c:IsAbleToRemoveAsCost()
+function s.tkcostfilter(c)
+	return c:IsSetCard(0x288) and c:IsAbleToRemoveAsCost() and aux.SpElimFilter(c,true)
 end
 function s.seqcost(e,tp,eg,ep,ev,re,r,rp,chk)
-    local b1=Duel.IsExistingMatchingCard(s.archcost,tp,LOCATION_GRAVE,0,1,nil)
-    local b2=Duel.IsExistingMatchingCard(s.accostfilter,tp,LOCATION_GRAVE,0,2,nil)
-    if chk==0 then return b1 or b2 end
-    if b1 and ((not b2) or Duel.SelectYesNo(tp,aux.Stringid(id,1))) then
+	local c=e:GetHandler()
+	if chk==0 then return Duel.IsExistingMatchingCard(s.tkcostfilter,tp,LOCATION_MZONE|LOCATION_GRAVE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectMatchingCard(tp,s.archcost,tp,LOCATION_GRAVE,0,1,1,nil)
+	local g=Duel.SelectMatchingCard(tp,s.tkcostfilter,tp,LOCATION_MZONE|LOCATION_GRAVE,0,1,1,nil)
 	Duel.Remove(g,POS_FACEUP,REASON_COST)
-    else
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectMatchingCard(tp,s.accostfilter,tp,LOCATION_GRAVE,0,2,2,nil)
-	Duel.Remove(g,POS_FACEUP,REASON_COST)
-  end
 end
 function s.seqtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 end

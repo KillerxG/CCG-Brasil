@@ -1,4 +1,4 @@
---Weast Royal Dragon Emissary
+--West Royal Dragon - Shadow
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -13,17 +13,18 @@ function s.initial_effect(c)
 	e1:SetTarget(s.sptg)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
-	--(2)Set Race
+	--(2)Change Name
 	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_SINGLE)
-	e2:SetCode(EFFECT_ADD_RACE)
-	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e2:SetRange(LOCATION_MZONE+LOCATION_GRAVE)
-	e2:SetValue(RACE_FIEND)
+	e2:SetDescription(aux.Stringid(id,2))
+	e2:SetType(EFFECT_TYPE_IGNITION)
+	e2:SetRange(LOCATION_MZONE)
+	e2:SetCountLimit(1,id+1)
+	e2:SetCost(s.tgcost)
+	e2:SetOperation(s.tgop)
 	c:RegisterEffect(e2)
 	--(3)Ritual Summon
 	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,2))
+	e3:SetDescription(aux.Stringid(id,3))
 	e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
 	e3:SetType(EFFECT_TYPE_IGNITION)
 	e3:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
@@ -34,8 +35,9 @@ function s.initial_effect(c)
 	e3:SetOperation(s.ritop)
 	c:RegisterEffect(e3)
 end
+--(1)Special Summon
 function s.spfilter(c)
-	return c:IsLevelAbove(1) and c:IsRitualMonster()
+	return c:IsLevelAbove(1) and c:IsRitualMonster() and not c:IsPublic()
 end
 function s.filter(c)
 	return (c:IsRitualSpell() or (c:IsSetCard(0x288) and c:IsSpell())) and c:IsSSetable()
@@ -82,6 +84,28 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 					end
 		end
 	end
+end
+--(2)Change Name
+function s.tgfilter(c)
+	return c:IsRitualMonster() and c:IsRace(RACE_DRAGON|RACE_FIEND) and not c:IsPublic()
+end
+function s.tgcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_HAND,0,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
+	local g=Duel.SelectMatchingCard(tp,s.tgfilter,tp,LOCATION_HAND,0,1,1,nil)
+	Duel.ConfirmCards(1-tp,g)
+	e:SetLabel(g:GetFirst():GetCode())
+end
+function s.tgop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	if not c:IsRelateToEffect(e) or c:IsFacedown() then return end
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetCode(EFFECT_CHANGE_CODE)
+	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+	e1:SetReset(RESETS_STANDARD_PHASE_END)
+	e1:SetValue(e:GetLabel())
+	c:RegisterEffect(e1)
 end
 --(3)Ritual Summon
 function s.cfilter(c)

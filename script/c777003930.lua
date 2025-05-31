@@ -1,4 +1,4 @@
---Weast Royal Dragon Advent
+--West Royal Dragon Travel
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -26,22 +26,6 @@ function s.initial_effect(c)
 	e3:SetTarget(s.eftg)
 	e3:SetLabelObject(e2)
 	c:RegisterEffect(e3)
-	--(2.1)Grant effect to "Weast Royal Dragon - Irya"
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,3))
-	e4:SetCategory(CATEGORY_ATKCHANGE)
-	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e4:SetCode(EVENT_ATTACK_ANNOUNCE)
-	e4:SetRange(LOCATION_MZONE)
-	e4:SetOperation(s.atkop)
-	c:RegisterEffect(e4)
-	local e5=Effect.CreateEffect(c)
-	e5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_GRANT)
-	e5:SetRange(LOCATION_GRAVE)
-	e5:SetTargetRange(LOCATION_MZONE,0)
-	e5:SetTarget(s.eftg)
-	e5:SetLabelObject(e4)
-	c:RegisterEffect(e5)
 end
 --(1)Excavate and add to hand
 function s.thcostfilter(c)
@@ -89,20 +73,4 @@ end
 --(2)Grant effect to "Weast Royal Dragon - Irya"
 function s.eftg(e,c)
 	return c:IsType(TYPE_EFFECT) and c:IsCode(777003710)
-end
---(2.1)Grant effect to "Weast Royal Dragon - Irya"
-function s.atkfilter(c)
-	return c:IsFaceup() and c:IsCode(777003710)
-end
-function s.atkop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(aux.FaceupFilter(s.atkfilter),tp,LOCATION_MZONE,0,nil)
-	for tc in aux.Next(g) do
-		local e1=Effect.CreateEffect(e:GetHandler())
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_UPDATE_ATTACK)
-		e1:SetValue(300)
-		e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,2)
-		tc:RegisterEffect(e1)
-	end
 end

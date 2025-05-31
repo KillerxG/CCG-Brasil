@@ -1,8 +1,7 @@
---Golden Dragon - Ellen
+--West Royal Dragon - Zephyr
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	c:EnableReviveLimit()
 	--(1)Special Summon 1 Ritual Monster
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
@@ -12,6 +11,7 @@ function s.initial_effect(c)
 	e1:SetRange(LOCATION_HAND)
 	e1:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
 	e1:SetCountLimit(1,id)
+	e1:SetCost(Cost.SelfDiscard)
 	e1:SetTarget(s.sptg)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
@@ -34,11 +34,11 @@ function s.initial_effect(c)
 	e3:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
 	e3:SetRange(LOCATION_MZONE)
 	e3:SetTargetRange(LOCATION_MZONE,0)
-	e3:SetTarget(aux.TargetBoolFunction(Card.IsType,TYPE_RITUAL))
+	e3:SetTarget(s.indtg)
 	e3:SetValue(s.indvalue)
 	c:RegisterEffect(e3)
 end
-s.listed_names={777003920,id}
+s.listed_names={id}
 --(1)Special Summon 1 Ritual Monster
 function s.cfilter(c,tp)
 	return c:IsReleasableByEffect() and (s.selfnouvfilter(c,tp) or c:IsFaceup())
@@ -47,7 +47,7 @@ function s.selfnouvfilter(c,tp)
 	return c:IsControler(tp)
 end
 function s.spfilter(c,e,tp)
-	return c:IsRitualMonster() and c:IsCanBeSpecialSummoned(e,0,tp,false,true) and not c:IsCode(id)
+	return c:IsRitualMonster() and c:IsRace(RACE_DRAGON|RACE_FIEND) and c:IsCanBeSpecialSummoned(e,0,tp,false,true)
 end
 function s.rescon(sg,e,tp,mg)
 	return Duel.GetMZoneCount(tp,sg)>0 and sg:IsExists(s.atkposchk,1,nil,sg,tp)
@@ -117,12 +117,12 @@ function s.th2con(e,tp,eg,ep,ev,re,r,rp)
 	else return true end
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
-	if Duel.SendtoHand(e:GetLabelObject(),nil,REASON_EFFECT) and Duel.IsPlayerCanDraw(tp,1)
-		and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
-	Duel.Draw(tp,1,REASON_EFFECT)
-	end
+	Duel.SendtoHand(e:GetLabelObject(),nil,REASON_EFFECT)
 end
 --(3)Your Ritual Monsters cannot be destroyed by effects that do not target 
+function s.indtg(e,c)
+	return c:IsSetCard(0x288) and c:IsFaceup()
+end
 function s.indvalue(e,re,rp,c)
 	if not re:IsHasProperty(EFFECT_FLAG_CARD_TARGET) then return true end
 	local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)

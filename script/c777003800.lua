@@ -1,4 +1,4 @@
---Weast Royal Dragon Regent - Annie
+--West Royal Dragon - Annie
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -37,7 +37,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.thop)
 	c:RegisterEffect(e3)
 end
-s.listed_names={777003920,777003710,id}
+s.listed_names={777003940,777003720,777003710,id}
 --(1)Destroy and Recover
 function s.filter(c)
 	return c:IsMonster() or c:IsSpellTrap()
@@ -102,7 +102,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.ShuffleHand(tp)
 	local tc=g:GetFirst()
 	local c=e:GetHandler()
-	if tc and tc:IsLocation(LOCATION_HAND) and (tc:IsSetCard(0x288) or tc:IsCode(777003920)) 
+	if tc and tc:IsLocation(LOCATION_HAND) and tc:IsCode(777003720)
 	and Duel.IsPlayerCanDraw(tp,1) and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
 		Duel.Draw(tp,1,REASON_EFFECT)
 	end
