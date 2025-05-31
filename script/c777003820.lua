@@ -4,7 +4,7 @@ local s,id=GetID()
 function s.initial_effect(c)
 	--Xyz Summon
 	c:EnableReviveLimit()
-	Xyz.AddProcedure(c,nil,nil,2,nil,nil,99,nil,false,s.xyzcheck)
+	Xyz.AddProcedure(c,nil,nil,2,nil,nil,Xyz.InfiniteMats,nil,false,s.xyzcheck)
 	--(1)Attach monsters from your opponent extra
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
@@ -37,6 +37,18 @@ function s.initial_effect(c)
 	e3:SetTarget(s.atttg)
 	e3:SetOperation(s.attop)
 	c:RegisterEffect(e3)
+	--(4)Add 1 "Fatale" card from your Deck to your hand
+	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,2))
+	e4:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
+	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e4:SetProperty(EFFECT_FLAG_DELAY)
+	e4:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e4:SetCondition(function(e) return e:GetHandler():IsXyzSummoned() end)
+	e4:SetCountLimit(1,id+2)
+	e4:SetTarget(s.thtg)
+	e4:SetOperation(s.thop)
+	c:RegisterEffect(e4)
 end
 --Xyz Summon
 function s.xyzcheck(g,tp)
@@ -79,7 +91,7 @@ function s.mttg(e,c)
 end
 --(3)Attach opponent's monster
 function s.attcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsType,TYPE_RITUAL),tp,LOCATION_MZONE,0,1,nil)
+	return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,777003750),tp,LOCATION_MZONE,0,1,nil)
 end
 function s.attfilter(c)
 	return c:IsAbleToChangeControler() and not c:IsType(TYPE_TOKEN)
@@ -95,5 +107,21 @@ function s.attop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if c:IsRelateToEffect(e) and tc and tc:IsRelateToEffect(e) and not tc:IsImmuneToEffect(e) then
 		Duel.Overlay(c,tc,true)
+	end
+end
+--(4)Add 1 "Fatale" card from your Deck to your hand
+function s.thfilter(c)
+	return c:IsSetCard(0x286) and c:IsAbleToHand()
+end
+function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
+end
+function s.thop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
+	local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK,0,1,1,nil)
+	if #g>0 then
+		Duel.SendtoHand(g,nil,REASON_EFFECT)
+		Duel.ConfirmCards(1-tp,g)
 	end
 end

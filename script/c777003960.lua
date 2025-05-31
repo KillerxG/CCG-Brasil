@@ -1,129 +1,97 @@
---Weast Royal Dragon Λ - Irya
+--Fatale Succubus - Eternal Lilith
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	--Link Summon
-	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsType,TYPE_EFFECT),3,nil,s.matcheck)
+	--Fusion Summon
 	c:EnableReviveLimit()
-	--(1)Change Name
+	--Fusion Summon
+	Fusion.AddProcMix(c,true,true,777003750,777003710)
+	--(1)Take Control
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e1:SetCode(EFFECT_CHANGE_CODE)
-	e1:SetRange(LOCATION_MZONE+LOCATION_GRAVE)
-	e1:SetValue(777003710)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetCategory(CATEGORY_CONTROL)
+	e1:SetType(EFFECT_TYPE_QUICK_O)
+	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetRange(LOCATION_MZONE)
+	e1:SetHintTiming(0,TIMINGS_CHECK_MONSTER|TIMING_MAIN_END)
+	e1:SetCountLimit(1,id)
+	e1:SetTarget(s.ctrltg)
+	e1:SetOperation(s.ctrlop)
 	c:RegisterEffect(e1)
-	--(2)Negate
-	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_FIELD)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetTargetRange(0,LOCATION_MZONE)
-	e3:SetTarget(s.negtg)
-	e3:SetCode(EFFECT_DISABLE)
+	--(2)Cannot be destroyed by battle or card effects
+	local e2=Effect.CreateEffect(c)
+	e2:SetType(EFFECT_TYPE_SINGLE)
+	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e2:SetRange(LOCATION_MZONE)
+	e2:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
+	e2:SetCondition(s.indcon)
+	e2:SetValue(1)
+	c:RegisterEffect(e2)
+	local e3=e2:Clone()
+	e3:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
 	c:RegisterEffect(e3)
-	--(3)Return to hand
+	--(3)Special Summon 1 Irya or 1 Lilith monster from your GY and place the other on the bottom of the Deck
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,0))
-	e4:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e4:SetType(EFFECT_TYPE_QUICK_O)
-	e4:SetCode(EVENT_FREE_CHAIN)
-	e4:SetRange(LOCATION_MZONE)
-	e4:SetHintTiming(0,TIMINGS_CHECK_MONSTER|TIMING_MAIN_END)
-	e4:SetCountLimit(1,id)
-	e4:SetTarget(s.destg)
-	e4:SetOperation(s.desop)
+	e4:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TODECK)
+	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e4:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
+	e4:SetCode(EVENT_TO_GRAVE)
+	e4:SetCondition(function(e) return e:GetHandler():IsPreviousLocation(LOCATION_ONFIELD) end)
+	e4:SetCost(Cost.SelfBanish)
+	e4:SetTarget(s.sptdtg)
+	e4:SetOperation(s.sptdop)
 	c:RegisterEffect(e4)
-	--(4)Banish all, then Special Summon all
-	local e5=Effect.CreateEffect(c)
-	e5:SetDescription(aux.Stringid(id,1))
-	e5:SetCategory(CATEGORY_REMOVE+CATEGORY_SPECIAL_SUMMON)
-	e5:SetType(EFFECT_TYPE_IGNITION)
-	e5:SetRange(LOCATION_MZONE)
-	e5:SetCountLimit(1,id+1)
-	e5:SetTarget(s.rmsptg)
-	e5:SetOperation(s.rmspop)
-	c:RegisterEffect(e5)
 end
-s.listed_names={777003710}
---Link Summon
-function s.matcheck(g,lc,sumtype,tp)
-	return g:IsExists(Card.IsRace,1,nil,RACE_DRAGON,lc,sumtype,tp) and g:IsExists(Card.IsLevelAbove,1,nil,8)
+s.listed_names={777003750,777003710}
+--(1)Take Control
+function s.ctrltg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and chkc:IsControlerCanBeChanged() and chkc:IsFaceup() end
+	if chk==0 then return Duel.IsExistingTarget(aux.FaceupFilter(Card.IsControlerCanBeChanged),tp,0,LOCATION_MZONE,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONTROL)
+	local g=Duel.SelectTarget(tp,aux.FaceupFilter(Card.IsControlerCanBeChanged),tp,0,LOCATION_MZONE,1,1,nil)
+	Duel.SetOperationInfo(0,CATEGORY_CONTROL,g,1,tp,0)
 end
---(2)Negate
-function s.ainzfiler(c,seq,p)
-  return c:IsFaceup() and c:IsSetCard(0x288) and c:IsColumn(seq,p,LOCATION_MZONE)
+function s.ctrlop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	if tc:IsRelateToEffect(e) then
+		Duel.GetControl(tc,tp)
+	end
 end
-function s.negtg(e,c)
-  local tp=e:GetHandlerPlayer()
-  local atk=e:GetHandler():GetAttack()
-  local g=e:GetHandler():GetColumnGroup() 
-  return (c:IsType(TYPE_EFFECT) or bit.band(c:GetOriginalType(),TYPE_EFFECT)==TYPE_EFFECT)
-  and c:GetAttack()<atk and c:IsSummonType(SUMMON_TYPE_SPECIAL) and (g:IsContains(c)  
-  or Duel.IsExistingMatchingCard(s.ainzfiler,tp,LOCATION_MZONE,0,1,nil,c:GetSequence(),1-tp))
+--(2)Cannot be destroyed by battle or card effects
+function s.indcon(e)
+	return Duel.GetFieldGroupCount(e:GetHandlerPlayer(),LOCATION_HAND,0)>Duel.GetFieldGroupCount(e:GetHandlerPlayer(),0,LOCATION_HAND)
 end
---(3)Return to hand
-function s.desfilter1(c,tp)
-  local lg=c:GetColumnGroup(1,1)
-  local atk=c:GetAttack()
-  return c:IsFaceup() and Duel.IsExistingMatchingCard(s.desfilter2,tp,0,LOCATION_ONFIELD,1,nil,lg,atk)
+--(3)Special Summon 1 Irya or 1 Lilith monster from your GY and place the other on the bottom of the Deck
+function s.sptdfilter(c,e,tp)
+	return (c:IsCode(777003750) or c:IsCode(777003710)) and (c:IsCanBeSpecialSummoned(e,0,tp,true,true) or c:IsAbleToDeck())
 end
-function s.desfilter2(c,g,atk)
-  local seq=c:GetSequence() 
-  return c:IsFaceup() and g:IsContains(c) and seq<5 and c:IsAttackBelow(atk) and c:IsAbleToHand()
+function s.rescon(sg,e,tp,mg)
+	return sg:IsExists(Card.IsCode,1,nil,777003750) and sg:IsExists(Card.IsCode,1,nil,777003710)
+		and sg:IsExists(s.spchk,1,nil,e,tp,sg)
 end
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-  if chk==0 then return Duel.IsExistingTarget(s.desfilter1,tp,LOCATION_MZONE,0,1,nil,tp) end
-  Duel.Hint(HINT_OPSELECTED,1-tp,e:GetDescription())
-  Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-  Duel.SelectTarget(tp,s.desfilter1,tp,LOCATION_MZONE,0,1,1,nil,tp)
+function s.spchk(c,e,tp,sg)
+	return c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_RITUAL,tp,true,true) and (#sg==1 or sg:IsExists(Card.IsAbleToDeck,1,c))
 end
-function s.desop(e,tp,eg,ep,ev,re,r,rp)
-  local c=e:GetHandler()
-  local tc1=Duel.GetFirstTarget()
-  local lg=tc1:GetColumnGroup(1,1)
-  local atk=tc1:GetAttack()
-  local g=Duel.GetMatchingGroup(s.desfilter2,tp,0,LOCATION_MZONE,nil,lg,atk)
-  if g:GetCount()==0 then return end
-  Duel.SendtoHand(g,nil,REASON_EFFECT)
-  if Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
-    Duel.BreakEffect()
-    if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 or not tc1:IsRelateToEffect(e) or tc1:IsFacedown()
-    or not Duel.IsPlayerCanSpecialSummonMonster(tp,777003726,0,0x288,2000,2000,9,RACE_DRAGON,ATTRIBUTE_DARK) then return end
-    Duel.Hint(HINT_OPSELECTED,1-tp,aux.Stringid(id,2))
-    local token=Duel.CreateToken(tp,777003726)
-    tc1:CreateRelation(token,RESET_EVENT+0x1fe0000)
-    Duel.SpecialSummonStep(token,0,tp,tp,false,false,POS_FACEUP)
-    Duel.SpecialSummonComplete()
-  end
+function s.sptdtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return false end
+	local g=Duel.GetMatchingGroup(s.sptdfilter,tp,LOCATION_GRAVE,0,nil,e,tp)
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+		and #g>=2 and aux.SelectUnselectGroup(g,e,tp,2,2,s.rescon,0) end
+	local tg=aux.SelectUnselectGroup(g,e,tp,2,2,s.rescon,1,tp,HINTMSG_TARGET)
+	Duel.SetTargetCard(tg)
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,tg,1,tp,0)
+	Duel.SetOperationInfo(0,CATEGORY_TODECK,tg,1,tp,0)
 end
---(4)Banish all, then Special Summon all
-function s.rmsptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsAbleToRemove,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,LOCATION_MZONE)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,PLAYER_EITHER,LOCATION_REMOVED)
-end
-function s.spfilter(c,e,tp)
-	return c:IsFaceup() and c:IsLocation(LOCATION_REMOVED) and not c:IsReason(REASON_REDIRECT)
-		and (c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP,c:GetOwner())
-		or c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEDOWN_DEFENSE,c:GetOwner()))
-end
-function s.rmspop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(Card.IsAbleToRemove,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
-	if #g>0 and Duel.Remove(g,POS_FACEUP,REASON_EFFECT)>0 then
-		local og=Duel.GetOperatedGroup()
-		local sg=og:Filter(s.spfilter,nil,e,tp)
-		if #sg==0 then return end
-		for sc in sg:Iter() do
-			local sump=0
-			if sc:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP,sc:GetOwner()) then sump=sump|POS_FACEUP end
-			if sc:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEDOWN_DEFENSE,sc:GetOwner()) then sump=sump|POS_FACEDOWN_DEFENSE end
-			Duel.SpecialSummonStep(sc,0,tp,sc:GetOwner(),false,false,sump)
-		end
-		local fdg=sg:Filter(Card.IsFacedown,nil)
-		if #fdg>0 then
-			Duel.ConfirmCards(1-tp,fdg)
-		end
-		Duel.BreakEffect()
-		Duel.SpecialSummonComplete()
+function s.sptdop(e,tp,eg,ep,ev,re,r,rp)
+	local tg=Duel.GetTargetCards(e)
+	if (#tg==0 or Duel.GetLocationCount(tp,LOCATION_MZONE)<=0) then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+	local sg=tg:FilterSelect(tp,s.spchk,1,1,nil,e,tp,tg)
+	if #sg>0 and Duel.SpecialSummon(sg,SUMMON_TYPE_RITUAL,tp,tp,true,true,POS_FACEUP)>0 and #tg==2 then
+		local dg=tg-sg
+		Duel.HintSelection(dg)
+		Duel.SendtoDeck(dg,nil,SEQ_DECKBOTTOM,REASON_EFFECT)
 	end
 end
