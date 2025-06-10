@@ -27,7 +27,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.hdop)
 	c:RegisterEffect(e2)
 end
-s.listed_names={777003920,id}
+s.listed_names={777003950,id}
 --(1)Special Summon
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_RITUAL)
