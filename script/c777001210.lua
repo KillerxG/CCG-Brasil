@@ -1,4 +1,4 @@
---Timerx Researcher
+--Timerx Hacker - Mikami
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
