@@ -30,7 +30,7 @@ function s.initial_effect(c)
 	e2:SetCode(EVENT_PHASE+PHASE_STANDBY)
     e2:SetRange(LOCATION_EXTRA)
 	e2:SetCountLimit(1,id+2)
-	e2:SetCost(s.cost)
+	e2:SetCondition(s.pencon)
 	e2:SetTarget(s.pentg)
 	e2:SetOperation(s.penop)
 	c:RegisterEffect(e2)
@@ -88,9 +88,8 @@ function s.cpop2(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 --Place itself into Pendulum Zone
-function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.CheckLPCost(tp,1000) end
-	Duel.PayLPCost(tp,1000)
+function s.pencon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.IsTurnPlayer(tp)
 end
 function s.pentg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.CheckPendulumZones(tp) end

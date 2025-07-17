@@ -29,14 +29,14 @@ function s.initial_effect(c)
 	e2:SetCode(EVENT_PHASE+PHASE_STANDBY)
     e2:SetRange(LOCATION_EXTRA)
 	e2:SetCountLimit(1,id+2)
-	e2:SetCost(s.pencost)
+	e2:SetCondition(s.pencon)
 	e2:SetTarget(s.pentg)
 	e2:SetOperation(s.penop)
 	c:RegisterEffect(e2)
 end
 --Copy "Okami" Continuous Spell
 function s.cpfilter(c)
-	return c:IsSetCard(0x444) and c:IsType(TYPE_CONTINUOUS) and c:IsSpell() and c:IsAbleToGraveAsCost()
+	return c:IsSetCard(0x444) and (c:IsType(TYPE_CONTINUOUS) or c:IsType(TYPE_FIELD)) and c:IsSpell() and c:IsAbleToGraveAsCost()
 end
 function s.cpcost(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.cpfilter,tp,LOCATION_DECK,0,1,e:GetHandler()) end
@@ -77,9 +77,8 @@ function s.tfop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 --Place itself into Pendulum Zone
-function s.pencost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.CheckLPCost(tp,1000) end
-	Duel.PayLPCost(tp,1000)
+function s.pencon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.IsTurnPlayer(tp)
 end
 function s.pentg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.CheckPendulumZones(tp) end

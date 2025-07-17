@@ -51,7 +51,7 @@ end
  --Avoid Destruction
 function s.desreptg(e,tp,eg,ep,ev,re,r,rp,chk)
     local c=e:GetHandler()
-    if chk==0 then return c:IsReason(REASON_BATTLE+REASON_EFFECT) and not c:IsReason(REASON_REPLACE) and c:GetDefense()>750 end
+    if chk==0 then return c:IsReason(REASON_BATTLE+REASON_EFFECT) and not c:IsReason(REASON_REPLACE) and c:GetDefense()>=750 end
     return Duel.SelectEffectYesNo(tp,c,96)
 end
 function s.desrepop(e,tp,eg,ep,ev,re,r,rp)

@@ -5,14 +5,12 @@ function s.initial_effect(c)
 	--Synchro Summon
 	c:EnableReviveLimit()
 	Synchro.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x444),1,1,Synchro.NonTuner(nil),1,99)
-	--Attack Twice
-	local e0=Effect.CreateEffect(c)
-	e0:SetType(EFFECT_TYPE_SINGLE)
-	e0:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e0:SetRange(LOCATION_MZONE)
-	e0:SetCode(EFFECT_EXTRA_ATTACK_MONSTER)
-	e0:SetValue(1)
-	c:RegisterEffect(e0)
+	--Can attack all monsters your opponent controls
+	local e2=Effect.CreateEffect(c)
+	e2:SetType(EFFECT_TYPE_SINGLE)
+	e2:SetCode(EFFECT_ATTACK_ALL)
+	e2:SetValue(1)
+	c:RegisterEffect(e2)
 	--Piercing Damage
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
