@@ -2,6 +2,8 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)	
+	--Xyz Summon
+	Xyz.AddProcedure(c,nil,6,2,s.ovfilter,aux.Stringid(id,4))
 	c:EnableReviveLimit()
 	--(1)This card gains 200 ATK for each monster on the field
 	local e1=Effect.CreateEffect(c)
@@ -20,6 +22,7 @@ function s.initial_effect(c)
 	e2:SetCode(EVENT_ATTACK_ANNOUNCE)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetCountLimit(1)
+	e2:SetCost(Cost.DetachFromSelf(1))
 	e2:SetTarget(s.atktg)
 	e2:SetOperation(s.atkop)
 	c:RegisterEffect(e2)
@@ -35,7 +38,10 @@ function s.initial_effect(c)
 	e3:SetOperation(s.drop)
 	c:RegisterEffect(e3)
 end
-s.listed_names={777005050}
+--Xyz Summon
+function s.ovfilter(c,tp,xyzc)
+	return c:IsFaceup() and c:IsType(TYPE_RITUAL,xyzc,SUMMON_TYPE_XYZ,tp)
+end
 --(1)This card gains 200 ATK for each monster on the field
 function s.value(e,c)
 	return Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsType,TYPE_MONSTER),0,LOCATION_MZONE,LOCATION_MZONE,e:GetHandler())*200

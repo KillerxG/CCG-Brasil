@@ -1,73 +1,94 @@
---Moon Blessing
+--Xyz Universal Level
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)	
-	--(1)Ritual Summon
-	local e1=Ritual.CreateProc(c,RITPROC_GREATER,aux.FilterBoolFunction(Card.IsRace,RACE_INSECT),nil,nil,s.extrafil,nil,aux.FilterBoolFunction(Card.IsType,TYPE_MONSTER))
-	local tg=e1:GetTarget()
-	e1:SetTarget(function(e,tp,eg,ep,ev,re,r,rp,chk,...)
-					if chk==0 then
-						if Duel.IsExistingMatchingCard(aux.FaceupFilter(s.condfilter),tp,LOCATION_MZONE,0,1,nil) then
-							e:SetLabel(1)
-						else
-							e:SetLabel(0)
-						end
-					end
-					if chk==1 and e:GetLabel()==1 then
-						Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,LOCATION_GRAVE)
-					end
-					return tg(e,tp,eg,ep,ev,re,r,rp,chk,...)
-				end)
-	local op=e1:GetOperation()
-	e1:SetOperation(function(e,...)
-						local ret=op(e,...)
-						if e:GetLabel()==1 then
-							e:SetLabel(0)
-						end
-						return ret
-					end)
+	--(1)Change Level
+	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetType(EFFECT_TYPE_ACTIVATE)
+	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetCountLimit(1,id)
+	e1:SetCost(s.spcost)
+	e1:SetTarget(s.target)
+	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
-	--(2)Special Summon 1 "Butterfly Lady - Tsukiko" monster from your GY
+	--(2)Attach 1 card from the GY to a Xyz Monster you control
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
 	e2:SetType(EFFECT_TYPE_IGNITION)
 	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e2:SetRange(LOCATION_GRAVE)
-	e2:SetCountLimit(1,id)
-	e2:SetCost(Cost.SelfBanish)
-	e2:SetTarget(s.sptg)
-	e2:SetOperation(s.spop)
+	e2:SetCountLimit(1,id+1)
+	e2:SetTarget(s.mattg)
+	e2:SetOperation(s.matop)
 	c:RegisterEffect(e2)
 end
-s.listed_names={777005040}
-function s.condfilter(c)
-	return c:IsRace(RACE_INSECT) or c:IsRitualMonster()
+--(1)Change Level
+function s.spfilter(c)
+	return c:IsType(TYPE_XYZ)
 end
-function s.mfilter(c)
-	return not Duel.IsPlayerAffectedByEffect(c:GetControler(),CARD_SPIRIT_ELIMINATION)
-		and (c:IsRace(RACE_INSECT) or c:IsRitualMonster()) and c:IsLevelAbove(1) and c:IsAbleToRemove()
+function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_EXTRA,0,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
+	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_EXTRA,0,1,1,nil)
+	Duel.ConfirmCards(1-tp,g)
+	e:SetLabelObject(g:GetFirst())
 end
-function s.extrafil(e,tp,eg,ep,ev,re,r,rp,chk)
-	if e:GetLabel()==1 then
-		return Duel.GetMatchingGroup(s.mfilter,tp,LOCATION_GRAVE,0,nil)
+function s.filter1(c,tp)
+	return c:IsLevelAbove(1) and Duel.IsExistingTarget(s.filter2,tp,LOCATION_MZONE,0,1,c,c:GetRace())
+end
+function s.filter2(c,rac)
+	return c:IsLevelAbove(1) and c:IsRace(rac)
+end
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() end
+	if chk==0 then return Duel.IsExistingTarget(s.filter1,tp,LOCATION_MZONE,0,1,nil,tp) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+	local g1=Duel.SelectTarget(tp,s.filter1,tp,LOCATION_MZONE,0,1,1,nil,tp)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+	Duel.SelectTarget(tp,s.filter2,tp,LOCATION_MZONE,0,1,1,g1:GetFirst(),g1:GetFirst():GetRace())
+end
+function s.activate(e,tp,eg,ep,ev,re,r,rp)
+	local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
+	local tc1=g:GetFirst()
+	local tc2=g:GetNext()
+	if tc1:IsRelateToEffect(e) and tc1:IsFaceup() and tc2:IsRelateToEffect(e) and tc2:IsFaceup() then
+		local lv=e:GetLabelObject():GetRank()
+		local e1=Effect.CreateEffect(e:GetHandler())
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_CHANGE_LEVEL_FINAL)
+		e1:SetValue(lv)
+		e1:SetReset(RESET_EVENT|RESETS_STANDARD)
+		tc1:RegisterEffect(e1)
+		local e2=e1:Clone()
+		tc2:RegisterEffect(e2)
 	end
 end
---(2)Special Summon 1 "Butterfly Lady - Tsukiko" monster from your GY
-function s.spfilter(c,e,tp)
-	return c:IsCode(777005040) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+--(2)Attach 1 card from the GY to a Xyz Monster you control
+function s.xyzfilter(c)
+	return c:IsFaceup() and c:IsType(TYPE_XYZ)
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.spfilter(chkc,e,tp) end
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and Duel.IsExistingTarget(s.spfilter,tp,LOCATION_GRAVE,0,1,e:GetHandler(),e,tp) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectTarget(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,g,1,tp,0)
+function s.atchfilter(c,tp)
+	return c:IsControler(tp) or c:IsAbleToChangeControler()
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc:IsRelateToEffect(e) then
-		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
-	end
+function s.mattg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.xyzfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.xyzfilter,tp,LOCATION_MZONE,0,1,nil)
+		and Duel.IsExistingTarget(s.atchfilter,tp,LOCATION_GRAVE,LOCATION_GRAVE,1,e:GetHandler(),tp) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
+	local xyzc=Duel.SelectTarget(tp,s.xyzfilter,tp,LOCATION_MZONE,0,1,1,nil,tp):GetFirst()
+	e:SetLabelObject(xyzc)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATTACH)
+	local tc=Duel.SelectTarget(tp,s.atchfilter,tp,LOCATION_GRAVE,LOCATION_GRAVE,1,1,e:GetHandler(),tp)
+	Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,tc,1,0,0)
+end
+function s.matop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local g=Duel.GetTargetCards(e)
+	if #g~=2 then return end
+	local tc=g:GetFirst()
+	local xyzc=g:GetNext()
+	if tc==e:GetLabelObject() then tc,xyzc=xyzc,tc end
+	Duel.Overlay(xyzc,tc)
 end

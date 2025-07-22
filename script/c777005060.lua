@@ -53,7 +53,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(2)Add 1 Normal Monster
 function s.th2filter(c)
-	return c:IsType(TYPE_NORMAL) and c:IsMonster() and c:IsAbleToHand()
+	return c:IsType(TYPE_NORMAL) and c:IsLevelAbove(5) and c:IsAbleToHand()
 end
 function s.bantg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chk==0 then return e:GetHandler():IsAbleToRemove() and Duel.IsExistingMatchingCard(s.th2filter,tp,LOCATION_DECK,0,1,nil) end
