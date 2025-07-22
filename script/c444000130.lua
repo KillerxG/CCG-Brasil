@@ -36,6 +36,21 @@ function s.initial_effect(c)
 	e2:SetRange(LOCATION_MZONE+LOCATION_GRAVE)
 	e2:SetValue(444000050)
 	c:RegisterEffect(e2)
+	--ATK Change
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_SINGLE)
+	e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetCode(EFFECT_UPDATE_ATTACK)
+	e3:SetValue(s.atkval)
+	c:RegisterEffect(e3)
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_SINGLE)
+	e4:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e4:SetRange(LOCATION_MZONE)
+	e4:SetCode(EFFECT_UPDATE_ATTACK)
+	e4:SetValue(s.atkval2)
+	c:RegisterEffect(e4)
 end
 --Special Summon
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
@@ -75,3 +90,16 @@ function s.spop2(e,tp,eg,ep,ev,re,r,rp)
 		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
 	end
 end
+--ATK Change
+function s.atkfilter(c)
+    return c:IsMonster()
+end
+function s.atkval(e,c)
+	return Duel.GetMatchingGroupCount(s.atkfilter,c:GetControler(),LOCATION_GRAVE,LOCATION_GRAVE,nil)*100
+end
+function s.atkfilter2(c)
+    return c:IsMonster() and c:IsSetCard(0x444) and c:IsFaceup()
+end
+function s.atkval2(e,c)
+    return Duel.GetMatchingGroupCount(s.atkfilter2,c:GetControler(),LOCATION_REMOVED,LOCATION_REMOVED,nil)*200
+end 
