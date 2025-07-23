@@ -91,10 +91,11 @@ function s.operation(e,tp,eg,ep,ev,re,r,rp)
 		if dcount-seq==1 then Duel.SpecialSummon(spcard,0,tp,tp,false,false,POS_FACEUP)
 		else
 			Duel.SpecialSummonStep(spcard,0,tp,tp,false,false,POS_FACEUP)
-			Duel.DiscardDeck(tp,dcount-seq-1,REASON_EFFECT)
+			--Duel.DiscardDeck(tp,dcount-seq-1,REASON_EFFECT)
+			Duel.ShuffleDeck(tp)
 			Duel.SpecialSummonComplete()
 		end
 	else
-		Duel.DiscardDeck(tp,dcount-seq,REASON_EFFECT)
+		Duel.ShuffleDeck(tp)--Duel.DiscardDeck(tp,dcount-seq,REASON_EFFECT)
 	end
 end
