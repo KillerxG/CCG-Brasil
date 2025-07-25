@@ -4,7 +4,7 @@ local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
 	--Link Summon Procedure
-	Link.AddProcedure(c,nil,2)
+	Link.AddProcedure(c,nil,2,3,s.lcheck)
 	--Extra Link Material
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_FIELD)
@@ -70,6 +70,10 @@ function s.initial_effect(c)
 	local e8=e7:Clone()
 	e8:SetCode(EVENT_REMOVE)
 	c:RegisterEffect(e8)
+end
+--Link Summon Procedure
+function s.lcheck(g,lc,sumtype,tp)
+	return g:IsExists(Card.IsSetCard,1,nil,0x660,lc,sumtype,tp)
 end
 --Extra Link Material
 function s.extrafilter(c,e,tp)
