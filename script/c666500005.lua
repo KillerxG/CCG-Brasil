@@ -4,7 +4,7 @@ local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
 	--Link Summon Procedure
-	Link.AddProcedure(c,nil,2,3,s.lcheck)
+	Link.AddProcedure(c,nil,2,4,s.lcheck)
 	--Extra Link Material
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_FIELD)
