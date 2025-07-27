@@ -16,7 +16,7 @@ function s.initial_effect(c)
     e1:SetTarget(s.lktg)
     e1:SetOperation(s.lkop)
     c:RegisterEffect(e1)
-			--Zombie
+	--Zombie
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -40,7 +40,7 @@ function s.initial_effect(c)
 	local e4=e3:Clone()
 	e4:SetCode(EVENT_TO_DECK)
 	c:RegisterEffect(e4)
-		--Zombification
+	--Zombification
 	local e5=Effect.CreateEffect(c)
 	e5:SetDescription(aux.Stringid(id,2))
 	e5:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_F)
@@ -55,27 +55,18 @@ end
 function s.lkcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK) and not e:GetHandler():IsSummonLocation(LOCATION_GRAVE)
 end
-
--- Filtro: monstros que este card aponta (para destruição)
-function s.pointed_filter(c)
-    return c:IsMonster() and c:IsDestructable()
+function s.desfilter(c,e,tp,g,nc)	
+	return c:IsMonster() and g:IsContains(c)
 end
-
--- Filtro: Zumbi no Cemitério invocável na zona que este card aponta
-function s.zombiefilter(c,e,tp,zone)
-    return c:IsRace(RACE_ZOMBIE) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP,tp,zone)
-end
-
 function s.spfilter(c,e,tp,p,zones)
 	return c:IsRace(RACE_ZOMBIE) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP,p,zones)
 end
 function s.lktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local zones_tp=aux.GetMMZonesPointedTo(tp)
 	local zones_opp=aux.GetMMZonesPointedTo(1-tp)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp,tp,zones_tp)
-		or Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp,1-tp,zones_opp) end
-			local g=e:GetHandler():GetLinkedGroup()
-	if chk==0 then return #g>0 end
+	if chk==0 then return Duel.IsExistingMatchingCard(s.desfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil,e,tp,e:GetHandler():GetLinkedGroup(),false)
+		and (Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp,tp,zones_tp)
+		or Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp,1-tp,zones_opp)) end
 	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
 end
