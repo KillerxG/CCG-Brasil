@@ -100,6 +100,7 @@ function s.matop(e,tp,eg,ep,ev,re,r,rp)
 	e6:SetCountLimit(1,id+1)
 	e6:SetTarget(s.thtg)
 	e6:SetOperation(s.thop)
+	e6:SetReset(RESET_EVENT|RESETS_STANDARD)
 	rc:RegisterEffect(e6)
 end
 --Send to Hand

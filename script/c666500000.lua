@@ -101,6 +101,7 @@ function s.matop2(e,tp,eg,ep,ev,re,r,rp)
 	e6:SetCondition(function() return Duel.IsMainPhase() end)
 	e6:SetTarget(s.lktg)
 	e6:SetOperation(s.lkop)
+	e6:SetReset(RESET_EVENT|RESETS_STANDARD)
 	rc:RegisterEffect(e6)
 end
 --Send to Deck/Special Summon

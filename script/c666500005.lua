@@ -2,7 +2,7 @@
 --Scripted by Imp
 local s,id=GetID()
 function s.initial_effect(c)
-    c:EnableReviveLimit()
+   c:EnableReviveLimit()
 	--Link Summon Procedure
 	Link.AddProcedure(c,nil,2,4,s.lcheck)
 	--Extra Link Material
@@ -154,6 +154,7 @@ function s.matop2(e,tp,eg,ep,ev,re,r,rp)
 	e10:SetCountLimit(1,id)
 	e10:SetTarget(s.destg)
 	e10:SetOperation(s.desop)
+	e10:SetReset(RESET_EVENT|RESETS_STANDARD)
 	rc:RegisterEffect(e10)
 end
 --Send to Extra Deck/Special Summon
