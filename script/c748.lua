@@ -52,6 +52,15 @@ function s.initial_effect(c)
 	e4:SetTarget(s.drtg)
 	e4:SetOperation(s.drop)
 	c:RegisterEffect(e4)
+	--(5)Look at your opponent's
+    local e5=Effect.CreateEffect(c)
+    e5:SetDescription(aux.Stringid(id,3))
+    e5:SetType(EFFECT_TYPE_IGNITION)
+    e5:SetRange(LOCATION_REMOVED)
+    e5:SetCountLimit(1,id)
+    e5:SetTarget(s.target)
+    e5:SetOperation(s.operation2)
+    c:RegisterEffect(e5)
 end
 --(0)Activate
 function s.op(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -116,4 +125,16 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.SendtoHand(g,nil,REASON_EFFECT)
 		--Duel.ConfirmCards(1-tp,g)
 	end
+end
+--(5)Look at your opponent's
+function s.filter(c)
+    return (c:IsOnField() and c:IsFacedown()) or (c:IsLocation(LOCATION_HAND) and not c:IsPublic())
+end
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,0,LOCATION_HAND|LOCATION_ONFIELD,1,nil) end
+end
+function s.operation2(e,tp,eg,ep,ev,re,r,rp)
+    local g=Duel.GetMatchingGroup(s.filter,tp,0,LOCATION_HAND|LOCATION_ONFIELD,nil)
+    Duel.ConfirmCards(tp,g)
+    Duel.ShuffleHand(1-tp)
 end
