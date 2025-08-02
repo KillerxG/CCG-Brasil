@@ -61,6 +61,14 @@ function s.initial_effect(c)
     e5:SetTarget(s.target)
     e5:SetOperation(s.operation2)
     c:RegisterEffect(e5)
+	--(6)Cannot be Target
+	local e6=Effect.CreateEffect(c)
+	e6:SetType(EFFECT_TYPE_SINGLE)
+	e6:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
+	e6:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e6:SetRange(LOCATION_REMOVED)
+	e6:SetValue(s.efilter1)
+	c:RegisterEffect(e6)
 end
 --(0)Activate
 function s.op(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -137,4 +145,8 @@ function s.operation2(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.GetMatchingGroup(s.filter,tp,0,LOCATION_HAND|LOCATION_ONFIELD,nil)
     Duel.ConfirmCards(tp,g)
     Duel.ShuffleHand(1-tp)
+end
+--(6)Cannot be Target
+function s.efilter1(e,re,rp)
+	return re:IsActiveType(TYPE_EFFECT)
 end

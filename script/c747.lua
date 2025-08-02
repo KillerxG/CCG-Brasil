@@ -62,6 +62,14 @@ function s.initial_effect(c)
 	e5:SetTarget(s.gemsp)
 	e5:SetOperation(s.gemop)
 	c:RegisterEffect(e5)
+	--(6)Cannot be Target
+	local e6=Effect.CreateEffect(c)
+	e6:SetType(EFFECT_TYPE_SINGLE)
+	e6:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
+	e6:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e6:SetRange(LOCATION_REMOVED)
+	e6:SetValue(s.efilter1)
+	c:RegisterEffect(e6)
 end
 --(0)Activate
 function s.op(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -148,4 +156,8 @@ function s.gemop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.SpecialSummon(tf,SUMMON_TYPE_FUSION,tp,tp,true,true,POS_FACEUP)~=0 then
 		
 	end
+end
+--(6)Cannot be Target
+function s.efilter1(e,re,rp)
+	return re:IsActiveType(TYPE_EFFECT)
 end

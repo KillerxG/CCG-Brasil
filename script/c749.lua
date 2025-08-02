@@ -52,6 +52,14 @@ function s.initial_effect(c)
 	e4:SetTarget(s.drtg)
 	e4:SetOperation(s.drop)
 	c:RegisterEffect(e4)
+	--(5)Cannot be Target
+	local e5=Effect.CreateEffect(c)
+	e5:SetType(EFFECT_TYPE_SINGLE)
+	e5:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
+	e5:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e5:SetRange(LOCATION_REMOVED)
+	e5:SetValue(s.efilter1)
+	c:RegisterEffect(e5)
 end
 --(0)Activate
 function s.op(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -116,4 +124,8 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.SendtoHand(g,nil,REASON_EFFECT)
 		--Duel.ConfirmCards(1-tp,g)
 	end
+end
+--(5)Cannot be Target
+function s.efilter1(e,re,rp)
+	return re:IsActiveType(TYPE_EFFECT)
 end
