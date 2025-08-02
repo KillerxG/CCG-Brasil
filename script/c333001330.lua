@@ -1,6 +1,7 @@
 --Goalkeeper of the Team Fins
 local s,id=GetID()
 function s.initial_effect(c)
+	c:EnableReviveLimit()
     -- E1: Send 1 WATER monster (exceto si) do Deck ao GY ao ser Ritual Summoned
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))

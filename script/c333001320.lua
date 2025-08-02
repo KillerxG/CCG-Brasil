@@ -1,6 +1,7 @@
 --Defender of the Team Fins
 local s,id=GetID()
 function s.initial_effect(c)
+	c:EnableReviveLimit()
     -- E1: Return target by sending WATER monster from field
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))

@@ -1,5 +1,7 @@
+--Midfielder of the Team Fins
 local s,id=GetID()
 function s.initial_effect(c)
+	c:EnableReviveLimit()
     -- E1: On Ritual Summon - send WATER from hand, then SS based on type
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))

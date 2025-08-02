@@ -1,6 +1,7 @@
 --Attacker of the Team fins
 local s,id=GetID()
 function s.initial_effect(c)
+	c:EnableReviveLimit()
     -- E2: Gain ATK and extra attack when Ritual Summoned or declares attack vs monster
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
