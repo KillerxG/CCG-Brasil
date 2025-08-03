@@ -64,7 +64,7 @@ function s.ovfilter(c,tp,sc)
 end
 --Attach ("Typeblood_Lycanthrope.lua")
 function s.mtfilter(c,e)
-	return c:IsFaceup() and not c:IsType(TYPE_TOKEN) and c:IsSetCard(0x660) and not c:IsImmuneToEffect(e)
+	return c:IsFaceup() and not c:IsType(TYPE_TOKEN) and c:IsSetCard(0x660) and c:IsMonster() and not c:IsImmuneToEffect(e)
 end
 function s.mttg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return e:GetHandler():IsType(TYPE_XYZ)
@@ -74,7 +74,7 @@ function s.mtop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_XMATERIAL)
-	local g=Duel.SelectMatchingCard(tp,s.mtfilter,tp,LOCATION_MZONE|LOCATION_GRAVE|LOCATION_REMOVED,0,1,1,e:GetHandler(),e)
+	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.mtfilter),tp,LOCATION_MZONE|LOCATION_GRAVE|LOCATION_REMOVED,0,1,1,e:GetHandler(),e)
 	local tc=g:GetFirst()
 	if tc then
 		Duel.Overlay(c,tc,true)

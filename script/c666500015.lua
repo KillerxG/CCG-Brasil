@@ -32,17 +32,17 @@ function s.initial_effect(c)
 	e3:SetCondition(s.matcon)
 	e3:SetOperation(s.matop)
 	c:RegisterEffect(e3)
-	--Send to Hand
+	--Send to Hand/Send to Deck
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,2))
-	e4:SetCategory(CATEGORY_TOHAND)
+	e4:SetCategory(CATEGORY_TOHAND+CATEGORY_TODECK)
 	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e4:SetProperty(EFFECT_FLAG_DELAY)
 	e4:SetCode(EVENT_TO_GRAVE)
 	e4:SetCountLimit(1,id+2)
-	e4:SetCondition(function(e,tp,eg,ep,ev,re) return e:GetHandler():IsReason(REASON_EFFECT) and re and re:IsMonsterEffect() and re:GetHandler():IsSetCard(0x660) end)
-	e4:SetTarget(s.thtg2)
-	e4:SetOperation(s.thop2)
+	e4:SetCondition(function(e,tp,eg,ep,ev,re) return e:GetHandler():IsReason(REASON_EFFECT) and re and re:IsMonsterEffect() end)
+	e4:SetTarget(s.thtdtg)
+	e4:SetOperation(s.thtdop)
 	c:RegisterEffect(e4)
 	local e5=e4:Clone()
 	e5:SetCode(EVENT_REMOVE)
@@ -50,7 +50,7 @@ function s.initial_effect(c)
 end
 --Special Summon
 function s.rmfilter(c)
-	return c:IsSetCard(0x660) and c:IsAbleToRemove()
+	return c:IsOriginalRace(RACE_CYBERSE) and c:IsAbleToRemove()
 end
 function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
@@ -103,19 +103,34 @@ function s.matop(e,tp,eg,ep,ev,re,r,rp)
 	e6:SetReset(RESET_EVENT|RESETS_STANDARD)
 	rc:RegisterEffect(e6)
 end
---Send to Hand
-function s.thfilter2(c)
-	return c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsSetCard(0x660) and c:IsMonster() and c:IsFaceup() and c:IsAbleToHand()
+--Send to Hand/Send to Deck
+function s.thtdfilter(c,e,tp)
+	return c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsSetCard(0x660) and c:IsMonster() and c:HasLevel() and c:IsFaceup()
+		and (c:IsAbleToHand() or (c:IsAbleToDeck()))
 end
-function s.thtg2(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter2,tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,nil) end
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE|LOCATION_REMOVED)
-end
-function s.thop2(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.thfilter2),tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,1,nil)
-	if #g>0 then
-		Duel.SendtoHand(g,nil,REASON_EFFECT)
-		Duel.ConfirmCards(1-tp,g)
+function s.thtdtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chk==0 then return Duel.IsExistingMatchingCard(s.thtdfilter,tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,nil) end
+	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE|LOCATION_REMOVED)
+	Duel.SetPossibleOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE|LOCATION_REMOVED)
 	end
-end
+function s.thtdop(e,tp,eg,ep,ev,re,r,rp)
+	local g=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.thtdfilter),tp,LOCATION_GRAVE|LOCATION_REMOVED,0,nil,e,tp)
+	if #g>0 then
+		Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,3))
+		local sc=g:Select(tp,1,1,nil):GetFirst()
+		local b1=sc:IsAbleToHand()
+		local b2=sc:IsAbleToDeck()
+		local op=Duel.SelectEffect(tp,
+			{b1,aux.Stringid(id,4)},
+			{b2,aux.Stringid(id,5)})
+		if not op then return end
+		Duel.BreakEffect()
+		if op==1 then
+			Duel.SendtoHand(sc,nil,REASON_EFFECT)
+		    Duel.ConfirmCards(1-tp,sc)
+		else
+			Duel.HintSelection(sc,true)
+			Duel.SendtoDeck(sc,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
+		end
+	end
+end 

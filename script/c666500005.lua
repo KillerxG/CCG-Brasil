@@ -2,7 +2,7 @@
 --Scripted by Imp
 local s,id=GetID()
 function s.initial_effect(c)
-   c:EnableReviveLimit()
+    c:EnableReviveLimit()
 	--Link Summon Procedure
 	Link.AddProcedure(c,nil,2,4,s.lcheck)
 	--Extra Link Material
@@ -63,7 +63,7 @@ function s.initial_effect(c)
 	e7:SetProperty(EFFECT_FLAG_DELAY)
 	e7:SetCode(EVENT_TO_GRAVE)
 	e7:SetCountLimit(1,id+1)
-	e7:SetCondition(function(e,tp,eg,ep,ev,re) return e:GetHandler():IsReason(REASON_EFFECT) and re and re:IsMonsterEffect() and re:GetHandler():IsSetCard(0x660) end)
+	e7:SetCondition(function(e,tp,eg,ep,ev,re) return e:GetHandler():IsReason(REASON_EFFECT) and re and re:IsMonsterEffect() end)
 	e7:SetTarget(s.tdsptg)
 	e7:SetOperation(s.tdspop)
 	c:RegisterEffect(e7)
@@ -121,22 +121,24 @@ function s.matop(e,tp,eg,ep,ev,re,r,rp)
 	e9:SetCode(EFFECT_IMMUNE_EFFECT)
 	e9:SetRange(LOCATION_MZONE)
 	e9:SetValue(s.immval)
+	e9:SetReset(RESET_EVENT|RESETS_STANDARD)
 	rc:RegisterEffect(e9)
 end
 --Destroy ("Typefull_Champion.lua")
 function s.rescon(sg,e,tp,mg)
 	return sg:IsExists(Card.IsControler,1,nil,tp)
 end
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local rg=Duel.GetMatchingGroup(nil,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
-	if chk==0 then return aux.SelectUnselectGroup(rg,e,tp,2,2,s.rescon,0) end
-	Duel.SetOperationInfo(0,CATEGORY_DESTROY,rg,2,0,0)
+function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return false end
+	local g=Duel.GetMatchingGroup(Card.IsCanBeEffectTarget,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil,e)
+	if chk==0 then return aux.SelectUnselectGroup(g,e,tp,2,2,s.rescon,0) end
+	local tg=aux.SelectUnselectGroup(g,e,tp,2,2,s.rescon,1,tp,HINTMSG_DESTROY)
+	Duel.SetTargetCard(tg)
+	Duel.SetOperationInfo(0,CATEGORY_DESTROY,tg,2,0,0)
 end
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
-	local rg=Duel.GetMatchingGroup(nil,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
-	local g=aux.SelectUnselectGroup(rg,e,tp,2,2,s.rescon,1,tp,HINTMSG_DESTROY)
-	if #g==2 then
-		Duel.HintSelection(g,true)
+	local g=Duel.GetTargetCards(e)
+	if #g>0 then
 		Duel.Destroy(g,REASON_EFFECT)
 	end
 end
