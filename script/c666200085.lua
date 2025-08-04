@@ -4,7 +4,7 @@ local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
 	--Xyz Summon procedure
-	Xyz.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x353),1,2,nil,nil,99)
+	Xyz.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x353),1,2,nil,nil,Xyz.InfiniteMats)
 	--(1)Banish it if detached
 	aux.GlobalCheck(s,function()
 		local ge2=Effect.GlobalEffect()
