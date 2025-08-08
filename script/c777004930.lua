@@ -44,10 +44,10 @@ end
 function s.pltg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_SZONE)>0
 		and Duel.IsExistingMatchingCard(s.plfilter,tp,LOCATION_HAND|LOCATION_DECK,0,1,nil) end
-		if e:GetLabel()==1 then
-		Duel.SetTargetPlayer(1-tp)
-		Duel.SetTargetParam(1000)
-		Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,1000)
+		if e:GetLabel()==0 then
+		Duel.SetTargetPlayer(tp)
+		Duel.SetTargetParam(2000)
+		Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,tp,2000)
 		Duel.SetPossibleOperationInfo(0,CATEGORY_DAMAGE,eg,1,0,0)
 		end
 end
@@ -61,7 +61,7 @@ function s.plop(e,tp,eg,ep,ev,re,r,rp)
 	for tc in sg:Iter() do
 		Duel.MoveToField(tc,tp,tp,LOCATION_SZONE,POS_FACEUP,true)
 	end
-	if e:GetLabel()==1 then
+	if e:GetLabel()==0 then
 		local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
 		Duel.Damage(p,d,REASON_EFFECT)
 	end
