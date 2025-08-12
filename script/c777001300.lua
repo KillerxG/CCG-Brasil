@@ -17,7 +17,7 @@ function s.initial_effect(c)
 	e2:SetTarget(aux.TargetBoolFunction(Card.IsRace,RACE_DRAGON))
 	e2:SetValue(s.indct)
 	c:RegisterEffect(e2)
-	--(2Banish opp card
+	--(2)Banish opp card
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_REMOVE)
@@ -31,6 +31,18 @@ function s.initial_effect(c)
 	e3:SetTarget(s.bantg)
 	e3:SetOperation(s.banop)
 	c:RegisterEffect(e3)
+	--(3)Banish Dragon from Extra
+	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,2))
+	e4:SetCategory(CATEGORY_REMOVE)
+	e4:SetType(EFFECT_TYPE_QUICK_O)
+	e4:SetCode(EVENT_CHAINING)
+	e4:SetRange(LOCATION_SZONE)
+	e4:SetCountLimit(1,id+1)
+	e4:SetCondition(s.rmcon)
+	e4:SetTarget(s.rmtg)
+	e4:SetOperation(s.rmop)
+	c:RegisterEffect(e4)
 end
 --(1)Cannot be destroyed by card effects
 function s.indcon(e)
@@ -61,5 +73,23 @@ function s.banop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()	
 	if tc and tc:IsRelateToEffect(e) then
 		Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)
+	end
+end
+--(3)Banish Dragon from Extra
+function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
+	return rp==1-tp and re:IsMonsterEffect() and re:GetHandler():IsRelateToEffect(re)
+end
+function s.tgfilter(c)
+	return c:IsRace(RACE_DRAGON) and c:IsAbleToRemove()
+end
+function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_EXTRA,0,1,nil) end
+	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_EXTRA)
+end
+function s.rmop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+	local g=Duel.SelectMatchingCard(tp,s.tgfilter,tp,LOCATION_EXTRA,0,1,1,nil)
+	if #g>0 then
+		Duel.Remove(g,POS_FACEUP,REASON_EFFECT)
 	end
 end

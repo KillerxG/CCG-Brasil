@@ -4,6 +4,7 @@ local s,id=GetID()
 function s.initial_effect(c)
 	--(1)Fusion summon 1 fusion monster by banishing monsters from GY, face-up, as material
 	local e1=Fusion.CreateSummonEff(c,nil,s.matfilter,s.fextra,s.extraop,nil,s.stage2,nil,nil,nil,nil,nil,nil,nil,s.extratg)
+	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
 	c:RegisterEffect(e1)
 end
 --(1)Fusion summon 1 fusion monster by banishing monsters from GY, face-up, as material
