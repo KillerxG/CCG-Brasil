@@ -99,7 +99,7 @@ function s.sspop(e,tp,eg,ep,ev,re,r,rp)
         e1:SetCondition(function() return sc:IsOnField() end)
         e1:SetOperation(function()
             local b1=sc:IsDestructable()
-            local b2=Duel.IsExistingMatchingCard(s.xyzfilter,tp,LOCATION_MZONE,0,1,nil)
+            local b2=Duel.IsExistingMatchingCard(s.xyzfilter,tp,LOCATION_MZONE,0,1,sc)
             if not (b1 or b2) then return end
             local opt=0
             if b1 and b2 then
@@ -108,7 +108,7 @@ function s.sspop(e,tp,eg,ep,ev,re,r,rp)
             if opt==0 then
                 Duel.Destroy(sc,REASON_EFFECT)
             else
-            local xyz=Duel.SelectMatchingCard(tp,s.xyzfilter,tp,LOCATION_MZONE,0,1,1,nil):GetFirst()
+            local xyz=Duel.SelectMatchingCard(tp,s.xyzfilter,tp,LOCATION_MZONE,0,1,1,sc):GetFirst()
             if xyz then Duel.Overlay(xyz,Group.FromCards(sc)) 
                 end
             end
