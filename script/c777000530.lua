@@ -1,4 +1,4 @@
---Eternal Blaze Dragon
+--Eternal Flame Dragon
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
