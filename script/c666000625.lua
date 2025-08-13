@@ -5,52 +5,56 @@ function s.initial_effect(c)
     --Fusion Material
 	c:EnableReviveLimit()
 	Fusion.AddProcMix(c,true,true,aux.FilterBoolFunctionEx(Card.IsSetCard,0x400),aux.FilterBoolFunctionEx(Card.IsRace,RACE_INSECT))
-	--(1)Must be either Fusion Summoned, or Special Summoned by its own procedure
+	Fusion.AddContactProc(c,s.contactfil,s.contactop,s.splimit,nil,nil,nil,false)
+	--(1)Special Summon procedure
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e1:SetCode(EFFECT_SPSUMMON_CONDITION)
-	e1:SetValue(aux.fuslimit)
+	e1:SetCode(EFFECT_SPSUMMON_PROC)
+	e1:SetRange(LOCATION_EXTRA)
+	e1:SetCondition(s.spcon)
+	e1:SetTarget(s.sptg)
+	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
-	--(2)Special Summon procedure
+	--(2)Add or banish
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e2:SetCode(EFFECT_SPSUMMON_PROC)
-	e2:SetRange(LOCATION_EXTRA)
-	e2:SetCondition(s.spcon)
-	e2:SetTarget(s.sptg)
-	e2:SetOperation(s.spop)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_REMOVE)
+	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e2:SetProperty(EFFECT_FLAG_DELAY)
+	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e2:SetCountLimit(1,id)
+	e2:SetCondition(function(e) return e:GetHandler():IsSummonLocation(LOCATION_EXTRA) end)
+	e2:SetTarget(s.thtg)
+	e2:SetOperation(s.thop)
 	c:RegisterEffect(e2)
-	--(3)Add or banish
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,1))
-	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_REMOVE)
-	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e3:SetProperty(EFFECT_FLAG_DELAY)
-	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
-	e3:SetCountLimit(1,id)
-	e3:SetCondition(function(e) return e:GetHandler():IsSummonLocation(LOCATION_EXTRA) end)
-	e3:SetTarget(s.thtg)
-	e3:SetOperation(s.thop)
+	local e3=e2:Clone()
+	e3:SetCode(EVENT_REMOVE)
 	c:RegisterEffect(e3)
-	local e4=e3:Clone()
-	e4:SetCode(EVENT_REMOVE)
+	--(3)Banish cards from GY
+	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,3))
+	e4:SetCategory(CATEGORY_REMOVE)
+	e4:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e4:SetType(EFFECT_TYPE_IGNITION)
+	e4:SetRange(LOCATION_MZONE)
+	e4:SetCountLimit(1)
+	e4:SetTarget(s.target)
+	e4:SetOperation(s.activate)
 	c:RegisterEffect(e4)
-	--(4)Banish cards from GY
-	local e5=Effect.CreateEffect(c)
-	e5:SetDescription(aux.Stringid(id,3))
-	e5:SetCategory(CATEGORY_REMOVE)
-	e5:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e5:SetType(EFFECT_TYPE_IGNITION)
-	e5:SetRange(LOCATION_MZONE)
-	e5:SetCountLimit(1)
-	e5:SetTarget(s.target)
-	e5:SetOperation(s.activate)
-	c:RegisterEffect(e5)
 end
---(2)Special Summon procedure
+--Fusion Material
+function s.splimit(e,se,sp,st)
+	return (st&SUMMON_TYPE_FUSION)==SUMMON_TYPE_FUSION
+end
+function s.contactfil(tp)
+	return Duel.GetMatchingGroup(Card.IsAbleToRemoveAsCost,tp,LOCATION_MZONE,0,nil)
+end
+function s.contactop(g)
+	Duel.Remove(g,POS_FACEUP,REASON_COST|REASON_MATERIAL)
+end
+--(1)Special Summon procedure
 function s.spcostfilter(c)
 	return c:IsRace(RACE_INSECT) and c:IsAbleToRemoveAsCost() and (c:IsLocation(LOCATION_HAND)
 		or (c:IsSetCard(0x400)))
@@ -84,7 +88,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
 	Duel.Remove(g,POS_FACEUP,REASON_COST|REASON_MATERIAL)
 	g:DeleteGroup()
 end
---(3)Add or banish
+--(2)Add or banish
 function s.filter(c)
 	return c:IsRace(RACE_INSECT) and (c:IsAbleToHand() or c:IsAbleToRemove()) and not c:IsCode(id)
 end
@@ -103,7 +107,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 		end
 	end
 end
---(4)Banish cards from GY
+--(3)Banish cards from GY
 function s.rmfilter(c)
 	return c:IsAbleToRemove() and aux.SpElimFilter(c)
 end

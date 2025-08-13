@@ -5,14 +5,8 @@ function s.initial_effect(c)
     --Fusion Material
 	c:EnableReviveLimit()
 	Fusion.AddProcMix(c,true,true,aux.FilterBoolFunctionEx(Card.IsSetCard,0x400),s.ffilter)
-	--(1)Must be either Fusion Summoned, or Special Summoned by its own procedure
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e1:SetCode(EFFECT_SPSUMMON_CONDITION)
-	e1:SetValue(aux.fuslimit)
-	c:RegisterEffect(e1)
-	--(2)Special Summon procedure
+	Fusion.AddContactProc(c,s.contactfil,s.contactop,s.splimit,nil,nil,nil,false)
+	--(1)Special Summon procedure
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetType(EFFECT_TYPE_FIELD)
@@ -23,7 +17,7 @@ function s.initial_effect(c)
 	e2:SetTarget(s.sptg)
 	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
-	--(3)Destroy replace
+	--(2)Destroy replace
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_CONTINUOUS+EFFECT_TYPE_SINGLE)
 	e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -32,7 +26,7 @@ function s.initial_effect(c)
 	e3:SetCountLimit(1)
 	e3:SetTarget(s.desreptg)
 	c:RegisterEffect(e3)
-	--(4)Banish
+	--(3)Banish
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,1))
 	e4:SetCategory(CATEGORY_REMOVE)
@@ -44,7 +38,7 @@ function s.initial_effect(c)
 	e4:SetTarget(s.remtg)
 	e4:SetOperation(s.remop)
 	c:RegisterEffect(e4)
-	--(5)Pos Change
+	--(4)Pos Change
 	local e5=Effect.CreateEffect(c)
 	e5:SetType(EFFECT_TYPE_FIELD)
 	e5:SetCode(EFFECT_SET_POSITION)
@@ -59,6 +53,16 @@ end
 --Fusion Material
 function s.ffilter(c,fc,sumtype,tp)
 	return c:IsRace(RACE_INSECT,fc,sumtype,tp) and c:IsType(TYPE_FUSION)
+end
+--Fusion Material
+function s.splimit(e,se,sp,st)
+	return (st&SUMMON_TYPE_FUSION)==SUMMON_TYPE_FUSION
+end
+function s.contactfil(tp)
+	return Duel.GetMatchingGroup(Card.IsAbleToRemoveAsCost,tp,LOCATION_MZONE,0,nil)
+end
+function s.contactop(g)
+	Duel.Remove(g,POS_FACEUP,REASON_COST|REASON_MATERIAL)
 end
 --(2)Special Summon procedure
 function s.spcostfilter(c)
