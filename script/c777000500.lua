@@ -3,7 +3,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
 	--Fusion Material
-	Fusion.AddProcFun2(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x315),s.ffilter,true)
+	Fusion.AddProcMixN(c,true,true,aux.FilterBoolFunctionEx(Card.IsAttribute,ATTRIBUTE_FIRE),1,aux.FilterBoolFunctionEx(Card.IsSetCard,0x315),2)
 	c:EnableReviveLimit()
 	c:EnableCounterPermit(0x199)	
 	--(1)Double damage

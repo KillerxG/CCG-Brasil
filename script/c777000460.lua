@@ -1,10 +1,10 @@
---White Dragon of Fire
+--Dragonborn of Imaginary
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
 	--Fusion Summon
 	c:EnableReviveLimit()
-	Fusion.AddProcMix(c,true,true,aux.FilterBoolFunctionEx(Card.IsType,TYPE_FUSION),aux.FilterBoolFunctionEx(Card.IsAttribute,ATTRIBUTE_FIRE))
+	Fusion.AddProcMix(c,true,true,aux.FilterBoolFunctionEx(Card.IsType,TYPE_FUSION),aux.FilterBoolFunctionEx(Card.IsRace,RACE_DRAGON))
 	--(1)To Deck, then destroy
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
@@ -22,7 +22,7 @@ function s.initial_effect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TODECK)
 	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e2:SetCode(EVENT_TO_GRAVE)
+	e2:SetCode(EVENT_REMOVE)
 	e2:SetCountLimit(1,id+1)
 	e2:SetTarget(s.rettg)
 	e2:SetOperation(s.retop)
@@ -30,7 +30,7 @@ function s.initial_effect(c)
 end
 --(1)To Deck, then destroy
 function s.tdfilter(c)
-	return c:IsFaceup() and (c:IsAttribute(ATTRIBUTE_FIRE) or c:IsRace(RACE_DRAGON)) and c:IsAbleToDeck()
+	return c:IsFaceup() and c:IsRace(RACE_DRAGON) and c:IsAbleToDeck()
 end
 function s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.tdfilter,tp,LOCATION_REMOVED,0,1,nil) end
@@ -52,14 +52,14 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(2)Shuffle
 function s.shffilter(c)
-	return c:IsFaceup() and (c:IsAttribute(ATTRIBUTE_FIRE) or c:IsRace(RACE_DRAGON)) and c:IsAbleToDeck()
+	return c:IsFaceup() and c:IsRace(RACE_DRAGON) and c:IsAbleToDeck()
 end
 function s.rettg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
-	local g=Duel.GetMatchingGroup(s.shffilter,tp,LOCATION_REMOVED,0,nil)
+	local g=Duel.GetMatchingGroup(s.shffilter,tp,LOCATION_REMOVED,0,e:GetHandler())
 	Duel.SetOperationInfo(0,CATEGORY_TODECK,g,#g,0,0)
 end
 function s.retop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(nil,tp,LOCATION_REMOVED,0,nil)
+	local g=Duel.GetMatchingGroup(nil,tp,LOCATION_REMOVED,0,e:GetHandler())
 	Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
 end
