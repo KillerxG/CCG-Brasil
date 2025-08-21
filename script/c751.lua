@@ -8,7 +8,7 @@ function s.initial_effect(c)
 	e0:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e0:SetCode(EVENT_STARTUP)
 	e0:SetCountLimit(1)
-	e0:SetRange(LOCATION_HAND+LOCATION_DECK)
+	e0:SetRange(LOCATION_ALL)
 	e0:SetOperation(s.op)
 	c:RegisterEffect(e0)
 	--(1)immune
@@ -52,6 +52,33 @@ function s.initial_effect(c)
 	e4:SetTarget(s.drtg)
 	e4:SetOperation(s.drop)
 	c:RegisterEffect(e4)
+	--(5)Cannot be Target
+	local e5=Effect.CreateEffect(c)
+	e5:SetType(EFFECT_TYPE_SINGLE)
+	e5:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
+	e5:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e5:SetRange(LOCATION_REMOVED)
+	e5:SetValue(s.efilter1)
+	c:RegisterEffect(e5)
+	--(6)Recover LP
+	local e6=Effect.CreateEffect(c)
+	e6:SetDescription(aux.Stringid(id,3))
+	e6:SetType(EFFECT_TYPE_IGNITION)
+	e6:SetCategory(CATEGORY_RECOVER)
+	e6:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e6:SetRange(LOCATION_REMOVED)
+	e6:SetOperation(s.lpop)
+	c:RegisterEffect(e6)
+	--(7)ATK Up
+	local e7=Effect.CreateEffect(c)
+	e7:SetDescription(aux.Stringid(id,4))
+	e7:SetCategory(CATEGORY_ATKCHANGE)
+	e7:SetType(EFFECT_TYPE_IGNITION)
+	e7:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e7:SetRange(LOCATION_REMOVED)
+	e7:SetTarget(s.atktg)
+	e7:SetOperation(s.atkop)
+	c:RegisterEffect(e7)
 end
 --(0)Activate
 function s.op(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -115,5 +142,37 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 	if #g>0 then
 		Duel.SendtoHand(g,nil,REASON_EFFECT)
 		--Duel.ConfirmCards(1-tp,g)
+	end
+end
+--(5)Cannot be Target
+function s.efilter1(e,re,rp)
+	return re:IsActiveType(TYPE_EFFECT)
+end
+--(6)Recover LP
+local declare_lp_table={}
+for i=1,30 do
+	declare_lp_table[i]=i*100
+end
+function s.lpop(e,tp,eg,ep,ev,re,r,rp)
+	local ac=Duel.AnnounceNumber(tp,declare_lp_table)
+	Duel.Recover(tp,ac,REASON_EFFECT)
+end
+--(7)ATK Up
+function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and chkc:IsFaceup() end
+	if chk==0 then return Duel.IsExistingTarget(Card.IsFaceup,tp,LOCATION_MZONE,0,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+	Duel.SelectTarget(tp,Card.IsFaceup,tp,LOCATION_MZONE,0,1,1,nil)
+end
+function s.atkop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	local ac=Duel.AnnounceNumber(tp,declare_lp_table)
+	if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() then
+		local e1=Effect.CreateEffect(e:GetHandler())
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_UPDATE_ATTACK)
+		e1:SetReset(RESETS_STANDARD_PHASE_END,1)
+		e1:SetValue(ac)
+		tc:RegisterEffect(e1)
 	end
 end

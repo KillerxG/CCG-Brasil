@@ -8,7 +8,7 @@ function s.initial_effect(c)
 	e0:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e0:SetCode(EVENT_STARTUP)
 	e0:SetCountLimit(1)
-	e0:SetRange(LOCATION_HAND+LOCATION_DECK)
+	e0:SetRange(LOCATION_ALL)
 	e0:SetOperation(s.op)
 	c:RegisterEffect(e0)
 	--(1)immune
