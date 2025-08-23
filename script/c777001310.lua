@@ -3,7 +3,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
 	--(1)Fusion Summon
-	local e1=Fusion.CreateSummonEff(c,aux.FilterBoolFunction(Card.IsRace,RACE_DRAGON),nil,s.fextra,Fusion.BanishMaterial,nil,nil,nil,nil,nil,nil,nil,nil,nil,s.extratg)
+	local e1=Fusion.CreateSummonEff(c,aux.FilterBoolFunction(Card.IsSetCard,0x295),nil,s.fextra,Fusion.BanishMaterial,nil,nil,nil,nil,nil,nil,nil,nil,nil,s.extratg)
 	e1:SetCountLimit(1,id)
 	c:RegisterEffect(e1)
 	--(2)Set Dragonborn Trap
@@ -20,16 +20,25 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 --(1)Fusion Summon
+function s.fcheck(tp,sg,fc)
+	return sg:FilterCount(Card.IsLocation,nil,LOCATION_EXTRA|LOCATION_DECK)<=1
+end
 function s.fextra(e,tp,mg)
 	if Duel.IsExistingMatchingCard(Card.IsSummonLocation,tp,0,LOCATION_MZONE,1,nil,LOCATION_EXTRA) then
-		return Duel.GetMatchingGroup(Fusion.IsMonsterFilter(Card.IsAbleToRemove),tp,LOCATION_EXTRA,0,nil)--aditional location
+		local eg=Duel.GetMatchingGroup(s.exfilter,tp,LOCATION_EXTRA|LOCATION_DECK,0,nil)
+		if eg and #eg>0 then
+			return eg,s.fcheck
+		end
 	end
 	return nil
 end
+function s.exfilter(c)
+	return c:IsMonster() and c:IsRace(RACE_DRAGON) and c:IsAbleToRemove()
+end
 function s.extratg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
-	Duel.SetPossibleOperationInfo(0,CATEGORY_REMOVE,nil,0,tp,LOCATION_EXTRA)--aditional location
-end
+	Duel.SetPossibleOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,LOCATION_DECK|LOCATION_EXTRA)
+end 
 --(2)Set Dragonborn Trap
 function s.cfilter(c)
 	return c:IsRace(RACE_DRAGON) and c:IsMonster() and c:IsAbleToRemoveAsCost()
