@@ -61,10 +61,10 @@ function s.disfilter(c)
 end
 function s.distg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	local c=e:GetHandler()
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.disfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.disfilter,tp,LOCATION_MZONE,0,1,c) end
+	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) and s.disfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.disfilter,tp,0,LOCATION_MZONE,1,c) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local g=Duel.SelectTarget(tp,s.disfilter,tp,LOCATION_MZONE,0,1,1,c)
+	local g=Duel.SelectTarget(tp,s.disfilter,tp,0,LOCATION_MZONE,1,1,c)
 	Duel.SetOperationInfo(0,CATEGORY_DISABLE,g,1,0,0)
 end
 function s.disop(e,tp,eg,ep,ev,re,r,rp)
