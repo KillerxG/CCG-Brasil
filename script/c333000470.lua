@@ -1,4 +1,4 @@
---Predator Blaze Serval
+--Predator Flame Serval
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)	

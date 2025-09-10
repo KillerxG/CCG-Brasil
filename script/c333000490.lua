@@ -1,4 +1,4 @@
---Predator Blaze Hunting Camp
+--Predator Flame Hunting Camp
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)	
