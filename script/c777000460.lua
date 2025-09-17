@@ -56,8 +56,8 @@ function s.shffilter(c)
 	return c:IsFaceup() and c:IsRace(RACE_DRAGON) and c:IsAbleToDeck()
 end
 function s.rettg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
 	local g=Duel.GetMatchingGroup(s.shffilter,tp,LOCATION_REMOVED,0,e:GetHandler())
+	if chk==0 then return #g>0 end	
 	Duel.SetOperationInfo(0,CATEGORY_TODECK,g,#g,0,0)
 end
 function s.retop(e,tp,eg,ep,ev,re,r,rp)
