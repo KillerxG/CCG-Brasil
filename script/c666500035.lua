@@ -1,159 +1,89 @@
---Typeblood_Dancer.lua
+--Dancer.lua
 --Scripted by Imp
 local s,id=GetID()
 function s.initial_effect(c)
-    c:EnableReviveLimit()
-	--Xyz Summoning Procedure
-	Xyz.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x660),4,2,s.ovfilter,aux.Stringid(id,0),Xyz.InfiniteMats)
-	--Attach ("Typeblood_Dancer.lua")
+    --Extra Link Material
 	local e0=Effect.CreateEffect(c)
-	e0:SetDescription(aux.Stringid(id,1))
-	e0:SetType(EFFECT_TYPE_IGNITION)
-	e0:SetRange(LOCATION_MZONE)
-	e0:SetCountLimit(1,id)
-	e0:SetTarget(s.mttg)
-	e0:SetOperation(s.mtop)
+	e0:SetType(EFFECT_TYPE_FIELD)
+	e0:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e0:SetCode(EFFECT_EXTRA_MATERIAL)
+	e0:SetRange(LOCATION_HAND)
+	e0:SetTargetRange(1,0)
+	e0:SetOperation(s.extracon)
+	e0:SetValue(s.extraval)
 	c:RegisterEffect(e0)
-	--Send to GY/Banish ("Typeblood_Dancer.lua")
+	if s.flagmap==nil then
+		s.flagmap={}
+	end
+	if s.flagmap[c]==nil then
+		s.flagmap[c] = {}
+	end
+    --Send to Hand
 	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,2))
-	e1:SetCategory(CATEGORY_TOGRAVE+CATEGORY_REMOVE)
-	e1:SetType(EFFECT_TYPE_IGNITION)
-	e1:SetRange(LOCATION_MZONE)
-	e1:SetCountLimit(1,id+1)
-	e1:SetTarget(s.tgtg)
-	e1:SetOperation(s.tgop)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetCategory(CATEGORY_TOHAND)
+	e1:SetType(EFFECT_TYPE_TRIGGER_O+EFFECT_TYPE_SINGLE)
+	e1:SetProperty(EFFECT_FLAG_DELAY)
+	e1:SetCode(EVENT_SUMMON_SUCCESS)
+	e1:SetCountLimit(1,id)
+	e1:SetTarget(s.thtg)
+	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 	local e2=e1:Clone()
-	e2:SetType(EFFECT_TYPE_XMATERIAL+EFFECT_TYPE_IGNITION)
-	e2:SetCondition(function(e) return e:GetHandler():IsSetCard(0x660) end)
+	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
 	c:RegisterEffect(e2)
-	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	local e3=e1:Clone()
 	e3:SetCode(EVENT_BE_MATERIAL)
 	e3:SetCondition(s.matcon)
-	e3:SetOperation(s.matop)
 	c:RegisterEffect(e3)
-	--Send to Extra Deck/Special Summon
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,3))
-	e4:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e4:SetProperty(EFFECT_FLAG_DELAY)
-	e4:SetCode(EVENT_TO_GRAVE)
-	e4:SetCountLimit(1,id+2)
-	e4:SetCondition(function(e,tp,eg,ep,ev,re) return e:GetHandler():IsReason(REASON_EFFECT) and re and re:IsMonsterEffect() end)
-	e4:SetTarget(s.tdsptg)
-	e4:SetOperation(s.tdspop)
-	c:RegisterEffect(e4)
-	local e5=e4:Clone()
-	e5:SetCode(EVENT_REMOVE)
-	c:RegisterEffect(e5)
 end
---Xyz Summoning Procedure
-function s.ovfilter(c,tp,sc)
-	return c:IsSetCard(0x660,sc,SUMMON_TYPE_XYZ,tp) and c:IsType(TYPE_LINK,xyzc,SUMMON_TYPE_XYZ,tp) and c:IsFaceup() 
+--Extra Link Material
+function s.extrafilter(c,tp)
+	return c:IsLocation(LOCATION_MZONE) and c:IsControler(tp)
 end
---Attach ("Typeblood_Dancer.lua")
-function s.mtfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x660) and c:IsMonster() 
+function s.extracon(c,e,tp,sg,mg,lc,og,chk)
+	return (sg+mg):Filter(s.extrafilter,nil,e:GetHandlerPlayer()):IsExists(Card.IsSetCard,1,og,0x660) and sg:FilterCount(Card.HasFlagEffect,nil,id)<2
 end
-function s.mttg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return e:GetHandler():IsType(TYPE_XYZ) 
-		and Duel.IsExistingMatchingCard(s.mtfilter,tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,nil) end
-end
-function s.mtop(e,tp,eg,ep,ev,re,r,rp)
+function s.extraval(chk,summon_type,e,...)
 	local c=e:GetHandler()
-	if not c:IsRelateToEffect(e) then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_XMATERIAL)
-	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.mtfilter),tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,1,nil)
-	if #g>0 then
-		Duel.Overlay(c,g)
-	end
-end
---Send to GY/Banish ("Typeblood_Dancer.lua")
-function s.tgfilter(c)
-	return c:IsSetCard(0x660) and c:IsMonster() and (c:IsAbleToGrave() or c:IsAbleToRemove())
-end
-function s.cfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x660) and c:IsType(TYPE_XYZ)
-	and c:GetOverlayCount()>0
-end
-function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil) and Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_DECK,0,1,nil) end
-	Duel.SetPossibleOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_DECK)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,LOCATION_DECK)
-end
-function s.tgop(e,tp,eg,ep,ev,re,r,rp)
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DEATTACHFROM)
-	local xyzg=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_MZONE,0,1,1,nil)
-	local tc=xyzg:GetFirst()
-	if not tc then return end
-	Duel.HintSelection(xyzg)
-	local mg=tc:GetOverlayGroup()
-	local ct=#mg
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVEXYZ)
-	local sg=mg:Select(tp,1,1,nil)
-	if #sg>0 and Duel.SendtoGrave(sg,REASON_EFFECT)>0
-	and tc:GetOverlayCount()<ct then
-	Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,4))
-	local g=Duel.SelectMatchingCard(tp,s.tgfilter,tp,LOCATION_DECK,0,1,1,nil)
-	if #g>0 then
-		local tc=g:GetFirst()
-		if tc and tc:IsAbleToGrave() and (not tc:IsAbleToRemove() or Duel.SelectYesNo(tp,aux.Stringid(id,5))) then
-			Duel.SendtoGrave(tc,REASON_EFFECT)
+	if chk==0 then
+		local tp,sc=...
+		if summon_type~=SUMMON_TYPE_LINK or not sc:IsRace(RACE_CYBERSE) or Duel.HasFlagEffect(tp,id) then
+			return Group.CreateGroup()
 		else
-			Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)
+			table.insert(s.flagmap[c],c:RegisterFlagEffect(id,0,0,1))
+			return Group.FromCards(c)
 		end
+	elseif chk==1 then
+		local sg,sc,tp=...
+		if summon_type&SUMMON_TYPE_LINK==SUMMON_TYPE_LINK and #sg>0 then
+			Duel.Hint(HINT_CARD,tp,id)
+			Duel.RegisterFlagEffect(tp,id,RESET_PHASE|PHASE_END,0,1)
+		end
+	elseif chk==2 then
+		for _,eff in ipairs(s.flagmap[c]) do
+			eff:Reset()
+		end
+		s.flagmap[c]={}
 	end
 end
+--Send to Hand
+function s.thfilter(c)
+	return c:IsSetCard(0x660) and c:IsAbleToHand() 
+end
+function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_GRAVE,0,1,nil) end
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE)
+end
+function s.thop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
+	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.thfilter),tp,LOCATION_GRAVE,0,1,1,nil)
+	if #g>0 then
+		Duel.SendtoHand(g,nil,REASON_EFFECT)
+		Duel.ConfirmCards(1-tp,g)
+	end
 end
 function s.matcon(e,tp,eg,ep,ev,re,r,rp)
-	return r==REASON_LINK
-end
-function s.matop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local rc=c:GetReasonCard()
-	if not rc:IsSetCard(0x660) then return end
-	local e6=Effect.CreateEffect(c)
-	e6:SetDescription(aux.Stringid(id,2))
-	e6:SetCategory(CATEGORY_TOGRAVE+CATEGORY_REMOVE)
-	e6:SetType(EFFECT_TYPE_IGNITION)
-	e6:SetRange(LOCATION_MZONE)
-	e6:SetCountLimit(1,id+1)
-	e6:SetTarget(s.tgtg)
-	e6:SetOperation(s.tgop)
-	e6:SetReset(RESET_EVENT|RESETS_STANDARD)
-	rc:RegisterEffect(e6)
-end
---Send to Extra Deck/Special Summon
-function s.tdspfilter(c,e,tp,ft)
-	return c:IsSetCard(0x660) and c:IsXyzMonster() and c:IsFaceup()
-		and (c:IsAbleToDeck() or (ft>0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false)))
-end
-function s.tdsptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.tdspfilter,tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,nil) end
-	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE|LOCATION_REMOVED)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE|LOCATION_REMOVED)
-	end
-function s.tdspop(e,tp,eg,ep,ev,re,r,rp)
- 	local ft=Duel.GetLocationCount(tp,LOCATION_MZONE)
-	local g=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.tdspfilter),tp,LOCATION_GRAVE|LOCATION_REMOVED,0,nil,e,tp,ft)
-	if #g>0 then
-		Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,6))
-		local sc=g:Select(tp,1,1,nil):GetFirst()
-		local b1=sc:IsAbleToDeck()
-		local b2=ft>0 and sc:IsCanBeSpecialSummoned(e,0,tp,false,false)
-		local op=Duel.SelectEffect(tp,
-			{b1,aux.Stringid(id,7)},
-			{b2,aux.Stringid(id,8)})
-		if not op then return end
-		Duel.BreakEffect()
-		if op==1 then
-			Duel.HintSelection(sc,true)
-			Duel.SendtoDeck(sc,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
-		else
-			Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)
-		end
-	end
+	return r==REASON_LINK and c:GetReasonCard():IsRace(RACE_CYBERSE)
 end

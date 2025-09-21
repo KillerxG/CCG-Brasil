@@ -1,77 +1,75 @@
---Typefull_Priestess.lua
+--Priestess.lua
 --Scripted by Imp
 local s,id=GetID()
 function s.initial_effect(c)
-    --Special Summon
+    --Extra Link Material
 	local e0=Effect.CreateEffect(c)
-	e0:SetDescription(aux.Stringid(id,0))
-	e0:SetCategory(CATEGORY_REMOVE+CATEGORY_SPECIAL_SUMMON)
-	e0:SetType(EFFECT_TYPE_IGNITION)
+	e0:SetType(EFFECT_TYPE_FIELD)
+	e0:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e0:SetCode(EFFECT_EXTRA_MATERIAL)
 	e0:SetRange(LOCATION_HAND)
-	e0:SetCountLimit(1,id)
-	e0:SetTarget(s.rmtg)
-	e0:SetOperation(s.rmop)
+	e0:SetTargetRange(1,0)
+	e0:SetOperation(s.extracon)
+	e0:SetValue(s.extraval)
 	c:RegisterEffect(e0)
-	--Search ("Typefull_Priestess.lua")
+	if s.flagmap==nil then
+		s.flagmap={}
+	end
+	if s.flagmap[c]==nil then
+		s.flagmap[c] = {}
+	end
+    --Search
 	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,1))
+	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
-	e1:SetType(EFFECT_TYPE_IGNITION)
-	e1:SetRange(LOCATION_MZONE)
-	e1:SetCountLimit(1,id+1)
+	e1:SetType(EFFECT_TYPE_TRIGGER_O+EFFECT_TYPE_SINGLE)
+	e1:SetProperty(EFFECT_FLAG_DELAY)
+	e1:SetCode(EVENT_SUMMON_SUCCESS)
+	e1:SetCountLimit(1,id)
 	e1:SetTarget(s.thtg)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 	local e2=e1:Clone()
-	e2:SetType(EFFECT_TYPE_XMATERIAL+EFFECT_TYPE_IGNITION)
-	e2:SetCondition(function(e) return e:GetHandler():IsSetCard(0x660) end)
+	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
 	c:RegisterEffect(e2)
-	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	local e3=e1:Clone()
 	e3:SetCode(EVENT_BE_MATERIAL)
 	e3:SetCondition(s.matcon)
-	e3:SetOperation(s.matop)
 	c:RegisterEffect(e3)
-	--Send to Hand/Send to Deck
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,2))
-	e4:SetCategory(CATEGORY_TOHAND+CATEGORY_TODECK)
-	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e4:SetProperty(EFFECT_FLAG_DELAY)
-	e4:SetCode(EVENT_TO_GRAVE)
-	e4:SetCountLimit(1,id+2)
-	e4:SetCondition(function(e,tp,eg,ep,ev,re) return e:GetHandler():IsReason(REASON_EFFECT) and re and re:IsMonsterEffect() end)
-	e4:SetTarget(s.thtdtg)
-	e4:SetOperation(s.thtdop)
-	c:RegisterEffect(e4)
-	local e5=e4:Clone()
-	e5:SetCode(EVENT_REMOVE)
-	c:RegisterEffect(e5)
 end
---Special Summon
-function s.rmfilter(c)
-	return c:IsOriginalRace(RACE_CYBERSE) and c:IsAbleToRemove()
+--Extra Link Material
+function s.extrafilter(c,tp)
+	return c:IsLocation(LOCATION_MZONE) and c:IsControler(tp)
 end
-function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.extracon(c,e,tp,sg,mg,lc,og,chk)
+	return (sg+mg):Filter(s.extrafilter,nil,e:GetHandlerPlayer()):IsExists(Card.IsSetCard,1,og,0x660) and sg:FilterCount(Card.HasFlagEffect,nil,id)<2
+end
+function s.extraval(chk,summon_type,e,...)
 	local c=e:GetHandler()
-	if chk==0 then return Duel.IsExistingMatchingCard(s.rmfilter,tp,LOCATION_HAND|LOCATION_GRAVE,0,1,c)
-		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false) end
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,LOCATION_HAND|LOCATION_GRAVE)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
-end
-function s.rmop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectMatchingCard(tp,s.rmfilter,tp,LOCATION_HAND|LOCATION_GRAVE,0,1,1,c)
-	if #g>0 and Duel.Remove(g,POS_FACEUP,REASON_EFFECT)>0 and g:GetFirst():IsLocation(LOCATION_REMOVED)
-		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and c:IsRelateToEffect(e) then
-		Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
+	if chk==0 then
+		local tp,sc=...
+		if summon_type~=SUMMON_TYPE_LINK or not sc:IsRace(RACE_CYBERSE) or Duel.HasFlagEffect(tp,id) then
+			return Group.CreateGroup()
+		else
+			table.insert(s.flagmap[c],c:RegisterFlagEffect(id,0,0,1))
+			return Group.FromCards(c)
+		end
+	elseif chk==1 then
+		local sg,sc,tp=...
+		if summon_type&SUMMON_TYPE_LINK==SUMMON_TYPE_LINK and #sg>0 then
+			Duel.Hint(HINT_CARD,tp,id)
+			Duel.RegisterFlagEffect(tp,id,RESET_PHASE|PHASE_END,0,1)
+		end
+	elseif chk==2 then
+		for _,eff in ipairs(s.flagmap[c]) do
+			eff:Reset()
+		end
+		s.flagmap[c]={}
 	end
 end
---Search ("Typefull_Priestess.lua")
+--Search
 function s.thfilter(c)
-	return c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsSetCard(0x660) and c:IsMonster() and c:IsAbleToHand()
+	return c:IsSetCard(0x660) and c:IsAbleToHand() 
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
@@ -86,51 +84,6 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 function s.matcon(e,tp,eg,ep,ev,re,r,rp)
-	return r==REASON_LINK
-end
-function s.matop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local rc=c:GetReasonCard()
-	if not rc:IsSetCard(0x660) then return end
-	local e6=Effect.CreateEffect(c)
-	e6:SetDescription(aux.Stringid(id,1))
-	e6:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
-	e6:SetType(EFFECT_TYPE_IGNITION)
-	e6:SetRange(LOCATION_MZONE)
-	e6:SetCountLimit(1,id+1)
-	e6:SetTarget(s.thtg)
-	e6:SetOperation(s.thop)
-	e6:SetReset(RESET_EVENT|RESETS_STANDARD)
-	rc:RegisterEffect(e6)
+	return r==REASON_LINK and c:GetReasonCard():IsRace(RACE_CYBERSE)
 end
---Send to Hand/Send to Deck
-function s.thtdfilter(c,e,tp)
-	return c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsSetCard(0x660) and c:IsMonster() and c:HasLevel() and c:IsFaceup()
-		and (c:IsAbleToHand() or (c:IsAbleToDeck()))
-end
-function s.thtdtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.thtdfilter,tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,nil) end
-	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE|LOCATION_REMOVED)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE|LOCATION_REMOVED)
-	end
-function s.thtdop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.thtdfilter),tp,LOCATION_GRAVE|LOCATION_REMOVED,0,nil,e,tp)
-	if #g>0 then
-		Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,3))
-		local sc=g:Select(tp,1,1,nil):GetFirst()
-		local b1=sc:IsAbleToHand()
-		local b2=sc:IsAbleToDeck()
-		local op=Duel.SelectEffect(tp,
-			{b1,aux.Stringid(id,4)},
-			{b2,aux.Stringid(id,5)})
-		if not op then return end
-		Duel.BreakEffect()
-		if op==1 then
-			Duel.SendtoHand(sc,nil,REASON_EFFECT)
-		    Duel.ConfirmCards(1-tp,sc)
-		else
-			Duel.HintSelection(sc,true)
-			Duel.SendtoDeck(sc,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
-		end
-	end
-end 
