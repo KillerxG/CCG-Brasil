@@ -2,23 +2,23 @@
 --Scripted by Imp
 local s,id=GetID()
 function s.initial_effect(c)
-    --Special Summon/Link Summon
+    --Special Summon
 	local e0=Effect.CreateEffect(c)
 	e0:SetDescription(aux.Stringid(id,0))
 	e0:SetCategory(CATEGORY_SPECIAL_SUMMON)
 	e0:SetType(EFFECT_TYPE_QUICK_O)
 	e0:SetCode(EVENT_FREE_CHAIN)
 	e0:SetRange(LOCATION_HAND)
+	e0:SetHintTiming(0,TIMING_MAIN_END|TIMINGS_CHECK_MONSTER)
 	e0:SetCountLimit(1,id)
-	e0:SetCondition(function(e,tp) return Duel.IsMainPhase() end)
+	e0:SetCondition(s.spcon)
 	e0:SetTarget(s.sptg)
 	e0:SetOperation(s.spop)
-	e0:SetHintTiming(0,TIMINGS_CHECK_MONSTER|TIMING_MAIN_END)
 	c:RegisterEffect(e0)
 	--Extra Link Material
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetRange(LOCATION_DECK+LOCATION_EXTRA)
+	e1:SetRange(LOCATION_DECK)
 	e1:SetCode(EFFECT_EXTRA_MATERIAL)
 	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
 	e1:SetTargetRange(1,0)
@@ -27,33 +27,46 @@ function s.initial_effect(c)
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_GRANT)
 	e2:SetRange(LOCATION_MZONE)
-	e2:SetTargetRange(LOCATION_DECK+LOCATION_EXTRA,0)
+	e2:SetTargetRange(LOCATION_DECK,0)
 	e2:SetTarget(s.eftg)
 	e2:SetLabelObject(e1)
 	c:RegisterEffect(e2)
+    --Link Summon
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,1))
+	e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e3:SetType(EFFECT_TYPE_TRIGGER_O+EFFECT_TYPE_SINGLE)
+	e3:SetProperty(EFFECT_FLAG_DELAY)
+	e3:SetCode(EVENT_SUMMON_SUCCESS)
+	e3:SetCountLimit(1,id+1)
+	e3:SetTarget(s.linksptg)
+	e3:SetOperation(s.linkspop)
+	c:RegisterEffect(e3)
+	local e4=e3:Clone()
+	e4:SetCode(EVENT_SPSUMMON_SUCCESS)
+	c:RegisterEffect(e4)
+	local e5=e3:Clone()
+	e5:SetCode(EVENT_BE_MATERIAL)
+	e5:SetCondition(s.matcon)
+	c:RegisterEffect(e5)
     aux.GlobalCheck(s,function()
 		s.flagmap={}
 	end)
 end
---Special Summon/Link Summon
-function s.lkfilter(c)
-	return c:IsRace(RACE_CYBERSE) and c:IsLinkSummonable()
+--Special Summon
+function s.spcon(e,tp,eg,ep,ev,re,r,rp)
+	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE,0,nil)
+	return #g==0 or g:FilterCount(Card.IsSetCard,nil,0x660)==#g
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,tp,0)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
+		and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if not c:IsRelateToEffect(e) or Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)==0 then return end
-	local g=Duel.GetMatchingGroup(s.lkfilter,tp,LOCATION_EXTRA,0,1,nil)
-	if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local sg=g:Select(tp,1,1,nil)
-		Duel.LinkSummon(tp,sg:GetFirst())
+	if c:IsRelateToEffect(e) then
+		Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
 	end
 end
 --Extra Link Material
@@ -89,4 +102,23 @@ function s.extraval(chk,summon_type,e,...)
 			s.flagmap[c]=nil
 		end
 	end
+end
+--Link Summon
+function s.linkfilter(c)
+	return c:IsRace(RACE_CYBERSE) and c:IsLinkSummonable()
+end
+function s.linksptg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.linkfilter,tp,LOCATION_EXTRA,0,1,nil) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
+end
+function s.linkspop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+	local sc=Duel.SelectMatchingCard(tp,s.linkfilter,tp,LOCATION_EXTRA,0,1,1,nil):GetFirst()
+	if sc then
+		Duel.LinkSummon(tp,sc)
+	end
+end
+function s.matcon(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	return r==REASON_LINK and c:GetReasonCard():IsRace(RACE_CYBERSE)
 end
