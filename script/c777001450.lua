@@ -1,11 +1,11 @@
---Siver Fangs Astrology Sage
+--Siver Fangs Pray
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
 	--(1)Draw
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_DRAW)
+	e1:SetCategory(CATEGORY_DRAW+CATEGORY_RECOVER)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetCountLimit(1,id)
@@ -41,9 +41,9 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 	local tp=e:GetHandlerPlayer()
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
 	if Duel.Draw(tp,2,REASON_EFFECT)>0 
-		and Duel.GetLP(tp)>Duel.GetLP(1-tp) and Duel.IsPlayerCanDraw(tp,1) then
+		and Duel.GetLP(tp)<Duel.GetLP(1-tp) then
 			Duel.BreakEffect()
-			Duel.Draw(tp,1,REASON_EFFECT)
+			Duel.Recover(tp,1000,REASON_EFFECT)
 	end
 end
 --(2)Gain LP

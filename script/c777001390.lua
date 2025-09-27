@@ -1,4 +1,4 @@
---Silver Fangs Angel Knight
+--Silver Fangs Blader
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -74,7 +74,7 @@ function s.tgcon(e,tp,eg,ep,ev,re,r,rp)
 	return c:IsLocation(LOCATION_GRAVE) and c:IsPreviousLocation(LOCATION_ONFIELD+LOCATION_HAND) and r==REASON_LINK and c:GetReasonCard():IsSetCard(0x307)
 end
 function s.tgfilter(c,e,chk)
-	return c:IsSetCard(0x307) and c:IsMonster() and not c:IsCode(id) and (c:IsAbleToGrave() or (chk==1 and c:IsCanBeSpecialSummoned(e,0,tp,false,false)))
+	return c:IsSetCard(0x307) and c:IsMonster() and not c:IsCode(id) and (chk==1 and c:IsCanBeSpecialSummoned(e,0,tp,false,false))
 end
 function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_DECK,0,1,nil,e:GetLabel()) end
