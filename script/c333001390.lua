@@ -54,7 +54,7 @@ function s.initial_effect(c)
 	e6:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e6:SetProperty(EFFECT_FLAG_DELAY)
 	e6:SetCode(EVENT_SUMMON_SUCCESS)
-	e6:SetRange(LOCATION_MZONE+LOCATION_SZONE)
+	e6:SetRange(LOCATION_MZONE)
 	e6:SetCountLimit(1,id)
 	e6:SetCondition(s.sumcon)
 	e6:SetTarget(s.sumtg)
@@ -69,9 +69,16 @@ function s.effcon(e,c)
 	return c:IsRace(RACE_WARRIOR)
 end
 -- ========== E4 ==========
+function s.atkcon(e)
+	local ph=Duel.GetCurrentPhase()
+	local bc=e:GetHandler():GetBattleTarget()
+	return (ph==PHASE_DAMAGE or ph==PHASE_DAMAGE_CAL) and bc and bc:IsType(TYPE_LINK)
+end
+
 function s.poscon(e,tp,eg,ep,ev,re,r,rp)
 	local eq=e:GetHandler():GetEquipTarget()
-	return eq and Duel.GetAttacker()==eq and Duel.GetAttackTarget()~=nil
+	local bc=eq:GetBattleTarget()
+	return eq and Duel.GetAttacker()==eq and Duel.GetAttackTarget()~=nil and bc and not (bc:IsType(TYPE_LINK) or bc:IsPosition(POS_FACEDOWN_DEFENSE))
 end
 function s.posop(e,tp,eg,ep,ev,re,r,rp)
 	local a=Duel.GetAttacker()

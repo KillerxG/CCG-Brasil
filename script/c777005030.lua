@@ -1,4 +1,4 @@
---Everlasting Soul, Archer Alice
+--Warrior Reaper - Alice
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)	
@@ -62,7 +62,7 @@ function s.stop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(2)Special Summon itself
 function s.spfilter(c,e,tp)
-	return c:IsLevel(5) and c:IsFaceup()
+	return c:IsLevel(6) and c:IsFaceup()
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_MZONE,0,1,nil)

@@ -26,7 +26,7 @@ function s.initial_effect(c)
 	e2:SetTarget(s.gysptg)
 	e2:SetOperation(s.gyspop)
 	c:RegisterEffect(e2)
-	--(3)Effect Gain: Each time a monster is Special Summoned, recover 500 LP
+	--(3)Effect Gain: Each time a monster is Special Summoned, recover 600 LP
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
 	e3:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE)
@@ -37,7 +37,7 @@ function s.initial_effect(c)
 end
 --(1)Foolish
 function s.tgfilter(c)
-	return c:IsLevel(5) and c:IsAbleToGrave()
+	return c:IsLevel(6) and c:IsAbleToGrave()
 end
 function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_DECK,0,1,nil) end
@@ -52,7 +52,7 @@ function s.tgop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(2)Special Summon
 function s.gyspfilter(c,e,tp)
-	return c:IsLevel(5) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE)
+	return c:IsLevel(6) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE)
 		and c:IsCanBeEffectTarget(e)
 end
 function s.gysptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
@@ -86,11 +86,11 @@ function s.gyspop(e,tp,eg,ep,ev,re,r,rp)
 		c:RegisterEffect(e1)
 	end
 end
---(3)Effect Gain: Each time a monster is Special Summoned, recover 500 LP
+--(3)Effect Gain: Each time a monster is Special Summoned, recover 600 LP
 function s.effop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local rc=c:GetReasonCard()
-	--(3.1)Each time a monster is Special Summoned, recover 500 LP
+	--(3.1)Each time a monster is Special Summoned, recover 600 LP
 	local e1=Effect.CreateEffect(rc)
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
@@ -111,11 +111,11 @@ function s.effop(e,tp,eg,ep,ev,re,r,rp)
 	end
 	rc:RegisterFlagEffect(id,RESET_EVENT|RESETS_STANDARD,EFFECT_FLAG_CLIENT_HINT,1,0,aux.Stringid(id,3))
 end
---(3.1)Each time a monster is Special Summoned, recover 500 LP
+--(3.1)Each time a monster is Special Summoned, recover 600 LP
 function s.damcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSetCard(0x258)
 end
 function s.damop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_CARD,0,id)
-	Duel.Recover(tp,500,REASON_EFFECT)
+	Duel.Recover(tp,600,REASON_EFFECT)
 end

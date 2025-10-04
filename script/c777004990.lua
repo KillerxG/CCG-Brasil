@@ -1,4 +1,4 @@
---Everlasting Soul, Knight Sophia
+--Warrior Reaper - Sophia
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)	

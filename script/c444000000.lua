@@ -46,7 +46,7 @@ function s.spcon(e,c)
     local tp=c:GetControler()
     local ft=Duel.GetLocationCount(tp,LOCATION_MZONE)
     local rg=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_SZONE,0,nil,ft)
-    return ft>-1 and #rg>0 and aux.SelectUnselectGroup(rg,e,tp,1,1,nil,0)
+    return ft>0 and #rg>0 and aux.SelectUnselectGroup(rg,e,tp,1,1,nil,0)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,c)
     local c=e:GetHandler()

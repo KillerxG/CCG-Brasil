@@ -27,7 +27,7 @@ function s.initial_effect(c)
 	local e3=e2:Clone()
 	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
 	c:RegisterEffect(e3)	
-	--(3)Effect Gain: Each time your opponent Special Summons a monster(s), inflict 500 damage to your opponent
+	--(3)Effect Gain: Each time your opponent Special Summons a monster(s), inflict 600 damage to your opponent
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
 	e4:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE)
@@ -41,7 +41,7 @@ function s.tgyspcheck(c,rc,e,tp)
 	return c:IsCanBeSpecialSummoned(e,0,tp,false,false) and rc:IsAbleToGrave()
 end
 function s.cfilter(c,e,tp,rc)
-	return c:IsLevel(5) and not c:IsPublic()
+	return c:IsLevel(6) and not c:IsPublic()
 		and (s.tgyspcheck(c,rc,e,tp) or s.tgyspcheck(rc,c,e,tp))
 end
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -70,7 +70,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		local tc=sg:GetFirst()
 		--You cannot Special Summon from the Extra Deck, except Synchro monsters
 		local e1=Effect.CreateEffect(c)
-		e1:SetDescription(aux.Stringid(id,2))
+		e1:SetDescription(aux.Stringid(id,4))
 		e1:SetType(EFFECT_TYPE_FIELD)
 		e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_CLIENT_HINT)
 		e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
@@ -97,11 +97,11 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.ConfirmCards(1-tp,g)
 	end
 end
---(3)Effect Gain: Each time your opponent Special Summons a monster(s), inflict 500 damage to your opponent
+--(3)Effect Gain: Each time your opponent Special Summons a monster(s), inflict 600 damage to your opponent
 function s.effop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local rc=c:GetReasonCard()
-	--(3.1)Each time your opponent Special Summons a monster(s), inflict 500 damage to your opponent
+	--(3.1)Each time your opponent Special Summons a monster(s), inflict 600 damage to your opponent
 	local e1=Effect.CreateEffect(rc)
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
@@ -121,11 +121,11 @@ function s.effop(e,tp,eg,ep,ev,re,r,rp)
 	end
 	rc:RegisterFlagEffect(id,RESET_EVENT|RESETS_STANDARD,EFFECT_FLAG_CLIENT_HINT,1,0,aux.Stringid(id,2))
 end
---(3.1)Each time your opponent Special Summons a monster(s), inflict 500 damage to your opponent
+--(3.1)Each time your opponent Special Summons a monster(s), inflict 600 damage to your opponent
 function s.damcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(Card.IsSummonPlayer,1,nil,1-tp)
 end
 function s.damop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_CARD,0,id)
-	Duel.Damage(1-tp,500,REASON_EFFECT)
+	Duel.Damage(1-tp,600,REASON_EFFECT)
 end

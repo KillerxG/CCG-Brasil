@@ -29,7 +29,7 @@ function s.initial_effect(c)
 end
 --(1)Place up to 2 "Majin Reaper" Continuous Traps 
 function s.plrevfilter(c)
-	return c:IsType(TYPE_SYNCHRO) and c:IsLevel(10)
+	return c:IsType(TYPE_SYNCHRO) and c:IsLevel(12)
 end
 function s.plcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.plrevfilter,tp,LOCATION_EXTRA,0,1,nil) end
