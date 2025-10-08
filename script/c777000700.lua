@@ -2,57 +2,49 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	--(1)Type Dragon
+	--(1)Special Summon procedure
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e1:SetCode(EFFECT_ADD_RACE)
-	e1:SetRange(LOCATION_MZONE+LOCATION_GRAVE)
-	e1:SetValue(RACE_DRAGON)
+	e1:SetType(EFFECT_TYPE_FIELD)
+	e1:SetCode(EFFECT_SPSUMMON_PROC)
+	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e1:SetRange(LOCATION_HAND)
+	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
+	e1:SetValue(1)
+	e1:SetCondition(s.spcon)
+	e1:SetTarget(s.sptg)
+	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
-	--(2)Special Summon procedure
+	--(2)Banish
 	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetCode(EFFECT_SPSUMMON_PROC)
-	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e2:SetRange(LOCATION_HAND)
-	e2:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
-	e2:SetValue(1)
-	e2:SetCondition(s.spcon)
-	e2:SetTarget(s.sptg)
-	e2:SetOperation(s.spop)
+	e2:SetDescription(aux.Stringid(id,0))
+	e2:SetCategory(CATEGORY_REMOVE)
+	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
+	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e2:SetRange(LOCATION_MZONE)
+	e2:SetCountLimit(1,id+1)
+	e2:SetCost(s.rmcost)
+	e2:SetCondition(function(e,tp,eg) return eg:IsExists(Card.IsSummonLocation,1,e:GetHandler(),LOCATION_GRAVE) end)
+	e2:SetTarget(s.rmtg)
+	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
-	--(3)Banish
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,0))
-	e3:SetCategory(CATEGORY_REMOVE)
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e3:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
-	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetCountLimit(2,id)
-	e3:SetCost(s.rmcost)
-	e3:SetCondition(function(e,tp,eg) return eg:IsExists(Card.IsSummonLocation,1,e:GetHandler(),LOCATION_GRAVE) end)
-	e3:SetTarget(s.rmtg)
-	e3:SetOperation(s.rmop)
+	local e3=e2:Clone()
+	e3:SetCode(EVENT_CHAINING)
+	e3:SetCondition(s.rmchaincon)
 	c:RegisterEffect(e3)
-	local e4=e3:Clone()
-	e4:SetCode(EVENT_CHAINING)
-	e4:SetCondition(s.rmchaincon)
+	--(3)Remove
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_FIELD)
+	e4:SetProperty(EFFECT_FLAG_SET_AVAILABLE+EFFECT_FLAG_IGNORE_RANGE+EFFECT_FLAG_IGNORE_IMMUNE)
+	e4:SetCode(EFFECT_TO_GRAVE_REDIRECT)
+	e4:SetRange(LOCATION_MZONE)
+	e4:SetTargetRange(0,0xff)
+	e4:SetValue(LOCATION_REMOVED)
+	e4:SetCondition(s.rmcon)
+	e4:SetTarget(s.rm2tg)
 	c:RegisterEffect(e4)
-	--(4)Remove
-	local e5=Effect.CreateEffect(c)
-	e5:SetType(EFFECT_TYPE_FIELD)
-	e5:SetProperty(EFFECT_FLAG_SET_AVAILABLE+EFFECT_FLAG_IGNORE_RANGE+EFFECT_FLAG_IGNORE_IMMUNE)
-	e5:SetCode(EFFECT_TO_GRAVE_REDIRECT)
-	e5:SetRange(LOCATION_MZONE)
-	e5:SetTargetRange(0,0xff)
-	e5:SetValue(LOCATION_REMOVED)
-	e5:SetCondition(s.rmcon)
-	e5:SetTarget(s.rm2tg)
-	c:RegisterEffect(e5)
 end
---(2)Special Summon procedure
+--(1)Special Summon procedure
 function s.spcfilter(c,tp)
 	return c:IsRace(RACE_DRAGON) and c:IsAbleToRemoveAsCost()
 end
@@ -84,7 +76,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
 	Duel.Remove(g,POS_FACEUP,REASON_COST)
 	g:DeleteGroup()
 end
---(3)Banish
+--(2)Banish
 function s.costfilter(c)
 	return c:IsRace(RACE_DRAGON) and c:IsLocation(LOCATION_EXTRA) and c:IsAbleToRemoveAsCost(POS_FACEUP)
 end
@@ -104,25 +96,20 @@ end
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if tc:IsRelateToEffect(e) then
-		if Duel.Remove(tc,POS_FACEUP,REASON_EFFECT) and Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_EXTRA,0,1,nil) 
-			and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-			local g=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_EXTRA,0,1,1,nil)
-			Duel.Remove(g,POS_FACEUP,REASON_EFFECT)
-		end
+		Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)
 	end
 end
 function s.rmchaincon(e,tp,eg,ep,ev,re,r,rp,chk)
 	local loc=Duel.GetChainInfo(ev,CHAININFO_TRIGGERING_LOCATION)
 	return loc==LOCATION_GRAVE and re:IsMonsterEffect()
 end
---(4)Remove
+--(3)Remove
 function s.cfilter1(c)
-	return c:IsFaceup() and c:IsCode(777000680)
+	return c:IsFaceup() and c:IsOriginalCodeRule(777000680)
 end
 function s.rmcon(e)
 	local tp=e:GetHandlerPlayer()
-	return Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_ONFIELD,0,1,nil)
+	return Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_MZONE,0,1,nil)
 end
 function s.rm2tg(e,c)
 	return c:GetOwner()~=e:GetHandlerPlayer() and Duel.IsPlayerCanRemove(e:GetHandlerPlayer(),c)

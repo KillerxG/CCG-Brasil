@@ -1,98 +1,126 @@
---Draconic Phoenix Knight
+--Draconic Rune
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-    --(1)Type Dragon
+    --Activate
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e1:SetCode(EFFECT_ADD_RACE)
-	e1:SetRange(LOCATION_MZONE+LOCATION_GRAVE)
-	e1:SetValue(RACE_DRAGON)
+	e1:SetType(EFFECT_TYPE_ACTIVATE)
+	e1:SetCode(EVENT_FREE_CHAIN)
 	c:RegisterEffect(e1)	
-	--(2)Add this card from the GY to your hand
+	--(1)All "Draconic" monsters are also Dragon
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SPECIAL_SUMMON)
-	e2:SetType(EFFECT_TYPE_IGNITION)
-	e2:SetRange(LOCATION_GRAVE)
-	e2:SetCountLimit(1,id)
-	e2:SetCost(s.thcost)
-	e2:SetTarget(s.thtg)
-	e2:SetOperation(s.thop)
+	e2:SetType(EFFECT_TYPE_FIELD)
+	e2:SetCode(EFFECT_ADD_RACE)
+	e2:SetRange(LOCATION_SZONE)
+	e2:SetTargetRange(LOCATION_PUBLIC,0)
+	e2:SetTarget(aux.TargetBoolFunction(Card.IsSetCard,0x300))
+	e2:SetValue(RACE_DRAGON)
 	c:RegisterEffect(e2)
-	--(3)Set 1 "Draconic" Trap from your Deck
+	--(2)Recycle or Special
 	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,2))
+	e3:SetDescription(aux.Stringid(id,0))
+	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SPECIAL_SUMMON)
 	e3:SetType(EFFECT_TYPE_IGNITION)
-	e3:SetRange(LOCATION_HAND)
-	e3:SetCountLimit(1,id+1)
-	e3:SetCost(s.setcost)
-	e3:SetTarget(s.settg)
-	e3:SetOperation(s.setop)
+	e3:SetCode(EVENT_FREE_CHAIN)
+	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e3:SetRange(LOCATION_SZONE)
+	e3:SetCountLimit(1,id)
+	e3:SetTarget(s.thsptg)
+	e3:SetOperation(s.thspop)
 	c:RegisterEffect(e3)
+	--(3)From banished to GY
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,3))
+	e3:SetCategory(CATEGORY_TOGRAVE)
+	e3:SetType(EFFECT_TYPE_IGNITION)
+	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e3:SetRange(LOCATION_GRAVE)
+	e3:SetCountLimit(1,id+1)
+	e3:SetCost(Cost.SelfBanish)
+	e3:SetTarget(s.tgtg)
+	e3:SetOperation(s.tgop)
+	c:RegisterEffect(e3)
+	--(4)Banish opponent's battled monster
+	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,4))
+	e4:SetCategory(CATEGORY_REMOVE)
+	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e4:SetCode(EVENT_DAMAGE_STEP_END)
+	e4:SetRange(LOCATION_SZONE)
+	e4:SetCountLimit(1)
+	e4:SetCondition(s.atcon)
+	e4:SetOperation(s.atop)
+	c:RegisterEffect(e4)
 end
---(2)Add this card from the GY to your hand
-function s.costfilter(c)
-	return c:IsRace(RACE_DRAGON) and c:IsLocation(LOCATION_EXTRA) and c:IsAbleToRemoveAsCost(POS_FACEUP)
+--(2)Recycle or Special
+function s.thspfilter(c,e,tp,ft)
+	return c:IsSetCard(0x300) and c:IsFaceup() and (c:IsAbleToHand() or (ft>0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false)))
 end
-function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_EXTRA,0,1,nil) end
-	local g=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_EXTRA,0,1,1,nil)
-	Duel.Remove(g,POS_FACEUP,REASON_COST)
-end
-function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.thsptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	local c=e:GetHandler()
-	if chk==0 then return c:IsAbleToHand() end
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,c,1,0,0)
-end
-function s.spfilter(c,e,tp)
-	return c:IsSetCard(0x300) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-end
-function s.thop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if not (c:IsRelateToEffect(e) and Duel.SendtoHand(c,nil,REASON_EFFECT)>0 and c:IsLocation(LOCATION_HAND)) then return end
-	Duel.ConfirmCards(1-tp,c)
-	Duel.ShuffleHand(tp)
-	if Duel.GetLocationCount(tp,LOCATION_MZONE)==0 then return end
-	local g=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_HAND,0,nil,e,tp)
-	if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local sc=g:Select(tp,1,1,nil):GetFirst()
-		if not sc then return end
-		Duel.BreakEffect()
-		if Duel.SpecialSummonStep(sc,0,tp,tp,false,false,POS_FACEUP) then
-			
-		end
-		Duel.SpecialSummonComplete()
+	local ft=Duel.GetLocationCount(tp,LOCATION_MZONE)
+	if chkc then return chkc:IsLocation(LOCATION_GRAVE|LOCATION_REMOVED) and chkc:IsControler(tp) and s.thspfilter(chkc,e,tp,ft) end
+	if chk==0 then return Duel.IsExistingTarget(s.thspfilter,tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,nil,e,tp,ft) end
+	Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,1))
+	local g=Duel.SelectTarget(tp,s.thspfilter,tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,1,nil,e,tp,ft)
+	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,g,1,tp,0)
+	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,g,1,tp,0)
+	if g:GetFirst():IsLocation(LOCATION_GRAVE) then
+		Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,g,1,tp,0)
 	end
 end
---(3)Set 1 "Draconic" Trap from your Deck
-function s.setcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return not c:IsPublic() end
-	Duel.ConfirmCards(1-tp,c)
-	Duel.ShuffleHand(tp)
+function s.thspop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	if not tc:IsRelateToEffect(e) then return end
+	aux.ToHandOrElse(tc,tp,
+		function()
+			return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and tc:IsCanBeSpecialSummoned(e,0,tp,false,false)
+		end,
+		function()
+			Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
+		end,
+		aux.Stringid(id,2)
+	)
 end
-function s.setfilter(c)
-	return c:IsSetCard(0x300) and c:IsTrap() and c:IsSSetable()
+--(3)From banished to GY
+function s.tgfilter(c)
+	return c:IsFaceup() and c:IsSetCard(0x300)
 end
-function s.set2filter(c)
-	return c:IsSetCard(0x300) and c:IsSpell() and c:IsSSetable()
+function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_REMOVED) and chkc:IsControler(tp) and s.tgfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.tgfilter,tp,LOCATION_REMOVED,0,1,e:GetHandler()) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+	local g=Duel.SelectTarget(tp,s.tgfilter,tp,LOCATION_REMOVED,0,1,3,e:GetHandler())
+	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,g,#g,0,0)
 end
-function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return c:IsDiscardable() and Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) end
-end
-function s.setop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	Duel.SendtoGrave(c,REASON_EFFECT|REASON_DISCARD)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
-	local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_DECK,0,1,1,nil)
-	if #g>0 and Duel.SSet(tp,g)>0 and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,777000680),tp,LOCATION_ONFIELD,0,1,nil)
-		and Duel.IsExistingMatchingCard(s.set2filter,tp,LOCATION_DECK,0,1,nil) and Duel.SelectYesNo(tp,aux.Stringid(id,3))then
-			local f=Duel.SelectMatchingCard(tp,s.set2filter,tp,LOCATION_DECK,0,1,1,nil)
-			Duel.SSet(tp,f)
+function s.tgop(e,tp,eg,ep,ev,re,r,rp)
+	local tg=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
+	local sg=tg:Filter(Card.IsRelateToEffect,nil,e)
+	if #sg>0 then
+		Duel.SendtoGrave(sg,REASON_EFFECT|REASON_RETURN)
 	end
 end
-
+--(4)Banish opponent's battled monster
+function s.atcon(e,tp,eg,ep,ev,re,r,rp)
+	local a=Duel.GetAttacker()
+	local d=Duel.GetAttackTarget()
+	if not d then return end
+	if d:IsControler(tp) then
+		e:SetLabelObject(a)
+		return d:IsMonster() and d:IsSetCard(0x300) and d:IsFaceup()
+			and a:IsRelateToBattle() and a:IsLocation(LOCATION_ONFIELD)
+	elseif a:IsControler(tp) then
+		e:SetLabelObject(d)
+		return a:IsMonster() and a:IsSetCard(0x300) and a:IsFaceup()
+			and d:IsRelateToBattle() and d:IsLocation(LOCATION_ONFIELD)
+	end
+	return false
+end
+function s.atop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	if not c:IsRelateToEffect(e) then return end
+	local tc=e:GetLabelObject()
+	if tc and tc:IsRelateToBattle() then
+		Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)
+	end
+end

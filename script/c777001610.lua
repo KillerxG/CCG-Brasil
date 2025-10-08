@@ -1,100 +1,81 @@
---Draconic War Path
+--Draconic Defense
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	--(1)Banish
+	--(1)Negate attack and banish
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_REMOVE)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
-	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e1:SetCode(EVENT_ATTACK_ANNOUNCE)
 	e1:SetCountLimit(1,id)
-	e1:SetTarget(s.destg)
-	e1:SetOperation(s.desop)
+	e1:SetCondition(s.condition)
+	e1:SetTarget(s.target)
+	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
-	--(2)Banish opponent's Extra Deck
+	--(2)Negate an effect that targtes a "Draconic" monster you control, and if you do, banish that card
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_REMOVE)
-	e2:SetType(EFFECT_TYPE_IGNITION)
+	e2:SetType(EFFECT_TYPE_QUICK_O)
+	e2:SetCategory(CATEGORY_DISABLE+CATEGORY_REMOVE)
+	e2:SetCode(EVENT_CHAINING)
 	e2:SetRange(LOCATION_GRAVE)
 	e2:SetCountLimit(1,id+1)
-	e2:SetCondition(s.rmcon)
-	e2:SetCost(s.rmcost)
-	e2:SetTarget(s.rmtg)
-	e2:SetOperation(s.rmop)
+	e2:SetCondition(s.discon)
+	e2:SetCost(Cost.SelfBanish)
+	e2:SetTarget(s.distg)
+	e2:SetOperation(s.disop)
 	c:RegisterEffect(e2)
 end
---(1)Banish
-function s.spfilter(c,e,tp)
-	return c:IsSetCard(0x300) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+--(1)Negate attack and banish
+function s.filter(c)
+	return c:IsFaceup() and c:IsSetCard(0x300)
 end
-function s.destgfilter(c,tp)
-	return c:IsSetCard(0x300) and c:IsFaceup()
-		and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsAttackBelow,c:GetAttack()),tp,0,LOCATION_MZONE,1,nil)
+function s.condition(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_MZONE,0,1,nil)
 end
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.destgfilter(chkc,tp) end
-	if chk==0 then return Duel.IsExistingTarget(s.destgfilter,tp,LOCATION_MZONE,0,1,nil,tp) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local g=Duel.SelectTarget(tp,s.destgfilter,tp,LOCATION_MZONE,0,1,1,nil,tp)
-	local dg=Duel.GetMatchingGroup(aux.FaceupFilter(Card.IsAttackBelow,g:GetFirst():GetAttack()),tp,0,LOCATION_MZONE,nil)
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,dg,1,tp,0)
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsOnField() end
+	if chk==0 then return Duel.IsExistingTarget(Card.IsAbleToRemove,tp,0,LOCATION_ONFIELD,1,e:GetHandler()) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+	local g=Duel.SelectTarget(tp,Card.IsAbleToRemove,tp,0,LOCATION_ONFIELD,1,1,e:GetHandler())
+	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
 end
-function s.desop(e,tp,eg,ep,ev,re,r,rp)
+function s.setfilter(c)
+	return c:IsNormalTrap() and not c:IsSetCard(SET_LABRYNTH) and c:IsSSetable()
+end
+function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
-	if not tc:IsRelateToEffect(e) or tc:IsFacedown() then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectMatchingCard(tp,aux.FaceupFilter(Card.IsAttackBelow,tc:GetAttack()),tp,0,LOCATION_MZONE,1,1,nil)
-	if #g>0 then
-		Duel.HintSelection(g)
-		if Duel.Remove(g,POS_FACEUP,REASON_EFFECT) and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,777000680),tp,LOCATION_ONFIELD,0,1,nil)
-			and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp)
-			and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
-			Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-			local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.spfilter),tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
-				if #g>0 then
-					Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
-				end
-		end			
+	local c=e:GetHandler()
+	if not Duel.NegateAttack() or not tc:IsRelateToEffect(e) then return end
+	if Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)==0 then return end
+	Duel.SkipPhase(1-tp,PHASE_BATTLE,RESET_PHASE|PHASE_BATTLE_STEP,1)
+	if c:IsSSetable(true) and e:IsHasType(EFFECT_TYPE_ACTIVATE) then
+		Duel.BreakEffect()
+		c:CancelToGrave()
+		Duel.ChangePosition(c,POS_FACEDOWN)
+		Duel.RaiseEvent(c,EVENT_SSET,e,REASON_EFFECT,tp,tp,0)
 	end
 end
---(2)Banish opponent's Extra Deck
-function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,0x300),tp,LOCATION_MZONE,0,1,nil) and aux.exccon(e)
+--(2)Negate an effect that targtes a "Draconic" monster you control, and if you do, banish that card
+function s.tgfilter(c,tp)
+	return c:IsFaceup() and c:IsLocation(LOCATION_MZONE) and c:IsControler(tp) and c:IsSetCard(0x300)
 end
-function s.costfilter(c)
-	return c:IsRace(RACE_DRAGON) and c:IsLocation(LOCATION_EXTRA) and c:IsAbleToRemoveAsCost(POS_FACEUP)
+function s.discon(e,tp,eg,ep,ev,re,r,rp)
+	if not re:IsHasProperty(EFFECT_FLAG_CARD_TARGET) then return false end
+	local tg=Duel.GetChainInfo(ev,CHAININFO_TARGET_CARDS)
+	return tg and tg:IsExists(s.tgfilter,1,nil,tp) and Duel.IsChainDisablable(ev)
 end
-function s.rmcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return e:GetHandler():IsAbleToRemoveAsCost()
-		and Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_EXTRA,0,1,nil) end
-	Duel.Remove(e:GetHandler(),POS_FACEUP,REASON_COST)
-	local g=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_EXTRA,0,1,1,nil)
-	Duel.Remove(g,POS_FACEUP,REASON_COST)
-end
-function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetFieldGroupCount(tp,0,LOCATION_EXTRA)>0 end
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,0,1-tp,1)
-end
-function s.rmop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetFieldGroup(tp,0,LOCATION_EXTRA)
-	if #g>0 then
-		local sg=g:RandomSelect(tp,1)
-		if Duel.Remove(sg,POS_FACEUP,REASON_EFFECT) and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,777000680),tp,LOCATION_ONFIELD,0,1,nil) 
-			and Duel.GetFieldGroupCount(tp,0,LOCATION_EXTRA)>0 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
-				local f=Duel.GetFieldGroup(tp,0,LOCATION_EXTRA)
-					if #f<1 then return end
-						Duel.ConfirmCards(tp,f)
-						Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-						local sf=f:FilterSelect(tp,Card.IsAbleToRemove,1,1,nil,tp,POS_FACEDOWN)
-							if #sf>0 then
-								Duel.Remove(sf,POS_FACEDOWN,REASON_EFFECT)
-							end
-								Duel.ShuffleExtra(1-tp)
-		end
+function s.distg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return true end
+	Duel.SetOperationInfo(0,CATEGORY_DISABLE,eg,1,0,0)
+	if re:GetHandler():IsDestructable() and re:GetHandler():IsRelateToEffect(re) then
+		Duel.SetOperationInfo(0,CATEGORY_REMOVE,eg,1,0,0)
 	end
 end
-
+function s.disop(e,tp,eg,ep,ev,re,r,rp)
+	if Duel.NegateEffect(ev) and re:GetHandler():IsRelateToEffect(re) then
+		Duel.Remove(eg,POS_FACEUP,REASON_EFFECT)
+	end
+end

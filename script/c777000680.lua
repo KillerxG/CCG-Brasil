@@ -2,24 +2,23 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	c:SetSPSummonOnce(id)
 	c:EnableReviveLimit()
-	--(1)Special Summon Condition
+	c:SetSPSummonOnce(id)
+	--(1)Special Summon condition
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-	e0:SetValue(0)
+	e0:SetValue(aux.FALSE)
 	c:RegisterEffect(e0)
-	--(2)Special Summon Procedure
+	--(2)Special Summon itself from the hand
 	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetCode(EFFECT_SPSUMMON_PROC)
 	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
+	e1:SetCode(EFFECT_SPSUMMON_PROC)
 	e1:SetRange(LOCATION_HAND)
 	e1:SetCondition(s.spcon)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 	--(3)Banish monsters
 	local e2=Effect.CreateEffect(c)
@@ -41,59 +40,23 @@ function s.initial_effect(c)
 	e3:SetTarget(s.reptg)
 	e3:SetValue(s.repval)
 	c:RegisterEffect(e3)
-	--(5)Type Dragon
+	--(5)Your opponent cannot activate cards or effects during the Battle Phase
 	local e4=Effect.CreateEffect(c)
-	e4:SetType(EFFECT_TYPE_SINGLE)
-	e4:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e4:SetCode(EFFECT_ADD_RACE)
-	e4:SetRange(LOCATION_MZONE+LOCATION_GRAVE)
-	e4:SetValue(RACE_DRAGON)
-	c:RegisterEffect(e4)	
-	--(6)Disable
-	local e5=Effect.CreateEffect(c)
-	e5:SetType(EFFECT_TYPE_FIELD)	
-	e5:SetCode(EFFECT_DISABLE)
-	e5:SetRange(LOCATION_MZONE)
-	e5:SetTargetRange(0,LOCATION_ONFIELD)
-	e5:SetCondition(s.condition)
-	e5:SetTarget(s.disable)
-	c:RegisterEffect(e5)
-	--(7)Disable banishment
-	local e6=Effect.CreateEffect(c)
-	e6:SetType(EFFECT_TYPE_FIELD)	
-	e6:SetCode(EFFECT_DISABLE)
-	e6:SetRange(LOCATION_MZONE)
-	e6:SetTargetRange(0,LOCATION_REMOVED)
-	e6:SetTarget(s.di2sable)
-	c:RegisterEffect(e6)
+	e4:SetType(EFFECT_TYPE_FIELD)
+	e4:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e4:SetCode(EFFECT_CANNOT_ACTIVATE)
+	e4:SetRange(LOCATION_MZONE)
+	e4:SetTargetRange(0,1)
+	e4:SetCondition(function() return Duel.IsBattlePhase() end)
+	e4:SetValue(1)
+	c:RegisterEffect(e4)
 end
---(2)Special Summon Procedure
-function s.spfilter(c)
-	return c:IsMonster() and c:IsSetCard(0x300) and c:IsAbleToGraveAsCost()
-end
+--(2)Special Summon itself from the hand
 function s.spcon(e,c)
 	if c==nil then return true end
 	local tp=e:GetHandlerPlayer()
-	local rg=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_MZONE,0,e:GetHandler())
-	return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and #rg>2 and aux.SelectUnselectGroup(rg,e,tp,3,3,nil,0)
-end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,c)
-	local c=e:GetHandler()
-	local g=nil
-	local rg=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_MZONE,0,c)
-	local g=aux.SelectUnselectGroup(rg,e,tp,3,3,nil,1,tp,HINTMSG_TOGRAVE,nil,nil,true)
-	if #g>0 then
-		g:KeepAlive()
-		e:SetLabelObject(g)
-		return true
-	end
-	return false
-end
-function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
-	local g=e:GetLabelObject()
-	if not g then return end
-	Duel.SendtoGrave(g,REASON_COST)
-	g:DeleteGroup()
+	local g=Duel.GetMatchingGroup(aux.AND(Card.IsMonster,Card.IsSetCard),tp,LOCATION_GRAVE+LOCATION_MZONE,0,nil,0x300)
+	return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and #g>=3 and g:GetClassCount(Card.GetCode)>=3
 end
 --(3)Banish monsters
 function s.cfilter(c,tp)
@@ -144,16 +107,4 @@ function s.reptg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.repval(e,c)
 	return s.repfilter(c,e:GetHandlerPlayer())
-end
---(6)Disable
-function s.condition(e,tp,eg,ep,ev,re,r,rp)
-	local ph=Duel.GetCurrentPhase()
-	return ph>=PHASE_BATTLE_START and ph<=PHASE_BATTLE
-end
-function s.disable(e,c)
-	return c:IsFaceup() and not c:IsType(TYPE_NORMAL)
-end
---(7)Disable banishment
-function s.di2sable(e,c)
-	return not c:IsType(TYPE_NORMAL)
 end

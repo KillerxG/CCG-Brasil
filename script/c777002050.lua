@@ -1,4 +1,4 @@
---Draconic Champion
+--Draconic Travel
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -6,97 +6,84 @@ function s.initial_effect(c)
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_ACTIVATE)
 	e0:SetCode(EVENT_FREE_CHAIN)
+	e0:SetHintTiming(0,TIMING_STANDBY_PHASE|TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
+	e0:SetCost(s.thcost)
 	c:RegisterEffect(e0)
-	--(1)Send this card to the GY
+	--(1)ATK Up
 	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_TOGRAVE)
-	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
-	e1:SetCode(EVENT_PHASE+PHASE_END)
+	e1:SetType(EFFECT_TYPE_FIELD)
+	e1:SetCode(EFFECT_UPDATE_ATTACK)
 	e1:SetRange(LOCATION_SZONE)
-	e1:SetCountLimit(1)
-	e1:SetCondition(function(e,tp) return not Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,777000680),tp,LOCATION_ONFIELD,0,1,nil) end)
-	e1:SetTarget(s.tgtg)
-	e1:SetOperation(function(e) Duel.SendtoGrave(e:GetHandler(),REASON_EFFECT) end)
+	e1:SetTargetRange(LOCATION_MZONE,0)
+	e1:SetTarget(function(e,c) return c:IsSetCard(0x300) end)
+	e1:SetValue(s.atkval)
 	c:RegisterEffect(e1)
-	--(2)Place this card on the bottom of the Deck, then banish Dragon from Extra Deck
+	--(2)Reveal any number of FIRE monsters in your hand, shuffle them into the Deck, then draw the same number of cards
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_TODECK+CATEGORY_REMOVE)
+	e2:SetDescription(aux.Stringid(id,0))
+	e2:SetCategory(CATEGORY_TODECK+CATEGORY_DRAW)
 	e2:SetType(EFFECT_TYPE_QUICK_O)
 	e2:SetCode(EVENT_FREE_CHAIN)
-	e2:SetRange(LOCATION_GRAVE)
-	e2:SetHintTiming(0,TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
-	e2:SetTarget(s.tdtg)
-	e2:SetOperation(s.tdop)
+	e2:SetRange(LOCATION_SZONE)
+	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMINGS_CHECK_MONSTER_E)
+	e2:SetCountLimit(1,id)
+	e2:SetTarget(s.drtg)
+	e2:SetOperation(s.drop)
 	c:RegisterEffect(e2)
-	--(3)Banish cards your opponent controls
+	--Can be activated the turn it was Set by banishing 1 face-up "Maliss" monster you control
 	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,3))
-	e3:SetCategory(CATEGORY_REMOVE)
-	e3:SetType(EFFECT_TYPE_QUICK_O)
-	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e3:SetCode(EVENT_FREE_CHAIN)
-	e3:SetRange(LOCATION_SZONE)
-	e3:SetHintTiming(0,TIMING_MAIN_END+TIMINGS_CHECK_MONSTER_E)
-	e3:SetCountLimit(1,id)
-	e3:SetTarget(s.destg)
-	e3:SetOperation(s.desop)
+	e3:SetDescription(aux.Stringid(id,1))
+	e3:SetType(EFFECT_TYPE_SINGLE)
+	e3:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
+	e3:SetCode(EFFECT_TRAP_ACT_IN_SET_TURN)
+	e3:SetValue(function(e) e:SetLabel(1) end)
+	e3:SetCondition(function(e) return Duel.IsExistingMatchingCard(s.thcostfilter,e:GetHandlerPlayer(),LOCATION_EXTRA,0,1,nil,e:GetHandlerPlayer()) end)
 	c:RegisterEffect(e3)
+	e0:SetLabelObject(e3)
 end
---(1)Send this card to the GY
-function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
-	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,e:GetHandler(),1,tp,0)
+
+function s.thcostfilter(c,tp)
+	return c:IsRace(RACE_DRAGON) and c:IsAbleToRemove(tp)
 end
---(2)Place this card on the bottom of the Deck, then draw 1 card
-function s.tdfilter(c)
-	return (c:IsSetCard(0x300) or c:IsRace(RACE_DRAGON)) and c:IsMonster() and c:IsAbleToDeck() and c:IsFaceup()
-end
-function s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return c:IsAbleToDeck() and Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_EXTRA,0,1,nil) end
-	Duel.SetOperationInfo(0,CATEGORY_TODECK,c,1,tp,0)
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,0)
-end
-function s.tdop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) and Duel.SendtoDeck(c,nil,SEQ_DECKBOTTOM,REASON_EFFECT)>0
-		and c:IsLocation(LOCATION_DECK) then
-		Duel.BreakEffect()
-		local f=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_EXTRA,0,1,1,nil)
-		if Duel.Remove(f,POS_FACEUP,REASON_EFFECT) and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,777000680),tp,LOCATION_ONFIELD,0,1,nil) 
-			and Duel.IsExistingMatchingCard(s.tdfilter,tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,nil) and Duel.SelectYesNo(tp,aux.Stringid(id,2))then
-			e:SetCategory(CATEGORY_TODECK)
-			Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE|LOCATION_REMOVED)
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
-			local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.tdfilter),tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,5,nil)
-				if #g>0 then
-					Duel.HintSelection(g,true)
-					Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
-				end
-		end
+function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	local label_obj=e:GetLabelObject()
+	if chk==0 then label_obj:SetLabel(0) return true end
+	if label_obj:GetLabel()>0 then
+		label_obj:SetLabel(0)
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+		local g=Duel.SelectMatchingCard(tp,s.thcostfilter,tp,LOCATION_EXTRA,0,1,1,nil,tp)
+		Duel.Remove(g,POS_FACEUP,REASON_COST)
 	end
 end
---(3)Banish cards your opponent controls
-function s.desfilter(c)
-	return c:IsFaceup() or c:IsFacedown()
+--(1)ATK Up
+function s.atkfilter(c)
+	return c:IsRace(RACE_DRAGON) and c:IsMonster() and c:IsFaceup()
 end
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and s.desfilter(chkc) end
-	local ct=Duel.GetMatchingGroupCount(aux.FaceupFilter(Card.IsSetCard,0x300),tp,LOCATION_MZONE,0,nil)
-	if chk==0 then return ct>0 and Duel.IsExistingTarget(s.desfilter,tp,0,LOCATION_ONFIELD,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-	local g=Duel.SelectTarget(tp,s.desfilter,tp,0,LOCATION_ONFIELD,1,ct,nil)
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
+function s.atkval(e,c)
+	return 200*Duel.GetMatchingGroupCount(s.atkfilter,e:GetHandlerPlayer(),LOCATION_REMOVED,0,nil)
 end
-function s.desop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetTargetCards(e)
-	if #g==0 then return end
-	local c=e:GetHandler()
-	for tc in g:Iter() do
-		if Duel.Remove(tc,POS_FACEUP,REASON_EFFECT) then
-
+--(2)Reveal any number of FIRE monsters in your hand, shuffle them into the Deck, then draw the same number of cards
+function s.tdfilter(c)
+	return c:IsAttribute(ATTRIBUTE_FIRE) and c:IsMonster() and c:IsAbleToDeck() and not c:IsPublic()
+end
+function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsPlayerCanDraw(tp)
+		and Duel.IsExistingMatchingCard(s.tdfilter,tp,LOCATION_HAND,0,1,nil) end
+	Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_HAND)
+	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
+end
+function s.drop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
+	local g=Duel.SelectMatchingCard(tp,s.tdfilter,tp,LOCATION_HAND,0,1,99,nil)
+	if #g>0 then
+		Duel.ConfirmCards(1-tp,g)
+		local ct=Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
+		if ct>0 then
+			Duel.ShuffleDeck(tp)
+			if Duel.IsPlayerCanDraw(tp) then
+				Duel.BreakEffect()
+				Duel.Draw(tp,ct,REASON_EFFECT)
+			end
 		end
 	end
 end
