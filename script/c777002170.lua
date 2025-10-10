@@ -67,9 +67,10 @@ function s.desop2(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 --(3)Can be activated from the hand
-function s.actfilter(c)
-	return c:IsFaceup() and c:IsCode(777002010)
+function s.cfilter1(c)
+	return c:IsFaceup() and c:IsOriginalCodeRule(777002010)
 end
 function s.actcon(e)
-	return Duel.IsExistingMatchingCard(s.actfilter,e:GetHandlerPlayer(),LOCATION_MZONE,0,1,nil)
+	local tp=e:GetHandlerPlayer()
+	return Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_MZONE,0,1,nil)
 end

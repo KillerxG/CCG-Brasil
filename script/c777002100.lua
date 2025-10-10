@@ -1,4 +1,4 @@
---Rockslash Earth Crystal
+--Rockslash Earth Gem
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -18,7 +18,7 @@ function s.initial_effect(c)
 	e2:SetTarget(s.rmtg)
 	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
-	--(1)Burn equal half of the ATK
+	--(2)Burn equal half of the ATK
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_DAMAGE)
@@ -51,7 +51,7 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Damage(1-tp,ct*400,REASON_EFFECT)
 	end
 end
---(1)Burn equal half of the ATK
+--(2)Burn equal half of the ATK
 function s.cfilter(c)
 	return c:IsFaceup() and c:IsSetCard(0x309) and c:IsMonster()
 end
