@@ -28,10 +28,11 @@ function s.initial_effect(c)
 	e3:SetOperation(s.copyop)
 	c:RegisterEffect(e3)
 end
+s.listed_names={CARD_UMI}
 --(1)Search
 function s.tgcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local b1 = Duel.CheckLPCost(tp,600)
-	local b2 = Duel.CheckLPCost(1-tp,600) and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsOriginalCode,777003320),tp,LOCATION_MZONE,0,1,nil)
+	local b2 = Duel.CheckLPCost(1-tp,600) and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsOriginalCodeRule,777003320),tp,LOCATION_MZONE,0,1,nil)
 	if chk==0 then return b1 or b2 end
 	local op=Duel.SelectEffect(tp,
 		{b1,aux.Stringid(id,0)},
@@ -47,7 +48,7 @@ function s.tgcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	end
 end
 function s.filter(c)
-	return c:IsSetCard(0x312)  and c:IsAbleToHand() and not c:IsCode(id)
+	return c:IsMonster() and (c:IsSetCard(0x312) or c:ListsCode(CARD_UMI))  and c:IsAbleToHand() and not c:IsCode(id)
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK,0,1,nil) end
@@ -64,7 +65,7 @@ end
 --(2)Add Name
 function s.copycost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local b1 = Duel.CheckLPCost(tp,600)
-	local b2 = Duel.CheckLPCost(1-tp,600) and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsOriginalCode,777003320),tp,LOCATION_MZONE,0,1,nil)
+	local b2 = Duel.CheckLPCost(1-tp,600) and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsOriginalCodeRule,777003320),tp,LOCATION_MZONE,0,1,nil)
 	if chk==0 then return b1 or b2 end
 	local op=Duel.SelectEffect(tp,
 		{b1,aux.Stringid(id,0)},

@@ -2,25 +2,24 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	c:SetSPSummonOnce(id)
 	c:EnableReviveLimit()
-	--(1)Special Summon Condition
-	local e0=Effect.CreateEffect(c)
-	e0:SetType(EFFECT_TYPE_SINGLE)
-	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-	e0:SetValue(0)
-	c:RegisterEffect(e0)
-	--(2)Special Summon Procedure
+	c:SetSPSummonOnce(id)
+	--(1)Special Summon condition
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetCode(EFFECT_SPSUMMON_PROC)
-	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
-	e1:SetRange(LOCATION_HAND)
-	e1:SetCondition(s.spcon)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
-	c:RegisterEffect(e1)	
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e1:SetCode(EFFECT_SPSUMMON_CONDITION)
+	e1:SetValue(aux.FALSE)
+	c:RegisterEffect(e1)
+	--(2)Special Summon itself from the hand
+	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(id,3))
+	e2:SetType(EFFECT_TYPE_FIELD)
+	e2:SetProperty(EFFECT_FLAG_UNCOPYABLE)
+	e2:SetCode(EFFECT_SPSUMMON_PROC)
+	e2:SetRange(LOCATION_HAND)
+	e2:SetCondition(s.spcon)
+	c:RegisterEffect(e2)
 	--(3)Special Summon WATER monster from Extra
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,0))
@@ -53,33 +52,13 @@ function s.initial_effect(c)
 	e5:SetValue(s.repval)
 	c:RegisterEffect(e5)
 end
---(2)Special Summon Procedure
-function s.spfilter(c)
-	return c:IsMonster() and c:IsSetCard(0x312) and c:IsAbleToGraveAsCost()
-end
+s.listed_names={CARD_UMI}
+--(2)Special Summon itself from the hand
 function s.spcon(e,c)
 	if c==nil then return true end
 	local tp=e:GetHandlerPlayer()
-	local rg=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_MZONE,0,e:GetHandler())
-	return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and #rg>2 and aux.SelectUnselectGroup(rg,e,tp,3,3,nil,0)
-end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,c)
-	local c=e:GetHandler()
-	local g=nil
-	local rg=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_MZONE,0,c)
-	local g=aux.SelectUnselectGroup(rg,e,tp,3,3,nil,1,tp,HINTMSG_TOGRAVE,nil,nil,true)
-	if #g>0 then
-		g:KeepAlive()
-		e:SetLabelObject(g)
-		return true
-	end
-	return false
-end
-function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
-	local g=e:GetLabelObject()
-	if not g then return end
-	Duel.SendtoGrave(g,REASON_COST)
-	g:DeleteGroup()
+	local g=Duel.GetMatchingGroup(aux.AND(Card.IsMonster,Card.IsSetCard),tp,LOCATION_GRAVE+LOCATION_MZONE,0,nil,0x312)
+	return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and #g>=3 and g:GetClassCount(Card.GetCode)>=3
 end
 --(3)Special Summon WATER monster from Extra
 function s.sp2filter(c,e,tp)
@@ -125,10 +104,6 @@ end
 function s.sp3filter(c,e,tp)
 	return (c:IsSetCard(0x312) or c:ListsCode(CARD_UMI)) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
-function s.xyzfilter(c,e,tp)
-	return c:IsSetCard(SET_GUNKAN) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_XYZ,tp,false,false)
-		and Duel.GetLocationCountFromEx(tp,tp,nil,c)
-end
 function s.xyzop(e,tp,eg,ep,ev,re,r,rp)
 	local def=0
 	local g=eg:Filter(s.filter,nil,tp)
@@ -140,12 +115,12 @@ function s.xyzop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.PayLPCost(1-tp,def)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 		and Duel.IsExistingMatchingCard(s.sp3filter,tp,LOCATION_DECK+LOCATION_HAND,0,1,nil,e,tp)
-		and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+		and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
 		Duel.BreakEffect()
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 		local hc=Duel.SelectMatchingCard(tp,s.sp3filter,tp,LOCATION_DECK+LOCATION_HAND,0,1,1,nil,e,tp)
 		if Duel.SpecialSummon(hc,0,tp,tp,false,false,POS_FACEUP)>0 then
-			
+			--
 		end
 	end
 end

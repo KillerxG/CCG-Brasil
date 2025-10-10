@@ -1,4 +1,4 @@
---Oceanic Storm Blood Experience
+--Oceanic Storm Blood Infection
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -7,7 +7,9 @@ function s.initial_effect(c)
 	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetHintTiming(0,TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
 	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
+	e1:SetCost(Cost.PayLP(800))
 	e1:SetCondition(s.ctcon)
 	e1:SetTarget(s.cttg)
 	e1:SetOperation(s.ctop)

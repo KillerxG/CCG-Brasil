@@ -1,4 +1,4 @@
---Oceanic Storm Blood Lancer
+--Oceanic Storm Spectrum
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -30,18 +30,19 @@ function s.initial_effect(c)
 	e3:SetOperation(s.copyop)
 	c:RegisterEffect(e3)
 	--(3)Recycle
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,6))
-	e3:SetCategory(CATEGORY_TOHAND)
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e3:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
-	e3:SetCode(EVENT_PAY_LPCOST)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetCountLimit(1,id+2)
-	e3:SetTarget(s.target)
-	e3:SetOperation(s.activate)
-	c:RegisterEffect(e3)
+	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,6))
+	e4:SetCategory(CATEGORY_TOHAND)
+	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e4:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
+	e4:SetCode(EVENT_PAY_LPCOST)
+	e4:SetRange(LOCATION_MZONE)
+	e4:SetCountLimit(1,id+2)
+	e4:SetTarget(s.target)
+	e4:SetOperation(s.activate)
+	c:RegisterEffect(e4)
 end
+s.listed_names={CARD_UMI}
 --(1)Special Summon
 function s.spfilter(c,tp)
 	return c:IsSetCard(0x312) and c:IsControler(tp)
@@ -66,7 +67,7 @@ end
 --(2)Add Name
 function s.copycost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local b1 = Duel.CheckLPCost(tp,600)
-	local b2 = Duel.CheckLPCost(1-tp,600) and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsOriginalCode,777003320),tp,LOCATION_MZONE,0,1,nil)
+	local b2 = Duel.CheckLPCost(1-tp,600) and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsOriginalCodeRule,777003320),tp,LOCATION_MZONE,0,1,nil)
 	if chk==0 then return b1 or b2 end
 	local op=Duel.SelectEffect(tp,
 		{b1,aux.Stringid(id,1)},

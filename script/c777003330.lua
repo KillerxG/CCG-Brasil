@@ -1,4 +1,4 @@
---Oceanic Storm Huntress - Ritta
+--Oceanic Storm Blader
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -27,9 +27,10 @@ function s.initial_effect(c)
 	e3:SetOperation(s.copyop)
 	c:RegisterEffect(e3)
 end
+s.listed_names={CARD_UMI}
 --(1)Special Summon
 function s.cfilter(c)
-	return c:IsFaceup() and (c:IsCode(777000830) or c:IsCode(777003320))
+	return c:IsFaceup() and (c:IsCode(CARD_UMI) or c:IsOriginalCodeRule(777003320))
 end
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local lv=e:GetHandler():GetLevel()
@@ -55,7 +56,7 @@ end
 --(2)Add Name
 function s.copycost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local b1 = Duel.CheckLPCost(tp,600)
-	local b2 = Duel.CheckLPCost(1-tp,600) and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsOriginalCode,777003320),tp,LOCATION_MZONE,0,1,nil)
+	local b2 = Duel.CheckLPCost(1-tp,600) and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsOriginalCodeRule,777003320),tp,LOCATION_MZONE,0,1,nil)
 	if chk==0 then return b1 or b2 end
 	local op=Duel.SelectEffect(tp,
 		{b1,aux.Stringid(id,1)},

@@ -6,117 +6,118 @@ function s.initial_effect(c)
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
-	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e1:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
-	e1:SetTarget(s.target)
+	e1:SetHintTiming(0,TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
 	c:RegisterEffect(e1)
+	--(1)Change Name/Type
 	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+	e2:SetDescription(aux.Stringid(id,0))
+	e2:SetType(EFFECT_TYPE_QUICK_O)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e2:SetCode(EVENT_FREE_CHAIN)
 	e2:SetRange(LOCATION_SZONE)
-	e2:SetCode(EVENT_CHAIN_SOLVED)
-	e2:SetLabelObject(e1)
-	e2:SetCondition(aux.PersistentTgCon)
-	e2:SetOperation(aux.PersistentTgOp(false))
+	e2:SetCountLimit(1,id)
+	e2:SetHintTiming(0,TIMING_STANDBY_PHASE|TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
+	e2:SetCost(Cost.PayLP(800))
+	e2:SetTarget(s.namechangetg)
+	e2:SetOperation(s.namechangeop)
 	c:RegisterEffect(e2)
-	--(1)Change name to "Blood Plague"
+	--(2)Cannot Attack or be used as material
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_FIELD)
-	e3:SetCode(EFFECT_CHANGE_CODE)
+	e3:SetCode(EFFECT_CANNOT_ATTACK)
 	e3:SetRange(LOCATION_SZONE)
 	e3:SetTargetRange(0,LOCATION_MZONE)
-	e3:SetTarget(aux.PersistentTargetFilter)
-	e3:SetValue(777003301)
+	e3:SetCondition(s.levycheck)
+	e3:SetTarget(s.etarget)
 	c:RegisterEffect(e3)
-	--(2)Remove Attributes
-	local e4=Effect.CreateEffect(c)
-	e4:SetType(EFFECT_TYPE_FIELD)
-	e4:SetCode(EFFECT_REMOVE_ATTRIBUTE)
-	e4:SetRange(LOCATION_SZONE)
-	e4:SetTargetRange(0,LOCATION_MZONE)
-	e4:SetTarget(aux.PersistentTargetFilter)
-	e4:SetValue(ATTRIBUTE_ALL)
+	local e4=e3:Clone()
+	e4:SetCode(EFFECT_UNRELEASABLE_SUM)
+	e4:SetValue(1)
 	c:RegisterEffect(e4)
-	--(3)Remove Types
-	local e5=Effect.CreateEffect(c)
-	e5:SetType(EFFECT_TYPE_FIELD)
-	e5:SetCode(EFFECT_REMOVE_RACE)
-	e5:SetRange(LOCATION_SZONE)
-	e5:SetTargetRange(0,LOCATION_MZONE)
-	e5:SetTarget(aux.PersistentTargetFilter)
-	e5:SetValue(RACE_ALL)
+	local e5=e4:Clone()
+	e5:SetCode(EFFECT_CANNOT_BE_FUSION_MATERIAL)
 	c:RegisterEffect(e5)
-	--(4)Activate cost
-	local e6=Effect.CreateEffect(c)
-	e6:SetType(EFFECT_TYPE_FIELD)
-	e6:SetCode(EFFECT_ACTIVATE_COST)
-	e6:SetRange(LOCATION_SZONE)
-	e6:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e6:SetTargetRange(0,1)
-	e6:SetCondition(s.costcon)
-	e6:SetCost(s.costchk)
-	e6:SetOperation(s.costop)
+	local e6=e4:Clone()
+	e6:SetCode(EFFECT_CANNOT_BE_SYNCHRO_MATERIAL)
 	c:RegisterEffect(e6)
-	--(4.1)Accumulate
-	local e7=Effect.CreateEffect(c)
-	e7:SetType(EFFECT_TYPE_FIELD)
-	e7:SetCode(id)
-	e7:SetRange(LOCATION_SZONE)
-	e7:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e7:SetTargetRange(0,1)
-	e7:SetCondition(s.costcon)
+	local e7=e4:Clone()
+	e7:SetCode(EFFECT_CANNOT_BE_XYZ_MATERIAL)
 	c:RegisterEffect(e7)
-	--(5)Set this card
-	local e8=Effect.CreateEffect(c)
-	e8:SetDescription(aux.Stringid(id,0))
-	e8:SetType(EFFECT_TYPE_QUICK_O)
-	e8:SetCode(EVENT_FREE_CHAIN)
-	e8:SetRange(LOCATION_GRAVE)
-	e8:SetCountLimit(1,id)
-	e8:SetHintTiming(TIMING_END_PHASE,TIMING_BATTLE_END|TIMINGS_CHECK_MONSTER_E)
-	e8:SetCondition(s.setcon)
-	e8:SetTarget(s.settg)
-	e8:SetOperation(s.setop)
+	local e8=e4:Clone()
+	e8:SetCode(EFFECT_CANNOT_BE_LINK_MATERIAL)
 	c:RegisterEffect(e8)
+	--(3)Take Control
+	local e9=Effect.CreateEffect(c)
+	e9:SetCategory(CATEGORY_CONTROL)
+	e9:SetDescription(aux.Stringid(id,1))
+	e9:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e9:SetCode(EVENT_PHASE+PHASE_END)
+	e9:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e9:SetRange(LOCATION_SZONE)
+	e9:SetCountLimit(1,id+1)
+	e9:SetCondition(s.levycheck)
+	e9:SetTarget(s.cttg)
+	e9:SetOperation(s.ctop)
+	c:RegisterEffect(e9)
 end
---Activate
-function s.filter(c)
-	return c:IsFaceup() and c:GetCode()~=777003301
+--(1)Change Name/Type
+function s.namechangefilter(c)
+	return c:IsFaceup() and not c:IsCode(777003301)
 end
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsOnField() and s.filter(chkc) and chkc~=e:GetHandler() end
-	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,0,LOCATION_MZONE,1,e:GetHandler()) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	Duel.SelectTarget(tp,s.filter,tp,0,LOCATION_MZONE,1,1,e:GetHandler())
+function s.namechangetg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) and s.namechangefilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.namechangefilter,tp,0,LOCATION_MZONE,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
+	Duel.SelectTarget(tp,s.namechangefilter,tp,0,LOCATION_MZONE,1,1,nil)
 end
---(4)Activate cost
-function s.spconfilter(c)
+function s.namechangeop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	if tc:IsRelateToEffect(e) and not tc:IsCode(777003301) then
+		--Its name becomes "Blood Plague"
+		local e1=Effect.CreateEffect(e:GetHandler())
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+		e1:SetCode(EFFECT_CHANGE_CODE)
+		e1:SetValue(777003301)
+		e1:SetReset(RESET_EVENT|RESETS_STANDARD)
+		tc:RegisterEffect(e1)
+		--It becomes a Zombie
+		if not tc:IsRace(RACE_ZOMBIE) then
+		local e2=Effect.CreateEffect(e:GetHandler())
+		e2:SetType(EFFECT_TYPE_SINGLE)
+		e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+		e2:SetCode(EFFECT_CHANGE_RACE)
+		e2:SetValue(RACE_ZOMBIE)
+		e2:SetReset(RESET_EVENT|RESETS_STANDARD)
+		tc:RegisterEffect(e2)
+		end
+	end
+end
+--(2)Cannot Attack or be used as material
+function s.cfilter1(c)
+	return c:IsFaceup() and c:IsOriginalCodeRule(777003320)
+end
+function s.levycheck(e)
+	local tp=e:GetHandlerPlayer()
+	return Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_MZONE,0,1,nil)
+end
+function s.etarget(e,c)
 	return c:IsFaceup() and c:IsCode(777003301)
 end
-function s.costcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(s.spconfilter,e:GetHandlerPlayer(),0,LOCATION_MZONE,1,nil)
+--(3)Take Control
+function s.filter(c)
+	return c:IsCode(777003301) and c:IsControlerCanBeChanged()
 end
-function s.costchk(e,te_or_c,tp)
-	local ct=#{Duel.GetPlayerEffect(tp,id)}
-	return Duel.CheckLPCost(tp,ct*600)
+function s.cttg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and s.filter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,0,LOCATION_MZONE,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONTROL)
+	local g=Duel.SelectTarget(tp,s.filter,tp,0,LOCATION_MZONE,1,1,nil)
+	Duel.SetOperationInfo(0,CATEGORY_CONTROL,g,1,0,0)
 end
-function s.costop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.PayLPCost(tp,600)
-end
---(5)Set this card
-function s.setconfilter(c)
-	return c:IsFaceup() and c:IsOriginalCode(777003320)
-end
-function s.setcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(s.setconfilter,tp,LOCATION_MZONE,0,1,nil)
-end
-function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return c:IsSSetable() end
-	Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,c,1,0,0)
-end
-function s.setop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) and c:IsSSetable() and Duel.SSet(tp,c)>0 then
+function s.ctop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	if tc and tc:IsRelateToEffect(e) then
+		Duel.GetControl(tc,tp)
 	end
 end

@@ -1,4 +1,4 @@
---Oceanic Storm Walker
+--Oceanic Storm Lancer - Henry
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -14,7 +14,7 @@ function s.initial_effect(c)
 	e1:SetTarget(s.sptg)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
-	--(2)Special Summon 1 WATER mosnter from GY
+	--(2)Special Summon 1 monster from GY
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,5))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -22,7 +22,7 @@ function s.initial_effect(c)
 	e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
 	e2:SetCode(EVENT_PAY_LPCOST)
 	e2:SetRange(LOCATION_MZONE)
-	e2:SetCountLimit(1,id)
+	e2:SetCountLimit(1,id+1)
 	e2:SetTarget(s.target)
 	e2:SetOperation(s.activate)
 	c:RegisterEffect(e2)
@@ -31,12 +31,13 @@ function s.initial_effect(c)
 	e3:SetDescription(aux.Stringid(id,3))
 	e3:SetType(EFFECT_TYPE_IGNITION)
 	e3:SetRange(LOCATION_MZONE)
-	e3:SetCountLimit(1,id+1)
+	e3:SetCountLimit(1,id+2)
 	e3:SetCost(s.copycost)
 	e3:SetTarget(s.copytg)
 	e3:SetOperation(s.copyop)
 	c:RegisterEffect(e3)
 end
+s.listed_names={CARD_UMI}
 --(1)Special Summon itself
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return e:GetHandler():IsRelateToEffect(e) and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
@@ -50,7 +51,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(2)Increase ATK/DEF per multiples of 600
 function s.filter(c,e,tp)
-	return c:IsAttribute(ATTRIBUTE_WATER) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP)
+	return c:IsMonster() and (c:IsSetCard(0x312) or c:ListsCode(CARD_UMI)) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP)
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.filter(chkc,e,tp) end
