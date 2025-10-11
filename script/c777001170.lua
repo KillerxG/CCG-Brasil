@@ -1,4 +1,4 @@
---Timerx Combatant - James
+--Timerx Cyborg, Code Agent
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)

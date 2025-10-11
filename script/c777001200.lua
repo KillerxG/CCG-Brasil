@@ -1,9 +1,9 @@
---Timerx Meklossus
+--Timerx Cyborg, Code Destroyer
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
 	--Fusion Material
-	Fusion.AddProcMixRep(c,false,false,aux.FilterBoolFunctionEx(Card.IsSetCard,0x305),1,99,777001180)
+	Fusion.AddProcMixRep(c,false,false,aux.FilterBoolFunctionEx(Card.IsSetCard,0x305),2,99)
 	c:EnableReviveLimit()
     --(1)Shuffle 1 monster you control and 1 opponent's card
 	local e1=Effect.CreateEffect(c)
@@ -33,7 +33,7 @@ function s.initial_effect(c)
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
 	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
-	e3:SetOperation(s.atkop)
+	e3:SetOperation(s.multatk)
 	c:RegisterEffect(e3)
 end
 --(1)Shuffle 1 monster you control and 1 opponent's card
@@ -82,7 +82,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 --(3)Multi Attacks
-function s.atkop(e,tp,eg,ep,ev,re,r,rp)
+function s.multatk(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)

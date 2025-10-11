@@ -1,4 +1,4 @@
---Timerx Mekhunter
+--Timerx Cyborg, Code Moderator
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
