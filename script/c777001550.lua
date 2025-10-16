@@ -2,32 +2,49 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	--Activate
+	--(1)Set "Pendulum" or "Sky Wind" S/T
 	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
+	e1:SetOperation(s.setop)
 	c:RegisterEffect(e1)
-	--(1)Back to hand, then Set another Scale
+	--(2)Back to hand, then Set another Scale
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,0))
+	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
 	e2:SetType(EFFECT_TYPE_IGNITION)
 	e2:SetRange(LOCATION_SZONE)
+	e2:SetCountLimit(1,id+1)
 	e2:SetTarget(s.target)
 	e2:SetOperation(s.activate)
 	c:RegisterEffect(e2)
-	--(2)Search "Pendulum" Spells
+	--(3)ATK Down
 	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,1))
-	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
-	e3:SetType(EFFECT_TYPE_IGNITION)
+	e3:SetType(EFFECT_TYPE_FIELD)
+	e3:SetCode(EFFECT_UPDATE_ATTACK)
 	e3:SetRange(LOCATION_SZONE)
-	e3:SetCountLimit(1,id)
-	e3:SetCondition(s.thcon)
-	e3:SetTarget(s.thtg)
-	e3:SetOperation(s.thop)
+	e3:SetTargetRange(0,LOCATION_MZONE)
+	e3:SetCondition(s.con)
+	e3:SetTarget(aux.TargetBoolFunction(Card.IsRace,RACE_ALL))
+	e3:SetValue(-1000)
 	c:RegisterEffect(e3)
 end
+--(1)Set "Pendulum" or "Sky Wind" S/T
+function s.setfilter(c)
+	return (c:IsSetCard(0x306) or c:IsSetCard(0xf2)) and c:IsSpellTrap() and not c:IsCode(id) and c:IsSSetable()
+end
+function s.setop(e,tp,eg,ep,ev,re,r,rp)
+	local g=Duel.GetMatchingGroup(s.setfilter,tp,LOCATION_DECK,0,nil)
+	if #g==0 or not Duel.SelectYesNo(tp,aux.Stringid(id,0)) then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
+	local sg=g:Select(tp,1,1,nil)
+	if #sg>0 then
+		Duel.SSet(tp,sg)
+	end
+end
+--(2)Back to hand, then Set another Scale
 function s.filter(c)
 	return c:IsFaceup() and c:IsOriginalType(TYPE_PENDULUM) and c:IsOriginalType(TYPE_MONSTER) and c:IsSetCard(0x306)
 end
@@ -45,32 +62,16 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
 			local tpg=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_EXTRA,0,1,1,nil)
 			if #tpg>0 then 
-				if Duel.MoveToField(tpg:GetFirst(),tp,tp,LOCATION_PZONE,POS_FACEUP,true) and Duel.GetFieldGroupCount(tp,LOCATION_HAND,0)>=4 then
-					Duel.DiscardHand(tp,nil,1,1,REASON_EFFECT|REASON_DISCARD,nil)
-				end
+				Duel.MoveToField(tpg:GetFirst(),tp,tp,LOCATION_PZONE,POS_FACEUP,true) 
 			end
 		end		
 	end
 end
---(2)Search "Pendulum" Spells
-function s.cfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x306)
+--(3)ATK Down
+function s.cfilter1(c)
+	return c:IsFaceup() and c:IsOriginalCodeRule(777001490)
 end
-function s.thcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_PZONE,0,1,nil)
-end
-function s.thfilter(c)
-	return c:IsSetCard(0xf2)  and c:IsAbleToHand()
-end
-function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
-end
-function s.thop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK,0,1,1,nil)
-	if #g>0 then
-		Duel.SendtoHand(g,nil,REASON_EFFECT)
-		Duel.ConfirmCards(1-tp,g)
-	end
+function s.con(e)
+	local tp=e:GetHandlerPlayer()
+	return Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_MZONE,0,1,nil)
 end

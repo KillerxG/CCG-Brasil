@@ -1,174 +1,152 @@
---Sky Wind Witch
+--Sky Wind Angel
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
 	--Pendulum Summon
 	Pendulum.AddProcedure(c)
 	--Synchro Summon
+	Synchro.AddProcedure(c,nil,1,1,Synchro.NonTunerEx(Card.IsSetCard,0x306),1,99)
 	c:EnableReviveLimit()
-	Synchro.AddProcedure(c,nil,1,1,Synchro.NonTunerEx(Card.IsSetCard,0x306),1,99,s.matfilter)
 	--(1)Pendulum Effect
-	--(1.1)Avoid destruction 1x
+	--(1.1)"Sky Wind" monsters you control cannot be destroyed by battle
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e1:SetType(EFFECT_TYPE_FIELD)
+	e1:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
 	e1:SetRange(LOCATION_PZONE)
-	e1:SetCode(EFFECT_INDESTRUCTABLE_COUNT)
-	e1:SetCountLimit(1)
-	e1:SetValue(s.valcon)
+	e1:SetTargetRange(LOCATION_MZONE,0)
+	e1:SetCondition(s.btcon)
+	e1:SetTarget(aux.TargetBoolFunction(Card.IsSetCard,0x306))
+	e1:SetValue(1)
 	c:RegisterEffect(e1)
-	--(1.2)Handes
+	--(1.2)Special Summon itself
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetCategory(CATEGORY_DESTROY+CATEGORY_DEFCHANGE)
-	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
-	e2:SetCode(EVENT_TO_HAND)
+	e2:SetCategory(CATEGORY_DESTROY+CATEGORY_SPECIAL_SUMMON)
+	e2:SetType(EFFECT_TYPE_IGNITION)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e2:SetRange(LOCATION_PZONE)
 	e2:SetCountLimit(1,id)
-	e2:SetCondition(s.hdcon)
-	e2:SetTarget(s.hdtg)
-	e2:SetOperation(s.hdop)
+	e2:SetTarget(s.sptg)
+	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
 	--(2)Monster Effect
-	--(2.1)Special Summon
+	--(2.1)Additional Attack
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
-	e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e3:SetCategory(CATEGORY_TOHAND)
 	e3:SetType(EFFECT_TYPE_IGNITION)
-	e3:SetRange(LOCATION_MZONE)
+	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e3:SetCountLimit(1,id+1)
-	e3:SetTarget(s.sptg)
-	e3:SetOperation(s.spop)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetTarget(s.destg)
+	e3:SetOperation(s.desop)
 	c:RegisterEffect(e3)
-	--(2.2)If targeted, Recycle
+	--(2.2)Double BP
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,2))
-	e4:SetCategory(CATEGORY_TOHAND)
+	e4:SetCategory(CATEGORY_SPECIAL_SUMMON)
 	e4:SetType(EFFECT_TYPE_QUICK_O)
 	e4:SetCode(EVENT_BECOME_TARGET)
-	e4:SetProperty(EFFECT_FLAG_DELAY)
 	e4:SetRange(LOCATION_MZONE)
-	e4:SetCountLimit(1)
-	e4:SetCondition(s.excon)
-	e4:SetTarget(s.thtg)
-	e4:SetOperation(s.thop)
+	e4:SetCountLimit(1,id+2)
+	e4:SetCondition(function(e,tp,eg) return eg:IsContains(e:GetHandler()) and not Duel.IsPlayerAffectedByEffect(tp,EFFECT_BP_TWICE) end)
+	e4:SetOperation(s.doublebattlephase)
 	c:RegisterEffect(e4)
-	--(2.3)Place itself into pendulum zone
+	--(2.3)Place itself in P-Zone
 	local e5=Effect.CreateEffect(c)
 	e5:SetDescription(aux.Stringid(id,3))
-	e5:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e5:SetCode(EVENT_DESTROYED)
-	e5:SetProperty(EFFECT_FLAG_DELAY)
+	e5:SetCategory(CATEGORY_TOHAND)
+	e5:SetType(EFFECT_TYPE_IGNITION)
+	e5:SetRange(LOCATION_EXTRA)
+	e5:SetCountLimit(1,id+3)
 	e5:SetCondition(s.pencon)
-	e5:SetTarget(s.pentg)
+	e5:SetTarget(function(e,tp,eg,ep,ev,re,r,rp,chk) if chk==0 then return Duel.CheckPendulumZones(tp) end end)
 	e5:SetOperation(s.penop)
 	c:RegisterEffect(e5)
 end
---Synchro Summon
-function s.matfilter(c,scard,sumtype,tp)
-	return c:IsType(TYPE_PENDULUM,scard,sumtype,tp)
+--(1.1)"Sky Wind" monsters you control cannot be destroyed by battle
+function s.cfilter1(c)
+	return c:IsFaceup() and c:IsOriginalCodeRule(777001490)
 end
---(1.1)Avoid destruction 1x
-function s.pfilter(c)
-	return c:IsFaceup() and c:IsCode(777001490)
+function s.btcon(e)
+	local tp=e:GetHandlerPlayer()
+	return Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_MZONE,0,1,nil)
 end
-function s.valcon(e,re,r,rp)
-	return (r&REASON_EFFECT)~=0 and not re:IsHasProperty(EFFECT_FLAG_CARD_TARGET)
-		and Duel.IsExistingMatchingCard(s.pfilter,e:GetHandlerPlayer(),LOCATION_MZONE,0,1,nil) 
+--(1.2)Special Summon itself
+function s.cfilter2(c)
+	return c:IsFaceup() and c:IsType(TYPE_PENDULUM) and c:IsMonster()
 end
---(1.2)Handes
-function s.defilter(c)
-	return c:IsFaceup() and c:IsType(TYPE_PENDULUM) and c:GetDefense()>=1000
+function s.rescon(sg,e,tp,mg)
+	return sg:IsExists(s.cfilter2,1,nil) and Duel.GetMZoneCount(tp,sg)>0
 end
-function s.cfilter(c,tp)
-	return c:IsControler(tp) and c:IsPreviousLocation(LOCATION_DECK)
-end
-function s.hdcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetCurrentPhase()~=PHASE_DRAW and eg:IsExists(s.cfilter,1,nil,1-tp)
-end
-function s.hdtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.defilter(chkc) end
-	if chk==0 then return Duel.GetFieldGroupCount(tp,0,LOCATION_HAND)>0 
-		and Duel.IsExistingTarget(s.defilter,tp,LOCATION_MZONE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	Duel.SelectTarget(tp,s.atkfilter,tp,LOCATION_MZONE,0,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,1,1-tp,LOCATION_HAND)
-end
-function s.hdop(e,tp,eg,ep,ev,re,r,rp)
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	local c=e:GetHandler()
-	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() and tc:UpdateDefense(-1000,RESET_EVENT+RESETS_STANDARD,c)==-1000
-		and c:IsRelateToEffect(e) then
-		local g=Duel.GetFieldGroup(tp,0,LOCATION_HAND)
-		local sg=g:RandomSelect(tp,1)
-		Duel.Destroy(sg,REASON_EFFECT)
-	end
-end
---(2.1)Special Summon
-function s.spfilter(c,e,tp)
-	if c:IsLocation(LOCATION_EXTRA) and Duel.GetLocationCountFromEx(tp,tp,nil,c)==0 then return false end
-	return c:IsSetCard(0x306) and c:IsType(TYPE_PENDULUM) and (c:IsLocation(LOCATION_PZONE) or c:IsFaceup())
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local loc=LOCATION_EXTRA
-	if Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then loc=loc+LOCATION_PZONE end
-	if chk==0 then return loc~=0 and Duel.IsExistingMatchingCard(s.spfilter,tp,loc,0,1,nil,e,tp) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,loc)
+	local g=Duel.GetMatchingGroup(Card.IsCanBeEffectTarget,tp,LOCATION_ONFIELD,0,nil,e)
+	if chk==0 then return c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+		and aux.SelectUnselectGroup(g,e,tp,1,2,s.rescon,0,tp) end
+	local tg=aux.SelectUnselectGroup(g,e,tp,1,2,s.rescon,1,tp,HINTMSG_DESTROY,s.rescon)
+	Duel.SetTargetCard(tg)
+	Duel.SetOperationInfo(0,CATEGORY_DESTROY,tg,#tg,tp,0)
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,tp,0)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local loc=LOCATION_EXTRA
-	if Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then loc=loc+LOCATION_PZONE end
-	if loc==0 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,loc,0,1,1,nil,e,tp)
-	if #g>0 then
-		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
-	end
-end
---(2.2)If targeted, Recycle
-function s.excon(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsContains(e:GetHandler())
-end
-function s.thfilter(c)
-	return c:IsSetCard(0x306) and c:IsAbleToHand()
-end
-function s.setfilter(c)
-	return c:IsSetCard(0x306) and c:IsSpellTrapCard() and c:IsSSetable()
-end
-function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.thfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.thfilter,tp,LOCATION_GRAVE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectTarget(tp,s.thfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,g,1,0,0)
-end
-function s.thop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc:IsRelateToEffect(e) then
-		Duel.SendtoHand(tc,nil,REASON_EFFECT)
-		Duel.ConfirmCards(1-tp,tc)
-		if Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,0x306),tp,LOCATION_PZONE,0,1,nil)
-			and Duel.SelectYesNo(tp,aux.Stringid(id,4)) then
-			Duel.BreakEffect()
-			local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_DECK,0,1,1,nil)
-				if #g>0 then
-					Duel.SSet(tp,g)
-				end
-		end
-	end
-end
---(2.3)Place itself into pendulum zone
-function s.pencon(e,tp,eg,ep,ev,re,r,rp)
+	local tg=Duel.GetTargetCards(e)
+	if #tg==0 then return end
+	local ct=Duel.Destroy(tg,REASON_EFFECT)
+	if ct==0 then return end
 	local c=e:GetHandler()
-	return c:IsPreviousLocation(LOCATION_MZONE) and c:IsFaceup()
+	if c:IsRelateToEffect(e) and Duel.SpecialSummonStep(c,0,tp,tp,false,false,POS_FACEUP) then
+		
+	end
+	Duel.SpecialSummonComplete()
 end
-function s.pentg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.CheckPendulumZones(tp) end
+--(2.1)Additional Attack
+function s.filter(c)
+	return c:GetSequence()<5
+end
+function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_SZONE) and chkc:IsControler(tp) and s.filter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,LOCATION_SZONE,0,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
+	local g=Duel.SelectTarget(tp,s.filter,tp,LOCATION_SZONE,0,1,2,nil)
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,g,#g,0,0)
+end
+function s.desop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local g=Duel.GetTargetCards(e)
+	local ct=Duel.SendtoHand(g,nil,REASON_EFFECT)
+	if ct>0 and c:IsRelateToEffect(e) then
+		local e1=Effect.CreateEffect(c)
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_EXTRA_ATTACK)
+		e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+		e1:SetValue(ct)
+		e1:SetReset(RESETS_STANDARD_PHASE_END)
+		c:RegisterEffect(e1)
+	end
+end
+--(2.2)Double BP
+function s.doublebattlephase(e,tp,eg,ep,ev,re,r,rp)
+	if Duel.IsPlayerAffectedByEffect(tp,EFFECT_BP_TWICE) then return end
+	local turn_ct=Duel.GetTurnCount()
+	local ct=Duel.IsTurnPlayer(tp) and Duel.IsBattlePhase() and 2 or 1
+	--You can conduct your next Battle Phase twice
+	local e1=Effect.CreateEffect(e:GetHandler())
+	e1:SetDescription(aux.Stringid(id,2))
+	e1:SetType(EFFECT_TYPE_FIELD)
+	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_CLIENT_HINT)
+	e1:SetCode(EFFECT_BP_TWICE)
+	e1:SetTargetRange(1,0)
+	e1:SetValue(1)
+	e1:SetCondition(function() return ct==1 or Duel.GetTurnCount()~=turn_ct end)
+	e1:SetReset(RESET_PHASE|PHASE_BATTLE|RESET_SELF_TURN,ct)
+	Duel.RegisterEffect(e1,tp)
+end
+--(2.3)Place itself in P-Zone
+function s.pencon(e)
+	return e:GetHandler():IsLocation(LOCATION_EXTRA) and e:GetHandler():IsFaceup()
 end
 function s.penop(e,tp,eg,ep,ev,re,r,rp)
-	if not Duel.CheckPendulumZones(tp) then return end
 	local c=e:GetHandler()
 	if c:IsRelateToEffect(e) then
 		Duel.MoveToField(c,tp,tp,LOCATION_PZONE,POS_FACEUP,true)

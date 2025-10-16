@@ -44,7 +44,7 @@ function s.negtop(e,tp,eg,ep,ev,re,r,rp)
 	if dc and dc:IsControler(tp) and dc:UpdateDefense(-1000,RESET_EVENT+RESETS_STANDARD,c)==-1000
 		and negc and negc:IsControler(1-tp) and negc:IsFaceup() and negc:IsCanBeDisabledByEffect(e) then
 		negc:NegateEffects(e:GetHandler(),RESET_PHASE|PHASE_END)
-		if Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,777001490),tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil)
+		if Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsOriginalCodeRule,777001490),tp,LOCATION_MZONE,0,1,nil)
 			and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
 			Duel.AdjustInstantly()
 			Duel.BreakEffect()
