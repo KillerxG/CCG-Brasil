@@ -1,10 +1,10 @@
 -- Okami - Gekigami
--- Scripted by Leonardofake & Imp
+-- Scripted by Leonardofake, Imp & KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
 	--Synchro Summon
 	c:EnableReviveLimit()
-	Synchro.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x444),1,1,Synchro.NonTuner(nil),1,99)
+	Synchro.AddProcedure(c,s.tunerfilter,1,1,Synchro.NonTuner(nil),1,99)
 	--Can attack all monsters your opponent controls
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
@@ -31,6 +31,12 @@ function s.initial_effect(c)
 	e2:SetTarget(s.destg)
 	e2:SetOperation(s.desop)
 	c:RegisterEffect(e2)
+end
+s.material={444000030}
+s.listed_names={444000030}
+--Synchro Summon
+function s.tunerfilter(c,lc,stype,tp)
+	return c:IsSummonCode(lc,stype,tp,444000030)
 end
 --Piercing Damage
 function s.ptg(e,c)

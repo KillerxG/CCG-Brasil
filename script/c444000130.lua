@@ -1,10 +1,10 @@
 -- Okami - Evil Rao
--- Scripted by Leonardofake & Imp
+-- Scripted by Leonardofake, Imp & KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
 	--Synchro Summon
 	c:EnableReviveLimit()
-	Synchro.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x444),1,1,Synchro.NonTuner(nil),1,99)
+	Synchro.AddProcedure(c,s.tunerfilter,1,1,Synchro.NonTuner(nil),1,99)
 	--Special Summon
 	local e0=Effect.CreateEffect(c)
 	e0:SetDescription(aux.Stringid(id,0))
@@ -51,6 +51,12 @@ function s.initial_effect(c)
 	e4:SetCode(EFFECT_UPDATE_ATTACK)
 	e4:SetValue(s.atkval2)
 	c:RegisterEffect(e4)
+end
+s.material={444000030}
+s.listed_names={444000030}
+--Synchro Summon
+function s.tunerfilter(c,lc,stype,tp)
+	return c:IsSummonCode(lc,stype,tp,444000030)
 end
 --Special Summon
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
