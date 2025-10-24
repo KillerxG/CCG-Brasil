@@ -1,47 +1,108 @@
---Elementale Earth Drummer
+--Elementale Drummer of Earth
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	--(1)Set Ifself
+	--(1)Special Summon itself
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_DAMAGE)
-	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e1:SetCode(EVENT_PHASE+PHASE_END)
-	e1:SetRange(LOCATION_MZONE)
-	e1:SetCountLimit(1)
-	e1:SetTarget(s.postg)
-	e1:SetOperation(s.posop)
-	c:RegisterEffect(e1)
-	local e2=e1:Clone()
-	e2:SetCode(EVENT_PHASE+PHASE_STANDBY)
+	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e1:SetType(EFFECT_TYPE_IGNITION)
+	e1:SetRange(LOCATION_HAND)
+	e1:SetCountLimit(1,id)
+	e1:SetCost(s.spcost)
+	e1:SetTarget(s.sptg)
+	e1:SetOperation(s.spop)
+	c:RegisterEffect(e1)	
+	--(2)If flipped: Destroy & its copies
+	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(id,2))
+	e2:SetCategory(CATEGORY_DESTROY+CATEGORY_REMOVE)
+	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
+	e2:SetCode(EVENT_FLIP)
+	e2:SetTarget(s.rmtg)
+	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
-	--(2)DEF Up
+	--(3)Set Itself
 	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_SINGLE)
-	e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e3:SetCode(EFFECT_UPDATE_DEFENSE)
+	e3:SetDescription(aux.Stringid(id,3))
+	e3:SetCategory(CATEGORY_POSITION)
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e3:SetCode(EVENT_PHASE+PHASE_END)
 	e3:SetRange(LOCATION_MZONE)
-	e3:SetValue(s.defval)
+	e3:SetCountLimit(1)
+	e3:SetCondition(s.poscon)
+	e3:SetTarget(s.postg)
+	e3:SetOperation(s.posop)
 	c:RegisterEffect(e3)
-	--(3)Attack while in Defense Position
-	local e4=Effect.CreateEffect(c)
-	e4:SetType(EFFECT_TYPE_SINGLE)
-	e4:SetCode(EFFECT_DEFENSE_ATTACK)
-	e4:SetValue(1)
+	local e4=e3:Clone()
+	e4:SetCode(EVENT_PHASE+PHASE_STANDBY)
 	c:RegisterEffect(e4)
-	--(4)Flip: Destroy
-	local e5=Effect.CreateEffect(c)
-	e5:SetDescription(aux.Stringid(id,1))
-	e5:SetCategory(CATEGORY_DESTROY+CATEGORY_REMOVE)
-	e5:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_FLIP+EFFECT_TYPE_TRIGGER_O)
-	e5:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
-	e5:SetCountLimit(1,id)
-	e5:SetTarget(s.destg)
-	e5:SetOperation(s.desop)
-	c:RegisterEffect(e5)
 end
---(1)Set Ifself
+--(1)Special Summon itself
+function s.cfilter(c)
+	return c:IsMonster() and not c:IsPublic()
+end
+function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
+	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND,0,1,c) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
+	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_HAND,0,1,1,c):GetFirst()
+	local flip_chk=g:IsType(TYPE_FLIP) and 1 or 0
+	local setcard_chk=g:IsSetCard(0x310) and 1 or 0
+	e:SetLabel(setcard_chk,flip_chk)
+	Duel.ConfirmCards(1-tp,g)
+	Duel.ShuffleHand(tp)
+end
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+		and c:IsCanBeSpecialSummoned(e,0,tp,false,false) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,tp,0)
+end
+function s.spop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local setcard_chk,flip_chk=e:GetLabel()
+	if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEDOWN_DEFENSE)>0
+		and (flip_chk==1 or setcard_chk==1) and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
+		Duel.BreakEffect()
+		Duel.ChangePosition(c,POS_FACEUP_DEFENSE)
+	end
+	Duel.ConfirmCards(1-tp,c)
+end
+--(2)If flipped: Destroy & its copies
+function s.filter(c)
+	return c:IsAbleToRemove()
+end
+function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_ONFIELD) and s.filter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,0,LOCATION_ONFIELD,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+	local g=Duel.SelectTarget(tp,s.filter,tp,0,LOCATION_ONFIELD,1,1,nil)
+	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
+	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
+end
+function s.rmop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	if tc and tc:IsRelateToEffect(e) then
+		if Duel.Destroy(tc,REASON_EFFECT,LOCATION_REMOVED)~=0 and tc:IsMonster() then
+			local code=tc:GetCode()
+			local g=Duel.GetMatchingGroup(Card.IsCode,tp,0,LOCATION_DECK+LOCATION_EXTRA,nil,code)
+			Duel.Remove(g,POS_FACEUP,REASON_EFFECT)
+			g=Duel.GetFieldGroup(tp,0,LOCATION_DECK+LOCATION_EXTRA)
+			Duel.ConfirmCards(tp,g)
+			Duel.ShuffleDeck(1-tp)
+		end
+	end
+end
+--(3)Set Itself
+function s.cfilter1(c)
+	return c:IsFaceup() and c:IsOriginalCodeRule(777003130)
+end
+function s.poscon(e)
+	local tp=e:GetHandlerPlayer()
+	return Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_MZONE,0,1,nil)
+end
 function s.postg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
 	if chk==0 then return c:IsCanTurnSet() and c:GetFlagEffect(id)==0 end
@@ -52,34 +113,5 @@ function s.posop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if c:IsRelateToEffect(e) and c:IsFaceup() then
 		Duel.ChangePosition(c,POS_FACEDOWN_DEFENSE)
-	end
-end
---(2)DEF Up
-function s.deffilter(c)
-	return c:IsMonster()
-end
-function s.defval(e,c)
-	return Duel.GetMatchingGroupCount(s.deffilter,c:GetControler(),0,LOCATION_MZONE,nil)*300
-end
---(4)Flip: Destroy
-function s.desfilter(c)
-	return c:IsAbleToRemove()
-end
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.desfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.desfilter,tp,0,LOCATION_MZONE,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-	local g=Duel.SelectTarget(tp,s.desfilter,tp,0,LOCATION_MZONE,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
-end
-function s.desop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) then
-		if Duel.Destroy(tc,REASON_EFFECT,LOCATION_REMOVED)~=0 and tc:IsType(TYPE_EFFECT) then
-			local code=tc:GetCode()
-			local g=Duel.GetMatchingGroup(Card.IsCode,tp,0,LOCATION_DECK+LOCATION_EXTRA,nil,code)
-			Duel.Remove(g,POS_FACEUP,REASON_EFFECT)
-		end
 	end
 end

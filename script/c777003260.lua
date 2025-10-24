@@ -1,4 +1,4 @@
---Elementale Preparing the Stage
+--Elementale Today's Look
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -7,72 +7,87 @@ function s.initial_effect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	c:RegisterEffect(e1)
-	--(1)Reveal 1 monster and add 1 Flip monster to the hand
+	--(1)Place on bottom and next turn draw 2
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
+	e1:SetCategory(CATEGORY_TODECK)
 	e1:SetType(EFFECT_TYPE_IGNITION)
+	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e1:SetRange(LOCATION_SZONE)
 	e1:SetCountLimit(1,id)
-	e1:SetTarget(s.tgtg)
-	e1:SetOperation(s.tgop)
+	e1:SetTarget(s.target)
+	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
-	--(2)Reveal 1 monster and Special 1 Flip monster from the hand
+	--(2)Extra Normal Summon/Set
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
-	e2:SetType(EFFECT_TYPE_IGNITION)
+	e2:SetDescription(aux.Stringid(id,2))
+	e2:SetType(EFFECT_TYPE_FIELD)
 	e2:SetRange(LOCATION_SZONE)
-	e2:SetTarget(s.sptg)
-	e2:SetOperation(s.spop)
+	e2:SetTargetRange(LOCATION_HAND|LOCATION_MZONE,0)
+	e2:SetCode(EFFECT_EXTRA_SUMMON_COUNT)
+	e2:SetTarget(aux.TargetBoolFunction(Card.IsType,TYPE_FLIP))
 	c:RegisterEffect(e2)
+	local e3=e2:Clone()
+	e3:SetCode(EFFECT_EXTRA_SET_COUNT)
+	c:RegisterEffect(e3)
+	--(3)Self Recycle
+	local e4=Effect.CreateEffect(c)
+	e4:SetCategory(CATEGORY_TOHAND)
+	e4:SetDescription(aux.Stringid(id,3))
+	e4:SetType(EFFECT_TYPE_IGNITION)
+	e4:SetRange(LOCATION_GRAVE)
+	e4:SetCondition(s.thcon)
+	e4:SetTarget(s.thtg)
+	e4:SetOperation(s.thop)
+	c:RegisterEffect(e4)
 end
---(1)Reveal 1 monster and add 1 Flip monster to the hand
-function s.cfilter(c,tp)
-	return not c:IsType(TYPE_EFFECT) and not c:IsPublic() and Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK,0,1,nil,c)
+--(1)Place on bottom and next turn draw 2
+function s.thfilter(c)
+	return c:IsFaceup() and c:IsSetCard(0x310)
 end
-function s.filter(c,rc)
-	return c:IsType(TYPE_FLIP) and c:IsAttribute(rc:GetAttribute()) and c:IsAbleToHand()
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE+LOCATION_REMOVED) end
+	if chk==0 then return Duel.IsExistingTarget(s.thfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
+	local g=Duel.SelectTarget(tp,s.thfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil)
+	Duel.SetPossibleOperationInfo(0,CATEGORY_TODECK,g,1,tp,0)
 end
-function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_EXTRA,0,1,nil,tp) end
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
-end
-function s.tgop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
-	local rc=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_EXTRA,0,1,1,nil,tp):GetFirst()
-	if rc then
-		Duel.ConfirmCards(1-tp,rc)
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-		local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil,rc)
-		Duel.SendtoHand(g,nil,REASON_EFFECT)
-		Duel.ConfirmCards(1-tp,g)
+function s.activate(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	if tc:IsRelateToEffect(e) then
+		--Place it on top of the Deck during the End Phase of this turn
+		aux.DelayedOperation(tc,PHASE_END,id,e,tp,function(cc) Duel.HintSelection(cc,true) Duel.SendtoDeck(cc,nil,SEQ_DECKBOTTOM,REASON_EFFECT) end)
 	end
+	local turn_ct=Duel.GetTurnCount()
+	local ct=(Duel.IsTurnPlayer(tp) and Duel.IsPhase(PHASE_DRAW)) and 2 or 1
+	--Draw 2 cards instead of 1 for your normal draw during your next Draw Phase
+	local e1=Effect.CreateEffect(e:GetHandler())
+	e1:SetDescription(aux.Stringid(id,1))
+	e1:SetType(EFFECT_TYPE_FIELD)
+	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_CLIENT_HINT)
+	e1:SetCode(EFFECT_DRAW_COUNT)
+	e1:SetTargetRange(1,0)
+	e1:SetCondition(function() return Duel.GetTurnCount()~=turn_ct end)
+	e1:SetValue(2)
+	e1:SetReset(RESET_PHASE|PHASE_DRAW|RESET_SELF_TURN,ct)
+	Duel.RegisterEffect(e1,tp)
 end
---(2)Reveal 1 monster and Special 1 Flip monster from the hand
-function s.spfilter1(c,e,tp)
-  return c:IsType(TYPE_EFFECT) and c:IsAbleToGrave()
-  and Duel.IsExistingMatchingCard(s.spfilter2,tp,LOCATION_HAND,0,1,nil,e,tp,c:GetAttribute())
+--(3)Self Recycle
+function s.cfilter1(c)
+	return c:IsFaceup() and c:IsOriginalCodeRule(777003130)
 end
-function s.spfilter2(c,e,tp,att)
-  return c:IsType(TYPE_FLIP) and c:IsType(TYPE_MONSTER) and c:GetAttribute()==att and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+function s.thcon(e)
+	local tp=e:GetHandlerPlayer()
+	return Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_MZONE,0,1,nil)
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-  if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter1,tp,LOCATION_EXTRA,0,1,nil,e,tp) end
-  Duel.Hint(HINT_OPSELECTED,1-tp,e:GetDescription())
-  Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND)
+function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return e:GetHandler():IsAbleToHand() end
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,e:GetHandler(),1,0,0)
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-  Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
-  local g1=Duel.SelectMatchingCard(tp,s.spfilter1,tp,LOCATION_EXTRA,0,1,1,nil,e,tp)
-  if g1:GetCount()==0 then return end
-  Duel.SendtoGrave(g1,REASON_EFFECT)
-  Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-  local g=Duel.SelectMatchingCard(tp,s.spfilter2,tp,LOCATION_HAND,0,1,1,nil,e,tp,g1:GetFirst():GetAttribute())
-  if g:GetCount()>0 then
-    Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEDOWN_DEFENSE)
-	Duel.ConfirmCards(1-tp,g)
-	Duel.SendtoDeck(g1,1-tp,2,REASON_EFFECT)
-  end
+function s.thop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	if c:IsRelateToEffect(e) then
+		Duel.SendtoHand(c,nil,REASON_EFFECT)
+		Duel.ConfirmCards(1-tp,c)
+	end
 end

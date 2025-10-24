@@ -1,112 +1,108 @@
 --Elementale Practicing
+--Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
 	--Activate
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetHintTiming(0,TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
 	c:RegisterEffect(e1)
-	--(1)Flip to face-up
+	--(1)Flip face-up or face-down any number of monsters
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_POSITION)
-	e2:SetType(EFFECT_TYPE_IGNITION)	
+	e2:SetType(EFFECT_TYPE_QUICK_O)
 	e2:SetCode(EVENT_FREE_CHAIN)
-	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e2:SetRange(LOCATION_SZONE)
-	e2:SetCountLimit(2,id)
-	e2:SetCondition(s.setcon1)
-	e2:SetTarget(s.uptg)
-	e2:SetOperation(s.upop)
+	e2:SetRange(LOCATION_MZONE)
+	e2:SetHintTiming(0,TIMING_MAIN_END,TIMINGS_CHECK_MONSTER_E)
+	e2:SetCountLimit(2)
+	e2:SetTarget(s.postg)
+	e2:SetOperation(s.posop)
 	c:RegisterEffect(e2)
-	local e3=e2:Clone()
-	e3:SetType(EFFECT_TYPE_QUICK_O)
-	e3:SetCode(EVENT_FREE_CHAIN)
-	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
-	e3:SetCondition(s.setcon2)
+	--(2)Special Summon 1 random face-down monster from your opponent's Extra Deck, or banish it
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,0))
+	e3:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_REMOVE)
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e3:SetProperty(EFFECT_FLAG_DELAY)
+	e3:SetCode(EVENT_FLIP)
+	e3:SetRange(LOCATION_GRAVE)
+	e3:SetHintTiming(0,TIMING_MAIN_END,TIMINGS_CHECK_MONSTER_E)
+	e3:SetCountLimit(1,id)
+	e3:SetCondition(s.spcon)
+	e3:SetCost(s.spcost)
+	e3:SetTarget(s.sptg)
+	e3:SetOperation(s.spop)
 	c:RegisterEffect(e3)
-	--(2)Flip to face-down
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,1))
-	e4:SetCategory(CATEGORY_POSITION)
-	e4:SetType(EFFECT_TYPE_IGNITION)	
-	e4:SetCode(EVENT_FREE_CHAIN)
-	e4:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e4:SetRange(LOCATION_SZONE)
-	e4:SetCountLimit(2,id)
-	e4:SetCondition(s.setcon1)
-	e4:SetTarget(s.downtg)
-	e4:SetOperation(s.downop)
-	c:RegisterEffect(e4)
-	local e5=e4:Clone()
-	e5:SetType(EFFECT_TYPE_QUICK_O)
-	e5:SetCode(EVENT_FREE_CHAIN)
-	e5:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
-	e5:SetCondition(s.setcon2)
-	c:RegisterEffect(e5)	
 end
---Conditions to effects 1 and 2
-function s.setcon1(e,tp,eg,ep,ev,re,r,rp)
-	return not Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,0x310),tp,LOCATION_ONFIELD,0,1,e:GetHandler())
+--(1)Flip face-up or face-down any number of monsters
+function s.posfilter(c)
+	return c:IsFaceup() and c:IsCanTurnSet()
 end
-function s.setcon2(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,0x310),tp,LOCATION_ONFIELD,0,1,e:GetHandler())
+function s.postg(e,tp,eg,ep,ev,re,r,rp,chk)
+	local b1=Duel.IsExistingMatchingCard(Card.IsFacedown,tp,LOCATION_MZONE,0,1,nil)
+	local b2=Duel.IsExistingMatchingCard(s.posfilter,tp,LOCATION_MZONE,0,1,nil)
+	if chk==0 then return b1 or b2 end
+	local op=Duel.SelectEffect(tp,
+		{b1,aux.Stringid(id,1)},
+		{b2,aux.Stringid(id,2)})
+	e:SetLabel(op)
+	local pos=op==1 and POS_FACEUP_DEFENSE or POS_FACEDOWN_DEFENSE
+	Duel.SetOperationInfo(0,CATEGORY_POSITION,nil,1,tp,pos)
 end
---(1)Flip to face-up
-function s.setconfilter(c)
-	return c:IsCode(777003130)
+function s.posop(e,tp,eg,ep,ev,re,r,rp)
+	local op=e:GetLabel()
+	if not op then return end
+	local filter=op==1 and Card.IsFacedown or s.posfilter
+	local g=Duel.GetMatchingGroup(filter,tp,LOCATION_MZONE,0,nil)
+	if #g==0 then return end
+	local pos=op==1 and POS_FACEUP_DEFENSE or POS_FACEDOWN_DEFENSE
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_POSCHANGE)
+	Duel.ChangePosition(g:Select(tp,1,#g,nil),pos)
 end
-function s.setfilter(c)
-	return c:IsSetCard(0x310) and c:IsSpell() and c:IsSSetable()
+--(2)Special Summon 1 random face-down monster from your opponent's Extra Deck, or banish it
+function s.cfilter1(c)
+	return c:IsFaceup() and c:IsOriginalCodeRule(777003130)
 end
-function s.uptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:GetLocation()==LOCATION_MZONE and chkc:IsFacedown() end
-	if chk==0 then return Duel.IsExistingTarget(Card.IsFacedown,tp,LOCATION_MZONE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEDOWN)
-	local g=Duel.SelectTarget(tp,Card.IsFacedown,tp,LOCATION_MZONE,0,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_POSITION,g,1,0,0)
+function s.spcon(e,tp,eg)
+	local tp=e:GetHandlerPlayer()
+	return Duel.IsMainPhase() and Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_MZONE,0,1,nil) and eg:IsExists(s.spconfilter,1,nil,tp)
 end
-function s.upop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc:IsRelateToEffect(e) and tc:IsFacedown() then
-		Duel.ChangePosition(tc,POS_FACEUP_ATTACK)
-		if Duel.IsExistingMatchingCard(aux.FaceupFilter(s.setconfilter),tp,LOCATION_ONFIELD,0,1,nil)
-			and Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) and Duel.GetFieldGroupCount(tp,0,LOCATION_SZONE)>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
-			local sg=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_DECK,0,1,1,nil)
-				if #sg>0 then
-					Duel.BreakEffect()
-					Duel.SSet(tp,sg)
-				end
-		end
-	end
+function s.spconfilter(c,tp)
+	return c:IsControler(tp) and c:IsSetCard(0x310)
 end
---(2)Flip to face-down
-function s.desfilter(c)
-	return c:IsCode(777003130)
+function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
+	if chk==0 then return not c:HasFlagEffect(id) end
+	Duel.Remove(c,POS_FACEUP,REASON_COST)
+	c:RegisterFlagEffect(id,RESET_CHAIN,0,1)
 end
-function s.filter(c)
-	return c:IsFaceup() and c:IsType(TYPE_FLIP) and c:IsCanTurnSet()
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return (Duel.IsPlayerCanSpecialSummon(tp) or Duel.IsPlayerCanRemove(tp))
+		and Duel.IsExistingMatchingCard(Card.IsFacedown,tp,0,LOCATION_EXTRA,1,nil) end
+	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,1-tp,LOCATION_EXTRA)
+	Duel.SetPossibleOperationInfo(0,CATEGORY_REMOVE,nil,1,1-tp,LOCATION_EXTRA)
 end
-function s.downtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.filter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,LOCATION_MZONE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local g=Duel.SelectTarget(tp,s.filter,tp,LOCATION_MZONE,0,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_POSITION,g,1,0,0)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_DESTROY,nil,1,1-tp,LOCATION_MZONE)
-end
-function s.downop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) and tc:IsLocation(LOCATION_MZONE) and tc:IsFaceup() then
-		Duel.ChangePosition(tc,POS_FACEDOWN_DEFENSE)
-		if Duel.IsExistingMatchingCard(aux.FaceupFilter(s.desfilter),tp,LOCATION_ONFIELD,0,1,nil)
-			and Duel.GetFieldGroupCount(tp,0,LOCATION_MZONE)>0 and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-			local sg=Duel.SelectMatchingCard(tp,nil,tp,0,LOCATION_MZONE,1,1,nil)
-			Duel.HintSelection(sg,true)
-			Duel.BreakEffect()
-			Duel.Destroy(sg,REASON_EFFECT)
-		end
+function s.spop(e,tp,eg,ep,ev,re,r,rp)
+	local g=Duel.GetMatchingGroup(Card.IsFacedown,tp,0,LOCATION_EXTRA,nil)
+	if #g==0 then return end
+	local tc=g:RandomSelect(tp,1):GetFirst()
+	if not tc then return end
+	Duel.ConfirmCards(tp,tc)
+	if Duel.GetLocationCountFromEx(tp,tp,nil,tc)>0
+		and tc:IsCanBeSpecialSummoned(e,0,tp,false,false)
+		and Duel.SpecialSummonStep(tc,0,tp,tp,false,false,POS_FACEUP) then
+		--It cannot activate its effects this turn
+		local e1=Effect.CreateEffect(e:GetHandler())
+		e1:SetDescription(3302)
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_CLIENT_HINT)
+		e1:SetCode(EFFECT_CANNOT_TRIGGER)
+		e1:SetReset(RESETS_STANDARD_PHASE_END)
+		tc:RegisterEffect(e1)
+		Duel.SpecialSummonComplete()
+	else
+		Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)
 	end
 end
