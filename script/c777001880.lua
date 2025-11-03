@@ -1,81 +1,92 @@
---Warbeast Scout - Ichor
+--Warbeast Rookie
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-    --(1)Search
+    --If this card on the field would be used as Synchro Material, 1 Beast-Warrior in your hand can be used as 1 of the other materials
+	Synchro.AddHandMaterialEffect(c,id,function(c) return c:IsRace(RACE_BEASTWARRIOR) end)	
+	--(1)Level Change
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_TOGRAVE+CATEGORY_SPECIAL_SUMMON)
-	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e1:SetCode(EVENT_SUMMON_SUCCESS)
-	e1:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_DAMAGE_STEP)
-	e1:SetCountLimit(1,id)
-	e1:SetTarget(s.target)
-	e1:SetOperation(s.activate)
+	e1:SetType(EFFECT_TYPE_IGNITION)
+	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e1:SetRange(LOCATION_MZONE)
+	e1:SetCountLimit(1)
+	e1:SetTarget(s.lvtg)
+	e1:SetOperation(s.lvop)
 	c:RegisterEffect(e1)
-	local e2=e1:Clone()
-	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
-	c:RegisterEffect(e2)	
-	--(2)Special Summon itself from the GY
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,2))
-	e3:SetCategory(CATEGORY_DECKDES+CATEGORY_SPECIAL_SUMMON)
-	e3:SetType(EFFECT_TYPE_IGNITION)
-	e3:SetRange(LOCATION_GRAVE)
-	e3:SetCountLimit(1,id+1)
-	e3:SetCondition(s.spcon)
-	e3:SetTarget(s.sptg)
-	e3:SetOperation(s.spop)
+	--(2)Special Summon
+	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOKEN)
+	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e2:SetProperty(EFFECT_FLAG_DELAY)
+	e2:SetCode(EVENT_TO_GRAVE)
+	e2:SetCountLimit(1,id+1)
+	e2:SetCondition(s.tkcon)
+	e2:SetTarget(s.tktg)
+	e2:SetOperation(s.tkop)
+	c:RegisterEffect(e2)
+	local e3=e2:Clone()
+	e3:SetCode(EVENT_REMOVE)
 	c:RegisterEffect(e3)
+	local e4=e2:Clone()
+	e4:SetCode(EVENT_BE_MATERIAL)
+	e4:SetCondition(s.tk2con)
+	c:RegisterEffect(e4)
 end
---(1)Search
+--(1)Level Change
 function s.filter(c)
-	return c:IsSetCard(0x308) and (c:IsAbleToHand() or c:IsAbleToGrave())
+	return c:IsFaceup() and c:IsRace(RACE_BEASTWARRIOR) and c:HasLevel()
 end
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK,0,1,nil) end
+function s.lvtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.filter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,LOCATION_MZONE,0,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+	local g=Duel.SelectTarget(tp,s.filter,tp,LOCATION_MZONE,0,1,1,nil)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_LVRANK)
+	local lv=Duel.AnnounceLevel(tp,2,4,g:GetFirst():GetLevel())
+	Duel.SetTargetParam(lv)
 end
-function s.spfilter(c,e,tp,tc)
-	return c:IsSetCard(0x308) and not c:IsCode(tc:GetCode()) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-end
-function s.activate(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil)
-	local tc=g:GetFirst()
-	if not tc then return end
-	aux.ToHandOrElse(tc,tp)
-	if not tc:IsLocation(LOCATION_HAND+LOCATION_GRAVE) then return end
-	local sg=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_HAND,0,nil,e,tp,tc)
-	if #sg>0 and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
-		Duel.BreakEffect()
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local sc=sg:Select(tp,1,1,nil):GetFirst()
-		Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)
+function s.lvop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	local lv=Duel.GetChainInfo(0,CHAININFO_TARGET_PARAM)
+	if tc and tc:IsFaceup() and tc:IsRelateToEffect(e) then
+		local e1=Effect.CreateEffect(e:GetHandler())
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_CHANGE_LEVEL)
+		e1:SetValue(lv)
+		e1:SetReset(RESETS_STANDARD_PHASE_END)
+		tc:RegisterEffect(e1)
 	end
 end
---(2)Special Summon itself from the GY
-function s.spconfilter(c)
-	return c:IsFaceup() and (c:IsType(TYPE_TOKEN) or c:IsCode(777001840))
+--(2)Special Summon
+function s.cfilter1(c)
+	return c:IsFaceup() and c:IsOriginalCodeRule(777001840)
 end
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(s.spconfilter,tp,LOCATION_MZONE,0,1,nil)
+function s.tkcon(e,tp,eg,ep,ev,re,r,rp)
+	return e:GetHandler():GetPreviousLocation()==LOCATION_HAND and (r&REASON_DISCARD)~=0
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.tk2con(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
+	return c:IsLocation(LOCATION_GRAVE|LOCATION_REMOVED) and r==REASON_SYNCHRO and c:GetReasonCard():IsRace(RACE_BEASTWARRIOR)
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
+function s.tktg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then
+		return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+			and Duel.IsPlayerCanSpecialSummonMonster(tp,777001885,0x308,TYPES_TOKEN|TYPE_TUNER,1000,1000,2,RACE_BEAST,ATTRIBUTE_WATER)
+	end
+	Duel.SetOperationInfo(0,CATEGORY_TOKEN,nil,1,0,0)
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,0)
+	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
+end
+function s.tkop(e,tp,eg,ep,ev,re,r,rp)
+	if s.tktg(e,tp,eg,ep,ev,re,r,rp,0) then
 		local c=e:GetHandler()
-		if c:IsRelateToEffect(e) and Duel.SpecialSummonStep(c,0,tp,tp,false,false,POS_FACEUP) then
-			--Can use both sides to Synchro Summon
-			local e1=Effect.CreateEffect(e:GetHandler())
-			e1:SetType(EFFECT_TYPE_FIELD)
-			e1:SetCode(EFFECT_SYNCHRO_MATERIAL)
-			e1:SetTargetRange(LOCATION_MZONE,LOCATION_MZONE)
-			e1:SetReset(RESET_PHASE+PHASE_END)
-			Duel.RegisterEffect(e1,tp)
-		end
-		Duel.SpecialSummonComplete()
+		local token=Duel.CreateToken(tp,777001885)
+		Duel.SpecialSummonStep(token,0,tp,tp,false,false,POS_FACEUP)
+	end
+	if Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_MZONE,0,1,nil) and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+		Duel.SpecialSummon(e:GetHandler(),0,tp,tp,false,false,POS_FACEUP)
+	end
+	Duel.SpecialSummonComplete()
 end
