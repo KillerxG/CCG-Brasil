@@ -57,10 +57,13 @@ s.roll_dice=true
 function s.hspfilter(c,tp,sc)
 	return c:IsSetCard(0x298,sc,MATERIAL_LINK,tp) and (c:GetLevel()==8 or (c:GetLink()==4) and not c:IsCode(id)) and c:IsControler(tp) and Duel.GetLocationCountFromEx(tp,tp,c,sc)>0
 end
+function s.thfilter(c)
+	return c:IsFaceup() and c:IsCode(333000560)
+end
 function s.hspcon(e,c)
 	if c==nil then return true end
 	local tp=c:GetControler()
-	return Duel.CheckReleaseGroup(tp,s.hspfilter,1,false,1,true,c,tp,nil,false,nil,tp,c)
+	return Duel.CheckReleaseGroup(tp,s.hspfilter,1,false,1,true,c,tp,nil,false,nil,tp,c) and Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_SZONE,0,1,nil)
 end
 function s.hsptg(e,tp,eg,ep,ev,re,r,rp,chk,c)
 	local g=Duel.SelectReleaseGroup(tp,s.hspfilter,1,1,false,true,true,c,nil,nil,false,nil,tp,c)
