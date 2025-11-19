@@ -99,11 +99,11 @@ end
 function s.th2con(e)
 	return e:GetHandler():IsLevel(6)
 end
-function s.spfilter(c,e,tp)
+function s.fil2ter(c,e,tp)
 	return c:IsRace(RACE_CYBERSE) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.th2tg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and Duel.IsExistingMatchingCard(s.fil2ter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end
 	Duel.SetOperationInfo(0,CATEGORY_DICE,nil,0,tp,1)
 	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
 end
@@ -111,8 +111,8 @@ function s.th2op(e,tp,eg,ep,ev,re,r,rp)
 	local d=Duel.TossDice(tp,1)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)==0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	if Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) and (d==4 or d==5 or d==6) then
-		local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
+	if Duel.IsExistingMatchingCard(s.fil2ter,tp,LOCATION_GRAVE,0,1,nil,e,tp) and (d==4 or d==5 or d==6) then
+		local g=Duel.SelectMatchingCard(tp,s.fil2ter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
 			if #g>0 then
 				Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
 			end
@@ -122,20 +122,20 @@ end
 function s.th3con(e)
 	return e:GetHandler():IsLevel(8)
 end
-function s.fil2ter(c,e,tp)
+function s.fil3ter(c,e,tp)
 	return c:IsRace(RACE_CYBERSE) and c:IsLevelBelow(4) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.th3tg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and Duel.IsExistingMatchingCard(s.fil2ter,tp,LOCATION_DECK+LOCATION_HAND,0,1,nil,e,tp) end
+		and Duel.IsExistingMatchingCard(s.fil3ter,tp,LOCATION_DECK+LOCATION_HAND,0,1,nil,e,tp) end
 	Duel.SetOperationInfo(0,CATEGORY_DICE,nil,0,tp,1)
 	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND+LOCATION_DECK)
 end
 function s.th3op(e,tp,eg,ep,ev,re,r,rp)
 	local d=Duel.TossDice(tp,1)
-	if Duel.IsExistingMatchingCard(s.fil2ter,tp,LOCATION_DECK+LOCATION_HAND,0,1,nil,e,tp) and (d==4 or d==5 or d==6) then
+	if Duel.IsExistingMatchingCard(s.fil3ter,tp,LOCATION_DECK+LOCATION_HAND,0,1,nil,e,tp) and (d==4 or d==5 or d==6) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local g=Duel.SelectMatchingCard(tp,s.fil2ter,tp,LOCATION_DECK+LOCATION_HAND,0,1,1,nil,e,tp)
+		local g=Duel.SelectMatchingCard(tp,s.fil3ter,tp,LOCATION_DECK+LOCATION_HAND,0,1,1,nil,e,tp)
 			if #g>0 then
 				Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
 			end
