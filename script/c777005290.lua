@@ -15,6 +15,7 @@ function s.initial_effect(c)
 	e1:SetRange(LOCATION_MZONE)
 	e1:SetCountLimit(1,id)
 	e1:SetHintTiming(0,TIMING_STANDBY_PHASE|TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
+	e1:SetCondition(s.descon)
 	e1:SetCost(s.descost)
 	e1:SetTarget(s.destg)
 	e1:SetOperation(s.desop)
@@ -46,6 +47,9 @@ function s.ffilter(c,fc,sumtype,tp)
 	return c:IsLevelAbove(5) and (c:IsAttribute(ATTRIBUTE_FIRE,fc,sumtype,tp) or c:IsRace(RACE_PYRO,fc,sumtype,tp))
 end
 --(1)Banish
+function s.descon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.IsMainPhase()
+end
 function s.cfilter(c)
 	return c:IsAttribute(ATTRIBUTE_FIRE) and c:IsAbleToRemoveAsCost()
 end
