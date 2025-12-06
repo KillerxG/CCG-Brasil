@@ -1,67 +1,75 @@
---Avatar of the End
+--Herald's Pray
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	--Link Material
-	c:EnableReviveLimit()
-	Link.AddProcedure(c,s.matfilter,1,1)
-	--(1)Add 1 "Idrakian" card from the Deck to the hand
+	--(1)Special Summon 1 Fairy Tuner monster from Deck
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
-	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
-	e1:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
-	e1:SetCost(s.thcost)
-	e1:SetTarget(s.thtg)
-	e1:SetOperation(s.thop)
+	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e1:SetType(EFFECT_TYPE_ACTIVATE)
+	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetCountLimit(1,id)
+	e1:SetCost(s.cost)
+	e1:SetTarget(s.target)
+	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
-	--(2)Cannot be Link Material
+	--(2)Recycle then draw
 	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_SINGLE)
-	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e2:SetCode(EFFECT_CANNOT_BE_LINK_MATERIAL)
-	e2:SetValue(1)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_TODECK+CATEGORY_DRAW)
+	e2:SetType(EFFECT_TYPE_IGNITION)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e2:SetRange(LOCATION_GRAVE)
+	e2:SetCode(EVENT_FREE_CHAIN)
+	e2:SetCountLimit(1,id+1)
+	e2:SetCost(Cost.SelfBanish)
+	e2:SetTarget(s.drtg)
+	e2:SetOperation(s.drop)
 	c:RegisterEffect(e2)
 end
---Link Material
-function s.matfilter(c,scard,sumtype,tp)
-	return c:IsType(TYPE_MONSTER)
+--(1)Special Summon 1 Fairy Tuner monster from Deck
+function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsDiscardable,tp,LOCATION_HAND,0,1,e:GetHandler()) end
+	Duel.DiscardHand(tp,Card.IsDiscardable,1,1,REASON_COST|REASON_DISCARD)
 end
---(1)Add 1 "Idrakian" card from the Deck to the hand
-local key=TYPE_MONSTER+TYPE_SPELL+TYPE_TRAP
-function s.cfilter(c,tp)
-	return c:IsSetCard(0x313) and not c:IsPublic()
-		and Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil,c:GetType())
+function s.filter(c,e,tp)
+	return c:IsRace(RACE_FAIRY) and c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsType(TYPE_TUNER) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP)
 end
-function s.thfilter(c,ctype)
-	return c:IsSetCard(0x313) and c:IsAbleToHand() and not c:IsType(ctype&key)
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+		and Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK,0,1,nil,e,tp) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_DECK)
 end
-function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND,0,1,nil,tp) 
-		and e:GetHandler():IsAbleToRemoveAsCost() end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
-	Duel.Remove(e:GetHandler(),POS_FACEUP,REASON_COST)
-	local rc=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_HAND,0,1,1,nil,tp):GetFirst()
-	Duel.ConfirmCards(1-tp,rc)
-	Duel.ShuffleHand(tp)
-	e:SetLabelObject(rc)
-	Duel.SetTargetCard(rc)
-	
+function s.activate(e,tp,eg,ep,ev,re,r,rp)
+	if Duel.GetLocationCount(tp,LOCATION_MZONE)<1 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil,e,tp)
+	if #g>0 then
+		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+	end
 end
-function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
-	Duel.SetOperationInfo(0,CATEGORY_HANDES,nil,0,tp,1)
+--(2)Recycle then draw
+function s.drfilter(c)
+	return c:IsFaceup() and c:IsRace(RACE_FAIRY) and c:IsAbleToDeck()
 end
-function s.thop(e,tp,eg,ep,ev,re,r,rp)
-	local rc=e:GetLabelObject()
-	if not rc:IsRelateToEffect(e) then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK,0,1,1,nil,rc:GetType())
-	if #g>0 and Duel.SendtoHand(g,nil,REASON_EFFECT)>0 and g:GetFirst():IsLocation(LOCATION_HAND) then
-		Duel.ConfirmCards(1-tp,g)
-		Duel.ShuffleHand(tp)
+function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.drfilter(chkc) end
+	if chk==0 then return Duel.IsPlayerCanDraw(tp,1) 
+		and Duel.IsExistingTarget(s.drfilter,tp,LOCATION_GRAVE,0,3,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
+	local g=Duel.SelectTarget(tp,s.drfilter,tp,LOCATION_GRAVE,0,3,3,nil)
+	Duel.SetOperationInfo(0,CATEGORY_TODECK,g,3,0,0)
+	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
+end
+function s.drop(e,tp,eg,ep,ev,re,r,rp)
+	local tg=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
+	if not tg or tg:FilterCount(Card.IsRelateToEffect,nil,e)~=3 then return end
+	Duel.SendtoDeck(tg,nil,SEQ_DECKTOP,REASON_EFFECT)
+	local g=Duel.GetOperatedGroup()
+	if g:IsExists(Card.IsLocation,1,nil,LOCATION_DECK) then Duel.ShuffleDeck(tp) end
+	local ct=g:FilterCount(Card.IsLocation,nil,LOCATION_DECK|LOCATION_EXTRA)
+	if ct==3 then
 		Duel.BreakEffect()
+		Duel.Draw(tp,1,REASON_EFFECT)
 	end
 end
