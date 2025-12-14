@@ -1,69 +1,116 @@
---Shinigami Curse of Madness
+--Shinigami Curse of Soul
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
 	--Activate
 	local e0=Effect.CreateEffect(c)
-	e0:SetDescription(aux.Stringid(id,0))
 	e0:SetType(EFFECT_TYPE_ACTIVATE)
 	e0:SetCode(EVENT_FREE_CHAIN)
+	e0:SetHintTiming(0,TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
 	c:RegisterEffect(e0)
-	--(1)Return to Extra
+	--(1)Level Up
 	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,1))
-	e1:SetCategory(CATEGORY_TOHAND)
-	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
-	e1:SetProperty(EFFECT_FLAG_DELAY)
-	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e1:SetType(EFFECT_TYPE_FIELD)
+	e1:SetCode(EFFECT_UPDATE_LEVEL)
 	e1:SetRange(LOCATION_SZONE)
-	e1:SetCountLimit(1)
-	e1:SetCost(s.cost)
-	e1:SetTarget(s.destg)
-	e1:SetOperation(s.desop)
+	e1:SetTargetRange(LOCATION_MZONE,0)
+	e1:SetTarget(aux.TargetBoolFunction(Card.IsRace,RACE_ALL))
+	e1:SetValue(-1)
 	c:RegisterEffect(e1)
-	--(2)Set itself to opponent's field
+	--(2)Banish card from Extra Deck
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,2))
-	e2:SetType(EFFECT_TYPE_QUICK_O)
-	e2:SetCode(EVENT_FREE_CHAIN)
-	e2:SetRange(LOCATION_HAND)
-	e2:SetCountLimit(1,id+1)
-	e2:SetCondition(s.setcon)
-	e2:SetTarget(s.settg)
-	e2:SetOperation(s.setop)
+	e2:SetDescription(aux.Stringid(id,0))
+	e2:SetCategory(CATEGORY_TOGRAVE)
+	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
+	e2:SetProperty(EFFECT_FLAG_DELAY)
+	e2:SetRange(LOCATION_SZONE)
+	e2:SetCountLimit(1)
+	e2:SetCondition(s.rmcon)
+	e2:SetTarget(s.rmtg)
+	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
+	--(3)Your opponet can draw 1 card
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,1))
+	e3:SetCategory(CATEGORY_DRAW)
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
+	e3:SetCode(EVENT_PHASE+PHASE_END)
+	e3:SetRange(LOCATION_SZONE)
+	e3:SetCountLimit(1)
+	e3:SetCondition(function(e,tp) return Duel.IsTurnPlayer(tp) end)
+	e3:SetTarget(s.drtg)
+	e3:SetOperation(s.drop)
+	c:RegisterEffect(e3)
+	--(4)Cannot activate effects or Special Summon from the GY
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_FIELD)
+	e4:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e4:SetCode(EFFECT_CANNOT_ACTIVATE)
+	e4:SetRange(LOCATION_SZONE)
+	e4:SetTargetRange(1,0)
+	local e5=e4:Clone()
+	e4:SetValue(function(_,re) return re:GetActivateLocation()==LOCATION_GRAVE end)
+	c:RegisterEffect(e4)
+	e5:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
+	e5:SetTarget(function(_,c) return c:IsLocation(LOCATION_GRAVE) end)
+	c:RegisterEffect(e5)
+	--(5)Set itself to opponent's field
+	local e6=Effect.CreateEffect(c)
+	e6:SetDescription(aux.Stringid(id,2))
+	e6:SetType(EFFECT_TYPE_QUICK_O)
+	e6:SetCode(EVENT_FREE_CHAIN)
+	e6:SetRange(LOCATION_HAND)
+	e6:SetHintTiming(0,TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
+	e6:SetCountLimit(1,id)
+	e6:SetCondition(s.setcon)
+	e6:SetTarget(s.settg)
+	e6:SetOperation(s.setop)
+	c:RegisterEffect(e6)
 end
---(1)Return to Extra
-function s.disfilter(c)
-	return c:IsDiscardable()
+--(2)Banish card from Extra Deck
+function s.rmfilter(c,tp)
+	return c:IsSummonLocation(LOCATION_EXTRA) and c:IsSummonPlayer(tp)
 end
-function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.disfilter,tp,LOCATION_HAND,0,1,nil) end
-	Duel.DiscardHand(tp,s.disfilter,1,1,REASON_COST+REASON_DISCARD)
+function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
+	return eg:IsExists(s.rmfilter,1,nil,tp)
 end
-function s.filter(c,tp,e)
-	return c:IsType(TYPE_EXTRA) and c:IsAbleToExtra()
+function s.tgfilter(c)
+	return c:IsAbleToGrave()
 end
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsOnField() end
-	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,LOCATION_MZONE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
-	local g=Duel.SelectTarget(tp,s.filter,tp,LOCATION_MZONE,0,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,g,1,tp,LOCATION_MZONE)
+function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_EXTRA,0,1,nil) end
+	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,1-tp,LOCATION_EXTRA)
 end
-function s.desop(e,tp,eg,ep,ev,re,r,rp)
-	if not e:GetHandler():IsRelateToEffect(e) then return end
-	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) then
-		Duel.SendtoDeck(tc,nil,1,REASON_EFFECT)
+function s.rmop(e,tp,eg,ep,ev,re,r,rp)
+	local g=Duel.GetMatchingGroup(s.tgfilter,tp,LOCATION_EXTRA,0,nil)
+	if #g==0 then return end
+	local rg=g:RandomSelect(tp,1)
+	if #rg>0 then
+		Duel.SendtoGrave(rg,REASON_EFFECT)
 	end
 end
---(2)Set itself to opponent's field
+--(3)Your opponet can draw 1 card
+function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return not Duel.IsExistingMatchingCard(Card.IsPublic,tp,LOCATION_HAND,0,1,e:GetHandler()) end
+	Duel.SetTargetPlayer(tp)
+	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,1-tp,1)
+end
+function s.drop(e,tp,eg,ep,ev,re,r,rp)
+	local p=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER)
+	local cg=Duel.GetFieldGroup(p,LOCATION_HAND,0)
+	Duel.ConfirmCards(1-p,cg)
+	Duel.ShuffleHand(p)
+	if Duel.IsPlayerCanDraw(1-tp,1) and Duel.SelectYesNo(1-tp,aux.Stringid(id,1)) then
+		Duel.Draw(1-tp,1,REASON_EFFECT)
+	end
+end
+--(5)Set itself to opponent's field
 function s.setfilter(c)
-	return c:IsFaceup() and ((c:IsLevelAbove(8) and c:IsSetCard(0x304)) or c:IsCode(777001470))
+	return c:IsFaceup() and ((c:IsLevelAbove(6) and c:IsSetCard(0x304)) or c:IsOriginalCodeRule(777001470))
 end
 function s.bossfilter(c)
-	return c:IsFaceup() and c:IsCode(777001470)
+	return c:IsFaceup() and c:IsOriginalCodeRule(777001470)
 end
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_MZONE,0,1,nil) and Duel.GetTurnPlayer()==tp and Duel.IsMainPhase()
