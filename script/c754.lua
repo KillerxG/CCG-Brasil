@@ -1,4 +1,4 @@
---Viktor Kyver
+--Idrakian Force
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)	
@@ -34,7 +34,7 @@ function s.flipop(e,tp,eg,ep,ev,re,r,rp)
 	e2:SetCode(EVENT_PREDRAW)
 	e2:SetRange(0x5f)
 	e2:SetCountLimit(1,id,EFFECT_COUNT_CODE_DUEL)
-	e2:SetCondition(function(e,tp) return Duel.IsTurnPlayer(tp) and Duel.IsExistingMatchingCard(Card.IsType,tp,LOCATION_DECK,0,1,nil,TYPE_MONSTER+TYPE_SPELL+TYPE_TRAP) and Duel.GetLP(tp)<=3000 end)
+	e2:SetCondition(function(e,tp) return Duel.IsTurnPlayer(tp) and Duel.IsExistingMatchingCard(Card.IsType,tp,LOCATION_DECK,0,1,nil,TYPE_MONSTER+TYPE_SPELL+TYPE_TRAP) and Duel.GetLP(tp)<=4000 end)
 	e2:SetOperation(s.excavop)
 	Duel.RegisterEffect(e2,tp)
 	--Swap cards
@@ -43,22 +43,15 @@ function s.flipop(e,tp,eg,ep,ev,re,r,rp)
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e3:SetCode(EVENT_FREE_CHAIN)
 	e3:SetRange(0x5f)
-	e3:SetCountLimit(1)
+	e3:SetCountLimit(2)
 	e3:SetCondition(s.thcon)
 	e3:SetOperation(s.thop)
 	Duel.RegisterEffect(e3,tp)
-	
-	local e4=Effect.CreateEffect(e:GetHandler())
-	e4:SetDescription(aux.Stringid(id,3))
-	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e4:SetCode(EVENT_FREE_CHAIN)
-	e4:SetRange(0x5f)
-	e4:SetCountLimit(1)
-	e4:SetCondition(s.drcon)
-	e4:SetOperation(s.drop)
-	Duel.RegisterEffect(e4,tp)
 end
 --Restart
+function s.filter(c)
+	return c:IsAbleToHand()
+end
 function s.restartop(e,tp,eg,ep,ev,re,r,rp)
 	if not Duel.SelectYesNo(tp,aux.Stringid(id,0)) then return end
 	Duel.Hint(HINT_CARD,tp,id)
@@ -67,9 +60,13 @@ function s.restartop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetFieldGroup(tp,LOCATION_HAND,0)
 	if #g==0 then return end
 	Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
-	Duel.ShuffleDeck(tp)
 	Duel.BreakEffect()
-	Duel.Draw(tp,#g,REASON_EFFECT)
+	local f=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil)
+	if #f>0 then
+		Duel.SendtoHand(f,nil,REASON_EFFECT)
+		Duel.ShuffleDeck(tp)
+		Duel.Draw(tp,#g-1,REASON_EFFECT)
+	end	
 end
 --Destiny Draw
 function s.excavop(e,tp,eg,ep,ev,re,r,rp)
@@ -88,24 +85,16 @@ function s.thfilter(c)
 end
 function s.thcon(e)
 	local tp=e:GetHandlerPlayer()
-	return aux.CanActivateSkill(tp) and Duel.IsExistingMatchingCard(Card.IsAbleToDeckAsCost,tp,LOCATION_HAND,0,1,nil) and Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil)
+	return aux.CanActivateSkill(tp) and Duel.IsExistingMatchingCard(Card.IsAbleToDeckAsCost,tp,LOCATION_HAND,0,1,nil) and Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil)
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
 	local f=Duel.SelectMatchingCard(tp,Card.IsAbleToDeckAsCost,tp,LOCATION_HAND,0,1,1,nil)
 	Duel.SendtoDeck(f,nil,SEQ_DECKSHUFFLE,REASON_COST)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,s.drfilter,tp,LOCATION_DECK,0,1,1,nil)
+	local g=Duel.SelectMatchingCard(tp,s.drfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
 	if #g>0 then
 		Duel.SendtoHand(g,nil,REASON_EFFECT)
 		--Duel.ConfirmCards(1-tp,g)
 	end
-end
-
-function s.drcon(e)
-	local tp=e:GetHandlerPlayer()
-	return aux.CanActivateSkill(tp)
-end
-function s.drop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Draw(tp,1,REASON_EFFECT)
 end
