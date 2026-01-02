@@ -1,90 +1,83 @@
---Administrator.lua
+--Rescuer.lua
 --Scripted by Imp
 local s,id=GetID()
 function s.initial_effect(c)
-    --Extra Link Material
+    c:EnableReviveLimit()
+	--Link Summon Procedure
+	Link.AddProcedure(c,nil,2,2,s.lcheck)
+	--Link Up
 	local e0=Effect.CreateEffect(c)
-	e0:SetType(EFFECT_TYPE_FIELD)
-	e0:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e0:SetCode(EFFECT_EXTRA_MATERIAL)
-	e0:SetRange(LOCATION_HAND)
-	e0:SetTargetRange(1,0)
-	e0:SetOperation(s.extracon)
-	e0:SetValue(s.extraval)
+	e0:SetType(EFFECT_TYPE_SINGLE)
+	e0:SetCode(EFFECT_UPDATE_LINK)
+	e0:SetRange(LOCATION_EMZONE)
+	e0:SetValue(1)
 	c:RegisterEffect(e0)
-	if s.flagmap==nil then
-		s.flagmap={}
-	end
-	if s.flagmap[c]==nil then
-		s.flagmap[c] = {}
-	end
-	--Special Summon
 	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e1:SetProperty(EFFECT_FLAG_DELAY)
-	e1:SetCode(EVENT_SUMMON_SUCCESS)
-	e1:SetCountLimit(1,id)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetCode(EFFECT_UPDATE_LINK)
+	e1:SetRange(LOCATION_MZONE)
+	e1:SetCondition(function(e) return (e:GetHandler():GetSequence()==1 or e:GetHandler():GetSequence()==3) end)
+	e1:SetValue(1)
 	c:RegisterEffect(e1)
-	local e2=e1:Clone()
-	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
+	--Bottom Link Marker
+	local e2=Effect.CreateEffect(c)
+	e2:SetType(EFFECT_TYPE_SINGLE)
+	e2:SetCode(EFFECT_ADD_LINKMARKER)
+	e2:SetRange(LOCATION_EMZONE)
+	e2:SetValue(LINK_MARKER_BOTTOM)
 	c:RegisterEffect(e2)
-	local e3=e1:Clone()
-	e3:SetCode(EVENT_BE_MATERIAL)
-	e3:SetCondition(s.matcon)
+	--Top Link Marker
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_SINGLE)
+	e3:SetCode(EFFECT_ADD_LINKMARKER)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetCondition(function(e) return (e:GetHandler():GetSequence()==1 or e:GetHandler():GetSequence()==3) end)
+	e3:SetValue(LINK_MARKER_TOP)
 	c:RegisterEffect(e3)
+	--Choose Battle Target
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_FIELD)
+	e4:SetRange(LOCATION_MZONE)
+	e4:SetCode(EFFECT_PATRICIAN_OF_DARKNESS)
+	e4:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e4:SetTargetRange(0,1)
+	e4:SetCondition(s.condition)
+	c:RegisterEffect(e4)
+	--Special Summon
+	local e5=Effect.CreateEffect(c)
+	e5:SetDescription(aux.Stringid(id,0))
+	e5:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e5:SetType(EFFECT_TYPE_IGNITION)
+	e5:SetProperty(EFFECT_FLAG_NO_TURN_RESET)
+	e5:SetCountLimit(1,{id,1})
+	e5:SetRange(LOCATION_MZONE)
+	e5:SetTarget(s.sptg)
+	e5:SetOperation(s.spop)
+	c:RegisterEffect(e5)
 end
---Extra Link Material
-function s.extrafilter(c,tp)
-	return c:IsLocation(LOCATION_MZONE) and c:IsControler(tp)
+--Link Summon Procedure
+function s.lcheck(g,lc,sumtype,tp)
+	return g:IsExists(Card.IsSetCard,1,nil,0x660,lc,sumtype,tp)
 end
-function s.extracon(c,e,tp,sg,mg,lc,og,chk)
-	return (sg+mg):Filter(s.extrafilter,nil,e:GetHandlerPlayer()):IsExists(Card.IsSetCard,1,og,0x660) and sg:FilterCount(Card.HasFlagEffect,nil,id)<2
-end
-function s.extraval(chk,summon_type,e,...)
-	local c=e:GetHandler()
-	if chk==0 then
-		local tp,sc=...
-		if summon_type~=SUMMON_TYPE_LINK or not sc:IsRace(RACE_CYBERSE) or Duel.HasFlagEffect(tp,id) then
-			return Group.CreateGroup()
-		else
-			table.insert(s.flagmap[c],c:RegisterFlagEffect(id,0,0,1))
-			return Group.FromCards(c)
-		end
-	elseif chk==1 then
-		local sg,sc,tp=...
-		if summon_type&SUMMON_TYPE_LINK==SUMMON_TYPE_LINK and #sg>0 then
-			Duel.Hint(HINT_CARD,tp,id)
-			Duel.RegisterFlagEffect(tp,id,RESET_PHASE|PHASE_END,0,1)
-		end
-	elseif chk==2 then
-		for _,eff in ipairs(s.flagmap[c]) do
-			eff:Reset()
-		end
-		s.flagmap[c]={}
-	end
+--Choose Battle Target
+function s.condition(e)
+	return e:GetHandler():IsLinked()
 end
 --Special Summon
-function s.spfilter(c,e,tp)
-	return c:IsSetCard(0x660) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+function s.spfilter(c,e,tp,zone)
+    return c:IsSetCard(0x660) and c:IsLinkMonster() and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP,tp,zone) and c:IsFaceup()
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_HAND|LOCATION_DECK,0,1,nil,e,tp) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND|LOCATION_DECK)
+	local zone=aux.GetMMZonesPointedTo(tp)
+	if chk==0 then return zone~=0 and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,nil,e,tp,zone) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE|LOCATION_REMOVED)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	if Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_HAND|LOCATION_DECK,0,1,1,nil,e,tp)
-		if #g>0 then
-			Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
-		end
+	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
+	local zone=aux.GetMMZonesPointedTo(tp)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,1,nil,e,tp,zone)
+	if #g>0 then
+		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP,zone)
 	end
-end
-function s.matcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return r==REASON_LINK and c:GetReasonCard():IsRace(RACE_CYBERSE)
 end
