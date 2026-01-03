@@ -47,16 +47,6 @@ function s.flipop(e,tp,eg,ep,ev,re,r,rp)
 	e3:SetCondition(s.thcon)
 	e3:SetOperation(s.thop)
 	Duel.RegisterEffect(e3,tp)
-	
-	local e4=Effect.CreateEffect(e:GetHandler())
-	e4:SetDescription(aux.Stringid(id,3))
-	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e4:SetCode(EVENT_FREE_CHAIN)
-	e4:SetRange(0x5f)
-	e4:SetCountLimit(1)
-	e4:SetCondition(s.drcon)
-	e4:SetOperation(s.drop)
-	Duel.RegisterEffect(e4,tp)
 end
 --Restart
 function s.restartop(e,tp,eg,ep,ev,re,r,rp)
@@ -100,12 +90,4 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.SendtoHand(g,nil,REASON_EFFECT)
 		--Duel.ConfirmCards(1-tp,g)
 	end
-end
-
-function s.drcon(e)
-	local tp=e:GetHandlerPlayer()
-	return aux.CanActivateSkill(tp)
-end
-function s.drop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Draw(tp,1,REASON_EFFECT)
 end
