@@ -1,4 +1,4 @@
---Phantom Gunners Intense Battle
+--Phantom Gunners Strike
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -6,6 +6,7 @@ function s.initial_effect(c)
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetHintTiming(0,TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
 	c:RegisterEffect(e1)
 	--(1)Destroy Deck
 	local e2=Effect.CreateEffect(c)
@@ -15,22 +16,36 @@ function s.initial_effect(c)
 	e2:SetRange(LOCATION_SZONE)
 	e2:SetCode(EVENT_FREE_CHAIN)
 	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e2:SetHintTiming(0,TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E+TIMING_BATTLE_START)
 	e2:SetCountLimit(1,id)
 	e2:SetTarget(s.distg)
 	e2:SetOperation(s.disop)
 	c:RegisterEffect(e2)
-	--(2)Mill when destroyed
+	--(2)Extra Mill
 	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,0))
+	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_DECKDES)
-	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e3:SetProperty(EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DELAY)
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e3:SetRange(LOCATION_SZONE)
+	e3:SetCode(EVENT_TO_GRAVE)
+	e3:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_PLAYER_TARGET)
 	e3:SetCountLimit(1,id+1)
-	e3:SetCode(EVENT_DESTROYED)
-	e3:SetCondition(s.mlcon)
-	e3:SetTarget(s.mltg)
-	e3:SetOperation(s.mlop)
+	e3:SetCondition(s.condtion)
+	e3:SetTarget(s.target)
+	e3:SetOperation(s.operation)
 	c:RegisterEffect(e3)
+	--(2)Mill when destroyed
+	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,2))
+	e4:SetCategory(CATEGORY_DECKDES)
+	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e4:SetProperty(EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DELAY)
+	e4:SetCountLimit(1,id+2)
+	e4:SetCode(EVENT_DESTROYED)
+	e4:SetCondition(s.mlcon)
+	e4:SetTarget(s.mltg)
+	e4:SetOperation(s.mlop)
+	c:RegisterEffect(e4)
 end
 --(1)Destroy Deck
 function s.filter(c)
@@ -48,7 +63,21 @@ function s.disop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.DiscardDeck(1-tp,ct,REASON_EFFECT)
 	end
 end
---(2)Mill when destroyed
+--(2)Extra Mill
+function s.desfilter(c,e,tp)
+	return c:IsPreviousLocation(LOCATION_DECK) and c:IsControler(1-tp) and c:IsReason(REASON_EFFECT)
+end
+function s.condtion(e,tp,eg,ep,ev,re,r,rp)
+	return eg:IsExists(s.desfilter,1,nil,e,tp) and re and re:GetHandler():GetCode()~=id
+end
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsPlayerCanDiscardDeck(1-tp,2) end
+	Duel.SetOperationInfo(0,CATEGORY_DECKDES,nil,0,1-tp,2)
+end
+function s.operation(e,tp,eg,ep,ev,re,r,rp)
+	Duel.DiscardDeck(1-tp,2,REASON_EFFECT)
+end
+--(3)Mill when destroyed
 function s.filter(c)
 	return c:IsSetCard(0x302) and c:IsType(TYPE_MONSTER)
 end

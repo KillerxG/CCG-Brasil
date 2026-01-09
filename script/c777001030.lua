@@ -1,8 +1,7 @@
---Phantom Gunners of Twilight - Kanna
+--Phantom Gunners Sniper
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)	
-	c:AddSetcodesRule(id,true,0x314)--Waifu Arch
 	--(1)Special Summon
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
@@ -36,10 +35,29 @@ function s.initial_effect(c)
 	e3:SetTarget(s.eqtg)
 	e3:SetOperation(s.eqop)
 	c:RegisterEffect(e3)	
+	--(4)"Phantom Gunners" monster can attack directly
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_FIELD)
+	e3:SetCode(EFFECT_DIRECT_ATTACK)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetTargetRange(LOCATION_MZONE,0)
+	e3:SetCondition(s.killercheck)
+	e3:SetTarget(aux.TargetBoolFunction(Card.IsSetCard,0x302))
+	c:RegisterEffect(e3)
+	--(5)Battle damage is halved if attacking directly
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_FIELD)
+	e4:SetCode(EFFECT_CHANGE_BATTLE_DAMAGE)
+	e4:SetRange(LOCATION_MZONE)
+	e4:SetTargetRange(LOCATION_MZONE,0)
+	e4:SetTarget(aux.TargetBoolFunction(Card.IsSetCard,0x302))
+	e4:SetCondition(s.rdmgcond)
+	e4:SetValue(aux.ChangeBattleDamage(1,HALF_DAMAGE))
+	c:RegisterEffect(e4)
 end
 --(1)Special Summon
 function s.desfilter(c,tp)
-	return c:IsFaceup() and c:IsSetCard(0x302) --and not c:IsCode(id)
+	return c:IsFaceup() and c:IsSetCard(0x302)
 end
 function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.desfilter,tp,LOCATION_ONFIELD,0,1,e:GetHandler(),tp) end
@@ -134,4 +152,19 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.eqlimit(e,c)
 	return c==e:GetLabelObject()
+end
+--(4)"Phantom Gunners" monster can attack directly
+function s.cfilter1(c)
+	return c:IsFaceup() and c:IsOriginalCodeRule(777000960)
+end
+function s.killercheck(e)
+	local tp=e:GetHandlerPlayer()
+	return Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_MZONE,0,1,nil)
+end
+--(5)Battle damage is halved if attacking directly
+function s.rdmgcond(e)
+	local tp=e:GetHandlerPlayer()
+	local c=Duel.GetAttacker()
+	return Duel.GetAttackTarget()==nil and c:GetEffectCount(EFFECT_DIRECT_ATTACK)<2
+		and Duel.GetFieldGroupCount(tp,0,LOCATION_MZONE)>0 --if there are 0 monsters, it's not attacking directly using this effect
 end

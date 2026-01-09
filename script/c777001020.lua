@@ -1,8 +1,7 @@
---Phantom Gunners Engineer - Marie
+--Phantom Gunners Engineer
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	c:AddSetcodesRule(id,true,0x314)--Waifu Arch
 	--(1)Search
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
@@ -38,7 +37,15 @@ function s.initial_effect(c)
 	e4:SetCountLimit(1,id+2)
 	e4:SetTarget(s.eqtg)
 	e4:SetOperation(s.eqop)
-	c:RegisterEffect(e4)	
+	c:RegisterEffect(e4)
+	--(3)Negate Grave
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e3:SetCode(EVENT_CHAIN_SOLVING)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetCondition(s.discon)
+	e3:SetOperation(function(e,tp,eg,ep,ev) Duel.NegateEffect(ev) end)
+	c:RegisterEffect(e3)	
 end
 --(1)Search
 function s.filter(c)
@@ -126,4 +133,13 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.eqlimit(e,c)
 	return c==e:GetLabelObject()
+end
+--(3)Negate Grave
+function s.disfilter(c)
+	return c:IsFaceup() and c:IsOriginalCodeRule(777000960)
+end
+function s.discon(e,tp,eg,ep,ev,re,r,rp)
+	if e:GetHandler():IsStatus(STATUS_BATTLE_DESTROYED) then return false end
+	local loc=Duel.GetChainInfo(ev,CHAININFO_TRIGGERING_LOCATION)
+	return rp==1-tp and loc==LOCATION_GRAVE and Duel.IsExistingMatchingCard(s.disfilter,e:GetHandler():GetControler(),LOCATION_MZONE,0,1,nil)
 end
