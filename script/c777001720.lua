@@ -1,9 +1,10 @@
---Thunder Force Blader
---Scripted by Imp
+--Thunder Force Assassin
+--Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
 	--(1)Special Summon, then Xyz Summon
 	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
 	e1:SetType(EFFECT_TYPE_IGNITION)
 	e1:SetRange(LOCATION_HAND)
@@ -13,14 +14,26 @@ function s.initial_effect(c)
 	c:RegisterEffect(e1)
 	--(2)Effect Gain
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,2))
-	e2:SetType(EFFECT_TYPE_XMATERIAL)
-	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e2:SetCondition(s.xyzcon)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetCode(EFFECT_UPDATE_ATTACK)
-	e2:SetValue(1000)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetType(EFFECT_TYPE_XMATERIAL+EFFECT_TYPE_IGNITION)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e2:SetCountLimit(1)
+	e2:SetCondition(function(e) return e:GetHandler():IsSetCard(0x301) end)
+	e2:SetTarget(s.attachtg)
+	e2:SetOperation(s.attachop)
 	c:RegisterEffect(e2)
+	--(3)Destroy monster
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,2))
+	e3:SetCategory(CATEGORY_DESTROY)
+	e3:SetType(EFFECT_TYPE_IGNITION)
+	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e3:SetCountLimit(1)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetCondition(s.zeuscon)
+	e3:SetTarget(s.destg)
+	e3:SetOperation(s.desop)
+	c:RegisterEffect(e3)
 end
 --(1)Special Summon, then Xyz Summon
 function s.filter(c,e,tp,tc)
@@ -61,6 +74,42 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 --(2)Effect Gain
-function s.xyzcon(e,tp,eg,ep,ev,re,r,rp)
-	return e:GetHandler():IsSetCard(0x301)
+function s.attachfilter(c,tp)
+	return c:IsSpellTrap() and c:IsAbleToChangeControler()
+end
+function s.attachtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chkc then return chkc:IsLocation(LOCATION_ONFIELD+LOCATION_GRAVE) and chkc:IsControler(1-tp) and s.attachfilter(chkc,tp) end
+	if chk==0 then return e:GetHandler():IsType(TYPE_XYZ)
+		and Duel.IsExistingTarget(s.attachfilter,tp,0,LOCATION_ONFIELD+LOCATION_GRAVE,1,nil,tp) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATTACH)
+	Duel.SelectTarget(tp,s.attachfilter,tp,0,LOCATION_ONFIELD+LOCATION_GRAVE,1,1,nil,tp)
+end
+function s.attachop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local tc=Duel.GetFirstTarget()
+	if c:IsRelateToEffect(e) and tc:IsRelateToEffect(e) and c:IsType(TYPE_XYZ) then
+		Duel.Overlay(c,tc)
+	end
+end
+--(3)Destroy S/T
+function s.zeusfilter1(c)
+	return c:IsFaceup() and c:IsOriginalCodeRule(777001670)
+end
+function s.zeuscon(e)
+	local tp=e:GetHandlerPlayer()
+	return Duel.IsExistingMatchingCard(s.zeusfilter1,tp,LOCATION_MZONE,0,1,nil)
+end
+function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	local c=e:GetHandler()
+	if chkc then return chkc:IsOnField() and chkc:IsControler(1-tp) and chkc:IsSpellTrap() and chkc~=c end
+	if chk==0 then return Duel.IsExistingTarget(Card.IsSpellTrap,tp,0,LOCATION_ONFIELD,1,c) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+	local g=Duel.SelectTarget(tp,Card.IsSpellTrap,tp,0,LOCATION_ONFIELD,1,1,c)
+	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,tp,0)
+end
+function s.desop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	if tc:IsRelateToEffect(e) then
+		Duel.Destroy(tc,REASON_EFFECT)
+	end
 end
