@@ -69,21 +69,7 @@ function s.initial_effect(c)
 	e8:SetTarget(s.tktg)
 	e8:SetOperation(s.tkop)
 	c:RegisterEffect(e8)
-	Aqui está o script para a sua Magia de Campo de suporte à Predaplant Chimerafflesia.
-
-Como você pediu, iniciei as variáveis a partir do e9, para que você possa simplesmente colar este trecho abaixo das oito primeiras habilidades restritivas de Magia de Campo que utilizamos como base nas cartas anteriores.
-
-Para a mudança de posição, apliquei o filtro padrão e absoluto do motor de jogo c:IsCanTurnSet(), que automaticamente já barra que o jogador escolha ilegalmente Monstros Link ou Fichas (Tokens) como alvo do efeito, impedindo qualquer bug ou travamento na partida. Na rotina de cura, usei a verificação de topologia (tc:IsType(TYPE_XYZ)) para extrair a Classe, ou tc:GetLevel() para os demais.
-
-Lua
--- Predaplant Chimerafflesia (Field Spell Support)
--- Scripted by Gemini
-local s, id = GetID()
-
-function s.initial_effect(c)
-    -- *Cole os efeitos de e1 a e8 da sua base aqui em cima*
-
-    -- Efeito 1 (e9): Monstros Plant e Insect ganham 500 de ATK
+	-- Efeito 1 (e9): Monstros Plant e Insect ganham 500 de ATK
     local e9 = Effect.CreateEffect(c)
     e9:SetType(EFFECT_TYPE_FIELD)
     e9:SetCode(EFFECT_UPDATE_ATTACK)
