@@ -62,7 +62,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e7)
 	--(7)Call ???
 	local e8=Effect.CreateEffect(c)
-	e8:SetDescription(aux.Stringid(id,6))
+	e8:SetDescription(aux.Stringid(id,5))
 	e8:SetType(EFFECT_TYPE_IGNITION)
 	e8:SetRange(LOCATION_FZONE)
 	e8:SetCountLimit(1)
@@ -73,16 +73,16 @@ function s.initial_effect(c)
     local e9 = Effect.CreateEffect(c)
     e9:SetType(EFFECT_TYPE_FIELD)
     e9:SetCode(EFFECT_UPDATE_ATTACK)
-    e9:SetRange(LOCATION_MZONE)
+    e9:SetRange(LOCATION_FZONE)
     e9:SetTargetRange(LOCATION_MZONE, 0)
     e9:SetTarget(aux.TargetBoolFunction(Card.IsRace, RACE_SPELLCASTER | RACE_ILLUSION))
     e9:SetValue(500)
     c:RegisterEffect(e9)
 	--(9)Look at your opponent's hand
     local e10 = Effect.CreateEffect(c)
-    e10:SetDescription(aux.Stringid(id,7))
+    e10:SetDescription(aux.Stringid(id,6))
     e10:SetType(EFFECT_TYPE_IGNITION)
-    e10:SetRange(LOCATION_MZONE)
+    e10:SetRange(LOCATION_FZONE)
     e10:SetCountLimit(1)
     e10:SetCondition(s.hdcon)
     e10:SetTarget(s.hdtg)
@@ -92,7 +92,7 @@ function s.initial_effect(c)
     local e11 = Effect.CreateEffect(c)
     e11:SetType(EFFECT_TYPE_FIELD)
     e11:SetCode(EFFECT_IMMUNE_EFFECT)
-    e11:SetRange(LOCATION_MZONE)
+    e11:SetRange(LOCATION_FZONE)
     e11:SetTargetRange(LOCATION_MZONE, 0)
     e11:SetTarget(aux.TargetBoolFunction(Card.IsCode,40221691))
     e11:SetValue(s.efilter)
@@ -101,18 +101,17 @@ function s.initial_effect(c)
     local e12 = Effect.CreateEffect(c)
     e12:SetType(EFFECT_TYPE_FIELD)
     e12:SetCode(EFFECT_DIRECT_ATTACK)
-    e12:SetRange(LOCATION_MZONE)
+    e12:SetRange(LOCATION_FZONE)
     e12:SetTargetRange(LOCATION_MZONE, 0)
     e12:SetTarget(aux.TargetBoolFunction(Card.IsCode,40221691))
     c:RegisterEffect(e12)
 end
 s.af="a"
 s.tableAction = {
-150000024,150000001,150000002,150000003,150000004,150000020,150000021,150000030,
-150000033,150000005,150000006,150000009,150000010,150000022,150000023,150000031,
-150000042,150000011,150000012,150000014,150000015,150000025,150000026,150000032,
-150000071,150000016,150000017,150000018,150000019,150000028,150000029,150000035,
-150000013,150000038,150000040
+111000001,111000002,111000003,111000004,111000005, --Traps Custom
+150000010,150000011,150000016,150000017,150000021, --Spells Anime
+111000201,111000202,111000203,111000204,111000205, --Spells Custom
+111000206,111000207,111000208,111000209,111000210  --Spells Custom
 }
 --(1)Neither Player can Special Summon Link
 function s.splimit(e, c)

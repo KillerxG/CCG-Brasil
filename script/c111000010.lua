@@ -62,7 +62,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e7)
 	--(7)Call ???
 	local e8=Effect.CreateEffect(c)
-	e8:SetDescription(aux.Stringid(id,6))
+	e8:SetDescription(aux.Stringid(id,5))
 	e8:SetType(EFFECT_TYPE_IGNITION)
 	e8:SetRange(LOCATION_FZONE)
 	e8:SetCountLimit(1)
@@ -82,7 +82,7 @@ function s.initial_effect(c)
 
     -- Efeito 2 (e10): Durante a End Phase, se controlar 3 ou mais monstros: Banir a mão face-down
     local e10 = Effect.CreateEffect(c)
-    e10:SetDescription(aux.Stringid(id, 0))
+    e10:SetDescription(aux.Stringid(id, 6))
     e10:SetCategory(CATEGORY_REMOVE)
     e10:SetType(EFFECT_TYPE_FIELD | EFFECT_TYPE_TRIGGER_F) -- Efeito Forçado/Obrigatório
     e10:SetCode(EVENT_PHASE | PHASE_END)
@@ -114,11 +114,10 @@ function s.initial_effect(c)
 end
 s.af="a"
 s.tableAction = {
-150000024,150000001,150000002,150000003,150000004,150000020,150000021,150000030,
-150000033,150000005,150000006,150000009,150000010,150000022,150000023,150000031,
-150000042,150000011,150000012,150000014,150000015,150000025,150000026,150000032,
-150000071,150000016,150000017,150000018,150000019,150000028,150000029,150000035,
-150000013,150000038,150000040
+111000011,111000012,111000013,111000014,111000015, --Traps Custom
+150000010,150000011,150000016,150000017,150000021, --Spells Anime
+111000201,111000202,111000203,111000204,111000205, --Spells Custom
+111000206,111000207,111000208,111000209,111000210  --Spells Custom
 }
 --(1)Neither Player can Special Summon Link
 function s.splimit(e, c)

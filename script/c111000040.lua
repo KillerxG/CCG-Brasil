@@ -62,7 +62,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e7)
 	--(7)Call ???
 	local e8=Effect.CreateEffect(c)
-	e8:SetDescription(aux.Stringid(id,6))
+	e8:SetDescription(aux.Stringid(id,5))
 	e8:SetType(EFFECT_TYPE_IGNITION)
 	e8:SetRange(LOCATION_FZONE)
 	e8:SetCountLimit(1)
@@ -107,7 +107,7 @@ function s.initial_effect(c)
 
     -- Efeito 4 (e14): Durante a SUA End Phase: Infligir 500 de dano a ambos os jogadores
     local e14 = Effect.CreateEffect(c)
-    e14:SetDescription(aux.Stringid(id, 0))
+    e14:SetDescription(aux.Stringid(id, 6))
     e14:SetCategory(CATEGORY_DAMAGE)
     e14:SetType(EFFECT_TYPE_FIELD | EFFECT_TYPE_TRIGGER_F)
     e14:SetCode(EVENT_PHASE | PHASE_END)
@@ -139,11 +139,10 @@ function s.initial_effect(c)
 end
 s.af="a"
 s.tableAction = {
-150000024,150000001,150000002,150000003,150000004,150000020,150000021,150000030,
-150000033,150000005,150000006,150000009,150000010,150000022,150000023,150000031,
-150000042,150000011,150000012,150000014,150000015,150000025,150000026,150000032,
-150000071,150000016,150000017,150000018,150000019,150000028,150000029,150000035,
-150000013,150000038,150000040
+111000041,111000042,111000043,111000044,111000045, --Traps Custom
+150000010,150000011,150000016,150000017,150000021, --Spells Anime
+111000201,111000202,111000203,111000204,111000205, --Spells Custom
+111000206,111000207,111000208,111000209,111000210  --Spells Custom
 }
 --(1)Neither Player can Special Summon Link
 function s.splimit(e, c)
@@ -200,7 +199,7 @@ end
 function s.tkop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
 		local token=Duel.CreateToken(tp,19847532)
-		Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP)
+		Duel.SpecialSummon(token,0,tp,tp,true,true,POS_FACEUP)
 	end
 end
 -- ==========================================================
