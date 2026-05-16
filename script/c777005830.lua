@@ -9,7 +9,7 @@ function s.initial_effect(c)
     e1:SetCategory(CATEGORY_TODECK)
     e1:SetType(EFFECT_TYPE_IGNITION)
     e1:SetRange(LOCATION_MZONE)
-    e1:SetCountLimit(1, id) -- HOPT
+    e1:SetCountLimit(1) -- SOFT
     e1:SetCost(s.typecost)
     e1:SetTarget(s.typetg)
     e1:SetOperation(s.typeop)
