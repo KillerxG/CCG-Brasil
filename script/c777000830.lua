@@ -1,121 +1,85 @@
---Oceanic Storm Citadel
---Scripted by KillerxG
+-- Oceanic Storm Blood Transmutation
+-- Programado por Gemini
 local s,id=GetID()
+
 function s.initial_effect(c)
-	--Activate
-	local e0=Effect.CreateEffect(c)
-	e0:SetType(EFFECT_TYPE_ACTIVATE)
-	e0:SetCode(EVENT_FREE_CHAIN)
-	c:RegisterEffect(e0)
-	--(1)Also always "Umi"
+	-- Ativação base da Armadilha Contínua (apenas colocar face para cima)
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e1:SetCode(EFFECT_ADD_CODE)
-	e1:SetValue(CARD_UMI)
+	e1:SetType(EFFECT_TYPE_ACTIVATE)
+	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_END_PHASE)
 	c:RegisterEffect(e1)
-	--(2)Avoid battle damage
+
+	-- Efeito Rápido (Integrado automaticamente pelo EDOPro na ativação ou quando já estiver em campo)
 	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetCode(EFFECT_AVOID_BATTLE_DAMAGE)
-	e2:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE)
-	e2:SetRange(LOCATION_FZONE)
-	e2:SetTargetRange(LOCATION_MZONE,0)
-	e2:SetCondition(s.condition)
-	e2:SetTarget(s.efilter)
-	e2:SetValue(1)
+	e2:SetDescription(aux.Stringid(id,0))
+	e2:SetCategory(CATEGORY_DESTROY+CATEGORY_LEAVE_GRAVE)
+	e2:SetType(EFFECT_TYPE_QUICK_O)
+	e2:SetCode(EVENT_FREE_CHAIN)
+	e2:SetRange(LOCATION_SZONE)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_END_PHASE)
+	e2:SetCountLimit(1,id)
+	e2:SetTarget(s.tgtg)
+	e2:SetOperation(s.tgop)
 	c:RegisterEffect(e2)
-	--(3)Reduce effect damage
-	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_FIELD)
-	e3:SetCode(EFFECT_CHANGE_DAMAGE)
-	e3:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e3:SetRange(LOCATION_SZONE)
-	e3:SetTargetRange(1,0)
-	e3:SetCondition(s.condition)
-	e3:SetValue(s.damval)
-	c:RegisterEffect(e3)
-	local e4=e3:Clone()
-	e4:SetCode(EFFECT_NO_EFFECT_DAMAGE)
-	c:RegisterEffect(e4)
-	--(4)Set
-	local e5=Effect.CreateEffect(c)
-	e5:SetDescription(aux.Stringid(id,0))
-	e5:SetCategory(CATEGORY_SET)
-	e5:SetType(EFFECT_TYPE_IGNITION)
-	e5:SetRange(LOCATION_FZONE)
-	e5:SetCountLimit(1,id)
-	e5:SetTarget(s.settg)
-	e5:SetOperation(s.setop)
-	c:RegisterEffect(e5)
-	--(5)Destroy monster
-	local e6=Effect.CreateEffect(c)
-	e6:SetDescription(aux.Stringid(id,1))
-	e6:SetCategory(CATEGORY_DESTROY)
-	e6:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e6:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
-	e6:SetCode(EVENT_PAY_LPCOST)
-	e6:SetRange(LOCATION_FZONE)
-	e6:SetCountLimit(1,id+1)
-	e6:SetTarget(s.destg)
-	e6:SetOperation(s.desop)
-	c:RegisterEffect(e6)
 end
-s.listed_names={CARD_UMI}
---(2)Avoid battle damage
-function s.condition(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetLP(tp)<Duel.GetLP(1-tp)
-end
-function s.efilter(e,c)
-	return c:IsAttribute(ATTRIBUTE_WATER)
-end
---(3)Reduce effect damage
-function s.damval(e,re,val,r,rp,rc)
-	if (r&REASON_EFFECT)~=0 then return 0 end
-	return val
-end
---(4)Set
-function s.setfilter(c)
-	return (c:IsSetCard(0x312) or c:ListsCode(CARD_UMI)) and c:IsSSetable() and not c:IsCode(id)
-end
-function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) end
-end
-function s.setop(e,tp,eg,ep,ev,re,r,rp)
-	if Duel.GetLocationCount(tp,LOCATION_SZONE)<1 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
-	local tc=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_DECK,0,1,1,nil):GetFirst()
-	if tc then
-		Duel.SSet(tp,tc)
-		if tc:IsTrapCard() then
-			local e1=Effect.CreateEffect(e:GetHandler())
-			e1:SetDescription(aux.Stringid(id,3))
-			e1:SetType(EFFECT_TYPE_SINGLE)
-			e1:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
-			e1:SetCode(EFFECT_TRAP_ACT_IN_SET_TURN)
-			e1:SetReset(RESET_EVENT|RESETS_STANDARD)
-			tc:RegisterEffect(e1)
-		end
-	end
-end
---(5)Destroy monster
-function s.cfilter1(c)
+
+-- Filtro exclusivo para a Caroline pelo ID
+function s.caroline_filter(c)
 	return c:IsFaceup() and c:IsOriginalCodeRule(777003320)
 end
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) end
-	if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,0,LOCATION_MZONE,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-	local g=Duel.SelectTarget(tp,aux.TRUE,tp,0,LOCATION_MZONE,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
+
+-- Filtro de Mágicas/Armadilhas no Campo ou GY do Oponente
+function s.filter(c,tp)
+	if not c:IsType(TYPE_SPELL+TYPE_TRAP) then return false end
+	if c:IsLocation(LOCATION_ONFIELD) then return true end
+	if c:IsLocation(LOCATION_GRAVE) then return c:IsSSetable() end
+	return false
 end
-function s.desop(e,tp,eg,ep,ev,re,r,rp)
+
+-- ==============================================================
+-- Lógica do Efeito Rápido / Seleção de Alvos
+-- ==============================================================
+function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_ONFIELD+LOCATION_GRAVE) and s.filter(chkc,tp) end
+	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,0,LOCATION_ONFIELD+LOCATION_GRAVE,1,nil,tp) end
+	
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
+	local g=Duel.SelectTarget(tp,s.filter,tp,0,LOCATION_ONFIELD+LOCATION_GRAVE,1,1,nil,tp)
+	
+	-- Define as categorias dinamicamente com base na localização do alvo
+	if g:GetFirst():IsLocation(LOCATION_ONFIELD) then
+		Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
+	else
+		Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,g,1,0,0)
+	end
+end
+
+function s.tgop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
-	local tp=e:GetHandlerPlayer()
-	if tc and tc:IsRelateToEffect(e) then
-		if Duel.Destroy(tc,REASON_EFFECT) and Duel.CheckLPCost(1-tp,800) and Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_MZONE,0,1,nil) then
-			Duel.Hint(HINT_CARD,1-tp,id)
-			Duel.PayLPCost(1-tp,800)
+	if not tc or not tc:IsRelateToEffect(e) then return end
+	
+	-- Determina o custo com base na presença da Caroline
+	local cost = 800
+	if Duel.IsExistingMatchingCard(s.caroline_filter,tp,LOCATION_MZONE,0,1,nil) then
+		cost = 1600
+	end
+	
+	-- Caixa de diálogo para o oponente decidir se vai pagar os LP para negar a ação
+	if Duel.CheckLPCost(1-tp,cost) and Duel.SelectYesNo(1-tp,aux.Stringid(id,1)) then
+		Duel.PayLPCost(1-tp,cost)
+		-- Anula a resolução do efeito
+		if Duel.IsChainDisablable(0) then
+			Duel.NegateEffect(0)
 		end
+		return
+	end
+	
+	-- Aplica a consequência do efeito se o oponente optar por não pagar
+	if tc:IsLocation(LOCATION_ONFIELD) then
+		Duel.Destroy(tc,REASON_EFFECT)
+	elseif tc:IsLocation(LOCATION_GRAVE) then
+		Duel.SSet(tp,tc)
 	end
 end
