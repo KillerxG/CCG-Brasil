@@ -23,13 +23,12 @@ function s.initial_effect(c)
 	e2:SetCondition(s.spcon)
 	c:RegisterEffect(e2)
 
-	-- While LP is lower: Cannot be targeted by opponent's card effects
+	-- Cannot be targeted by opponent's card effects
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_SINGLE)
 	e3:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
 	e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
 	e3:SetRange(LOCATION_MZONE)
-	e3:SetCondition(s.lpcon)
 	e3:SetValue(aux.tgoval)
 	c:RegisterEffect(e3)
 
@@ -78,12 +77,6 @@ function s.initial_effect(c)
 	e7:SetTarget(s.eptg)
 	e7:SetOperation(s.epop)
 	c:RegisterEffect(e7)
-end
-
--- LP Differential Evaluator
-function s.lpcon(e)
-	local tp=e:GetHandlerPlayer()
-	return Duel.GetLP(tp) < Duel.GetLP(1-tp)
 end
 
 -- Inherent Special Summon Validator
@@ -143,13 +136,13 @@ end
 
 -- Recursion Validators and Operators
 function s.thfilter(c)
-	return c:IsSetCard(0x312) and c:IsSpellTrap() and (c:IsAbleToHand() or c:IsSSetable())
+	return c:IsFaceup() and c:IsSetCard(0x312) and c:IsSpellTrap() and (c:IsAbleToHand() or c:IsSSetable())
 end
 function s.eptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.thfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.thfilter,tp,LOCATION_GRAVE,0,1,nil) end
+	if chkc then return chkc:IsLocation(LOCATION_GRAVE+LOCATION_REMOVED) and chkc:IsControler(tp) and s.thfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.thfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-	local g=Duel.SelectTarget(tp,s.thfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+	local g=Duel.SelectTarget(tp,s.thfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil)
 	Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,g,1,0,0)
 end
 function s.epop(e,tp,eg,ep,ev,re,r,rp)

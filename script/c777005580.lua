@@ -44,13 +44,13 @@ function s.initial_effect(c)
 end
 --Fusion Material
 function s.splimit(e,se,sp,st)
-	return (st&SUMMON_TYPE_FUSION)==SUMMON_TYPE_FUSION
+	return (st&SUMMON_TYPE_FUSION)==SUMMON_TYPE_FUSION or e:GetHandler():GetLocation()~=LOCATION_EXTRA 
 end
 function s.contactfil(tp)
-	return Duel.GetMatchingGroup(Card.IsAbleToGraveAsCost,tp,LOCATION_MZONE,0,nil)
+	return Duel.GetReleaseGroup(tp)
 end
 function s.contactop(g)
-	Duel.SendtoGrave(g,REASON_COST|REASON_MATERIAL)
+	Duel.Release(g,REASON_COST|REASON_MATERIAL)
 end
 --(1)Gain 1000 LP, and if you do, your opponent pays 1000 LP
 function s.lptg(e,tp,eg,ep,ev,re,r,rp,chk)
