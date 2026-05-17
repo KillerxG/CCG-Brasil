@@ -32,23 +32,20 @@ function s.initial_effect(c)
 	e2:SetOperation(s.posop)
 	e2:SetHintTiming(0,TIMING_STANDBY_PHASE|TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
 	c:RegisterEffect(e2)
-	--(4)DEF Up
+	--(4)Atack while in Defense using ATK value
 	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_FIELD)
-	e3:SetCode(EFFECT_UPDATE_DEFENSE)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetTargetRange(LOCATION_MZONE,0)
-	e3:SetTarget(s.efilter)
-	e3:SetValue(s.val)
+	e3:SetType(EFFECT_TYPE_SINGLE)
+	e3:SetCode(EFFECT_DEFENSE_ATTACK)
 	c:RegisterEffect(e3)
-	--(5)Pos Change
+	--(5)Prevent effect target
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_FIELD)
-	e4:SetCode(EFFECT_SET_POSITION)
-	e4:SetRange(LOCATION_MZONE)
-	e4:SetTargetRange(LOCATION_MZONE,0)	
-	e4:SetTarget(s.target)
-	e4:SetValue(POS_FACEUP_DEFENSE)
+	e4:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
+	e4:SetRange(LOCATION_FZONE)
+	e4:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_SET_AVAILABLE)
+	e4:SetTargetRange(LOCATION_MZONE,0)
+	e4:SetTarget(s.immtg)
+	e4:SetValue(aux.tgoval)
 	c:RegisterEffect(e4)
 end
 --(2)Special Summon itself from the hand
@@ -90,14 +87,7 @@ function s.posop(e,tp,eg,ep,ev,re,r,rp,chk)
 		end
 	end
 end
---(4)DEF Up
-function s.efilter(e,c)
-	return c:IsSetCard(0x310) and c~=e:GetHandler()
-end
-function s.val(e,c)
-	return Duel.GetFieldGroupCount(e:GetHandlerPlayer(),0,LOCATION_MZONE)*300
-end
---(5)Pos Change
-function s.target(e,c)
-	return c~=e:GetHandler() and c:IsFaceup() and c:IsSetCard(0x310)
+--(5)Prevent effect target
+function s.immtg(e,c)
+	return (c:IsSetCard(0x310) and c:IsFaceup()) or c:IsFacedown()
 end

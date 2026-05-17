@@ -1,4 +1,4 @@
---Elementale Practicing
+--Elementale Melody Rehearsal
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
@@ -15,21 +15,22 @@ function s.initial_effect(c)
 	e2:SetType(EFFECT_TYPE_QUICK_O)
 	e2:SetCode(EVENT_FREE_CHAIN)
 	e2:SetRange(LOCATION_SZONE)
-	e2:SetHintTiming(0,TIMING_MAIN_END,TIMINGS_CHECK_MONSTER_E)
-	e2:SetCountLimit(2)
+	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_MAIN_END)
+	e2:SetCountLimit(1,id)
+	e2:SetCondition(s.poscon)
 	e2:SetTarget(s.postg)
 	e2:SetOperation(s.posop)
 	c:RegisterEffect(e2)
 	--(2)Special Summon 1 random face-down monster from your opponent's Extra Deck, or banish it
 	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,0))
+	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_REMOVE)
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e3:SetProperty(EFFECT_FLAG_DELAY)
 	e3:SetCode(EVENT_FLIP)
 	e3:SetRange(LOCATION_GRAVE)
 	e3:SetHintTiming(0,TIMING_MAIN_END,TIMINGS_CHECK_MONSTER_E)
-	e3:SetCountLimit(1,id)
+	e3:SetCountLimit(1,id+1)
 	e3:SetCondition(s.spcon)
 	e3:SetCost(s.spcost)
 	e3:SetTarget(s.sptg)
@@ -37,29 +38,34 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 --(1)Flip face-up or face-down any number of monsters
-function s.posfilter(c)
-	return c:IsFaceup() and c:IsCanTurnSet()
+function s.poscon(e,tp,eg,ep,ev,re,r,rp)
+	local ph=Duel.GetCurrentPhase()
+	return ph==PHASE_MAIN1 or ph==PHASE_MAIN2
+end
+function s.fdfilter(c)
+	return c:IsFacedown()
+end
+function s.zel_filter(c)
+	return c:IsFaceup() and c:IsOriginalCodeRule(777003130)
 end
 function s.postg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local b1=Duel.IsExistingMatchingCard(Card.IsFacedown,tp,LOCATION_MZONE,0,1,nil)
-	local b2=Duel.IsExistingMatchingCard(s.posfilter,tp,LOCATION_MZONE,0,1,nil)
-	if chk==0 then return b1 or b2 end
-	local op=Duel.SelectEffect(tp,
-		{b1,aux.Stringid(id,1)},
-		{b2,aux.Stringid(id,2)})
-	e:SetLabel(op)
-	local pos=op==1 and POS_FACEUP_DEFENSE or POS_FACEDOWN_DEFENSE
-	Duel.SetOperationInfo(0,CATEGORY_POSITION,nil,1,tp,pos)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.fdfilter,tp,LOCATION_MZONE,0,1,nil) end
+	local g=Duel.GetMatchingGroup(s.fdfilter,tp,LOCATION_MZONE,0,nil)
+	Duel.SetOperationInfo(0,CATEGORY_POSITION,g,1,0,0)
 end
 function s.posop(e,tp,eg,ep,ev,re,r,rp)
-	local op=e:GetLabel()
-	if not op then return end
-	local filter=op==1 and Card.IsFacedown or s.posfilter
-	local g=Duel.GetMatchingGroup(filter,tp,LOCATION_MZONE,0,nil)
-	if #g==0 then return end
-	local pos=op==1 and POS_FACEUP_DEFENSE or POS_FACEDOWN_DEFENSE
+	if not e:GetHandler():IsRelateToEffect(e) then return end	
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_POSCHANGE)
-	Duel.ChangePosition(g:Select(tp,1,#g,nil),pos)
+	local g=Duel.SelectMatchingCard(tp,s.fdfilter,tp,LOCATION_MZONE,0,1,99,nil)
+	if #g>0 and Duel.ChangePosition(g,POS_FACEUP_DEFENSE)>0 then
+		local opp_g=Duel.GetMatchingGroup(Card.IsCanTurnSet,tp,0,LOCATION_MZONE,nil)
+		if Duel.IsExistingMatchingCard(s.zel_filter,tp,LOCATION_MZONE,0,1,nil) and #opp_g>0 then
+			if Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
+				Duel.BreakEffect()
+				Duel.ChangePosition(opp_g,POS_FACEDOWN_DEFENSE)
+			end
+		end
+	end
 end
 --(2)Special Summon 1 random face-down monster from your opponent's Extra Deck, or banish it
 function s.cfilter1(c)

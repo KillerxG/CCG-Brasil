@@ -24,21 +24,13 @@ function s.initial_effect(c)
 	e2:SetTarget(s.thtg)
 	e2:SetOperation(s.thop)
 	c:RegisterEffect(e2)
-	--(3)Set Itself
+	--(3)Attack while in Defense using DEF
 	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,3))
-	e3:SetCategory(CATEGORY_POSITION)
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e3:SetCode(EVENT_PHASE+PHASE_END)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetCountLimit(1)
-	e3:SetCondition(s.poscon)
-	e3:SetTarget(s.postg)
-	e3:SetOperation(s.posop)
+	e3:SetType(EFFECT_TYPE_SINGLE)
+	e3:SetCode(EFFECT_DEFENSE_ATTACK)
+	e3:SetCondition(s.atkcon)
+	e3:SetValue(1)
 	c:RegisterEffect(e3)
-	local e4=e3:Clone()
-	e4:SetCode(EVENT_PHASE+PHASE_STANDBY)
-	c:RegisterEffect(e4)
 end
 --(1)Special Summon itself
 function s.cfilter(c)
@@ -107,23 +99,11 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 		end
 	end
 end
---(3)Set Itself
-function s.cfilter1(c)
+--(3)Attack while in Defense using DEF
+function s.zel_filter(c)
 	return c:IsFaceup() and c:IsOriginalCodeRule(777003130)
 end
-function s.poscon(e)
+function s.atkcon(e)
 	local tp=e:GetHandlerPlayer()
-	return Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_MZONE,0,1,nil)
-end
-function s.postg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return c:IsCanTurnSet() and c:GetFlagEffect(id)==0 end
-	c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD-RESET_TURN_SET+RESET_PHASE+PHASE_END,0,1)
-	Duel.SetOperationInfo(0,CATEGORY_POSITION,c,1,0,0)
-end
-function s.posop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) and c:IsFaceup() then
-		Duel.ChangePosition(c,POS_FACEDOWN_DEFENSE)
-	end
+	return Duel.IsExistingMatchingCard(s.zel_filter,tp,LOCATION_MZONE,0,1,nil)
 end
