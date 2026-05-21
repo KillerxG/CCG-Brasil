@@ -1,4 +1,4 @@
---Sky Wind Archer
+--Sky Wind Celestial Archer
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)

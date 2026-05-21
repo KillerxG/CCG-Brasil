@@ -1,4 +1,4 @@
---Sky Wind Attack
+--Sky Wind Heaven Descent Strike
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
