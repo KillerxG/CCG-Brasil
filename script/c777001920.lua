@@ -29,16 +29,6 @@ function s.initial_effect(c)
 	e4:SetCode(EVENT_BE_MATERIAL)
 	e4:SetCondition(s.set2con)
 	c:RegisterEffect(e4)
-	--(3)Level Change
-	local e5=Effect.CreateEffect(c)
-	e5:SetDescription(aux.Stringid(id,2))
-	e5:SetType(EFFECT_TYPE_IGNITION)
-	e5:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e5:SetRange(LOCATION_MZONE)
-	e5:SetCountLimit(1)
-	e5:SetTarget(s.lvtg)
-	e5:SetOperation(s.lvop)
-	c:RegisterEffect(e5)
 end
 --(1)Can be used as material from the hand for Beast Warrior monster
 function s.synval(e,mc,sc)
@@ -71,30 +61,5 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
 				local token=Duel.CreateToken(tp,777001865)
 				Duel.SpecialSummon(token,0,tp,1-tp,false,false,POS_FACEUP_DEFENSE)
 		end
-	end
-end
---(3)Level Change
-function s.filter(c)
-	return c:IsFaceup() and c:IsRace(RACE_BEASTWARRIOR) and c:HasLevel()
-end
-function s.lvtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.filter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,LOCATION_MZONE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local g=Duel.SelectTarget(tp,s.filter,tp,LOCATION_MZONE,0,1,1,nil)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_LVRANK)
-	local lv=Duel.AnnounceLevel(tp,2,4,g:GetFirst():GetLevel())
-	Duel.SetTargetParam(lv)
-end
-function s.lvop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	local lv=Duel.GetChainInfo(0,CHAININFO_TARGET_PARAM)
-	if tc and tc:IsFaceup() and tc:IsRelateToEffect(e) then
-		local e1=Effect.CreateEffect(e:GetHandler())
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_CHANGE_LEVEL)
-		e1:SetValue(lv)
-		e1:SetReset(RESETS_STANDARD_PHASE_END)
-		tc:RegisterEffect(e1)
 	end
 end

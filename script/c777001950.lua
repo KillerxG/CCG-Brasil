@@ -1,115 +1,157 @@
---Warbeast Offensive
---Scripted by KillerxG
-local s,id=GetID()
+-- Warbeast Combat Tactics
+-- Scripted by Gemini
+local s, id = GetID()
+
 function s.initial_effect(c)
-	--(1)Activate and (you can) Special Summon
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e1:SetType(EFFECT_TYPE_ACTIVATE)
-	e1:SetCode(EVENT_FREE_CHAIN)
-	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
-	e1:SetOperation(s.activate)
-	c:RegisterEffect(e1)	
-	--(2)Piercing
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetCode(EFFECT_PIERCE)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetTargetRange(LOCATION_SZONE,0)
-	e2:SetTarget(aux.TargetBoolFunction(Card.IsSetCard,0x308))
-	c:RegisterEffect(e2)
-	--(2)Change the Levels of 2 face-up monsters you control, including a "Warbeast" monster
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,1))
-	e3:SetCategory(CATEGORY_LVCHANGE)
-	e3:SetType(EFFECT_TYPE_IGNITION)
-	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e3:SetRange(LOCATION_SZONE)
-	e3:SetCost(Cost.Discard())
-	e3:SetTarget(s.lvtg)
-	e3:SetOperation(s.lvop)
-	c:RegisterEffect(e3)
+    -- [Ativação Básica da Magia Contínua]
+    local e0 = Effect.CreateEffect(c)
+    e0:SetType(EFFECT_TYPE_ACTIVATE)
+    e0:SetCode(EVENT_FREE_CHAIN)
+    c:RegisterEffect(e0)
+
+    -- Efeito 1: Dano Perfurante (Piercing) para monstros "Warbeast"
+    local e1 = Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_FIELD)
+    e1:SetCode(EFFECT_PIERCE)
+    e1:SetRange(LOCATION_SZONE)
+    e1:SetTargetRange(LOCATION_MZONE, 0)
+    e1:SetTarget(aux.TargetBoolFunction(Card.IsSetCard, 0x308))
+    c:RegisterEffect(e1)
+
+    -- Efeito 2: Special Summon do Deck (Se ativada neste turno)
+    local e2 = Effect.CreateEffect(c)
+    e2:SetDescription(aux.Stringid(id, 0))
+    e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
+    e2:SetType(EFFECT_TYPE_IGNITION)
+    e2:SetRange(LOCATION_SZONE)
+    e2:SetCountLimit(1, id)
+    e2:SetCondition(s.spcon)
+    e2:SetCost(s.spcost)
+    e2:SetTarget(s.sptg)
+    e2:SetOperation(s.spop)
+    c:RegisterEffect(e2)
+
+    -- Efeito 3a: Retornar para a mão do Campo (Brenda)
+    local e3 = Effect.CreateEffect(c)
+    e3:SetDescription(aux.Stringid(id, 1))
+    e3:SetCategory(CATEGORY_TOHAND)
+    e3:SetType(EFFECT_TYPE_IGNITION)
+    e3:SetRange(LOCATION_SZONE)
+    e3:SetCountLimit(1, id + 1)
+    e3:SetCondition(s.brendacon)
+    e3:SetTarget(s.thtg1)
+    e3:SetOperation(s.thop1)
+    c:RegisterEffect(e3)
+
+    -- Efeito 3b: Adicionar do GY para a mão (Brenda)
+    local e4 = Effect.CreateEffect(c)
+    e4:SetDescription(aux.Stringid(id, 2))
+    e4:SetCategory(CATEGORY_TOHAND)
+    e4:SetType(EFFECT_TYPE_IGNITION)
+    e4:SetRange(LOCATION_GRAVE)
+    e4:SetCountLimit(1, id + 1)
+    e4:SetCondition(s.brendacon)
+    e4:SetCost(s.thcost2)
+    e4:SetTarget(s.thtg2)
+    e4:SetOperation(s.thop2)
+    c:RegisterEffect(e4)
 end
---(1)Activate and (you can) Special Summon
-function s.spfilter(c,e,tp)
-	return c:IsSetCard(0x308) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+
+-- ====================================================================
+-- Efeito 2: Special Summon
+-- ====================================================================
+function s.spcon(e, tp, eg, ep, ev, re, r, rp)
+    -- Checa se o turno atual é o mesmo turno em que a carta foi ativada (colocada com a face para cima)
+    return e:GetHandler():GetTurnID() == Duel.GetTurnCount()
 end
-function s.activate(e,tp,eg,ep,ev,re,r,rp)
-	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	local g=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_DECK,0,nil,e,tp)
-	if #g>0 and Duel.IsExistingMatchingCard(Card.IsDiscardable,tp,LOCATION_HAND,0,1,nil) and Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
-		if Duel.DiscardHand(tp,nil,1,1,REASON_EFFECT|REASON_DISCARD)>0 and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-			local sg=g:Select(tp,1,1,nil)
-			Duel.SpecialSummon(sg,0,tp,tp,false,false,POS_FACEUP)
-		end
-	end
+
+function s.dcfilter(c)
+    return c:IsSetCard(0x308) and c:IsType(TYPE_MONSTER) and c:IsDiscardable()
 end
---(2)Change the Levels of 2 face-up monsters you control, including a "Warbeast" monster
-function s.cfilter(c,e)
-	return c:IsFaceup() and c:HasLevel() and c:IsCanBeEffectTarget(e)
+
+function s.spcost(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return Duel.IsExistingMatchingCard(s.dcfilter, tp, LOCATION_HAND, 0, 1, nil) end
+    Duel.DiscardHand(tp, s.dcfilter, 1, 1, REASON_COST + REASON_DISCARD)
 end
-function s.rescon(sg,e,tp,mg)
-	return sg:IsExists(Card.IsControler,1,nil,tp)
+
+function s.spfilter(c, e, tp)
+    return c:IsSetCard(0x308) and c:IsType(TYPE_MONSTER) and c:IsCanBeSpecialSummoned(e, 0, tp, false, false)
 end
-s.nlvfilter=aux.NOT(Card.IsLevel)
-function s.lvtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return false end
-	local g1=Duel.GetMatchingGroup(s.cfilter,tp,LOCATION_MZONE,0,nil,e)
-	local g2=Duel.GetMatchingGroup(s.cfilter,tp,0,LOCATION_MZONE,nil,e)
-	if chk==0 then return #g1>0 and (#g1+#g2)>=2 end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_LVRANK)
-	local lv=Duel.AnnounceNumber(tp,s.get_declarable_levels(g1,g2))
-	local g=(g1+g2):Match(s.nlvfilter,nil,lv)
-	local sg=aux.SelectUnselectGroup(g,e,tp,2,2,s.rescon,1,tp,HINTMSG_TARGET)
-	Duel.SetTargetCard(sg)
-	e:SetLabel(lv)
-	Duel.SetOperationInfo(0,CATEGORY_LVCHANGE,sg,#sg,0,0)
+
+function s.sptg(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return Duel.GetLocationCount(tp, LOCATION_MZONE) > 0
+        and Duel.IsExistingMatchingCard(s.spfilter, tp, LOCATION_DECK, 0, 1, nil, e, tp) end
+    Duel.SetOperationInfo(0, CATEGORY_SPECIAL_SUMMON, nil, 1, tp, LOCATION_DECK)
 end
-function s.lvop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetTargetCards(e):Filter(Card.IsFaceup,nil)
-	if #g==0 then return end
-	local c=e:GetHandler()
-	local lv=e:GetLabel()
-	for tc in g:Iter() do
-		if not tc:IsLevel(lv) then
-			--Change level to the declared level
-			local e1=Effect.CreateEffect(c)
-			e1:SetType(EFFECT_TYPE_SINGLE)
-			e1:SetCode(EFFECT_CHANGE_LEVEL)
-			e1:SetValue(lv)
-			e1:SetReset(RESETS_STANDARD_PHASE_END)
-			tc:RegisterEffect(e1)
-		end
-	end
-	--Cannot Special Summon from the Extra Deck, except Synchro Monsters
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,2))
-	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_CLIENT_HINT)
-	e2:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
-	e2:SetTargetRange(1,0)
-	e2:SetTarget(s.splimit)
-	e2:SetReset(RESET_PHASE|PHASE_END)
-	Duel.RegisterEffect(e2,tp)
-	--Clock Lizard check
-	aux.addTempLizardCheck(c,tp,s.lizfilter)
+
+function s.spop(e, tp, eg, ep, ev, re, r, rp)
+    if Duel.GetLocationCount(tp, LOCATION_MZONE) <= 0 then return end
+    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_SPSUMMON)
+    local g = Duel.SelectMatchingCard(tp, s.spfilter, tp, LOCATION_DECK, 0, 1, 1, nil, e, tp)
+    local tc = g:GetFirst()
+    
+    if tc and Duel.SpecialSummon(tc, 0, tp, tp, false, false, POS_FACEUP) > 0 then
+        -- Injeta a restrição diretamente no monstro Invocado!
+        local e1 = Effect.CreateEffect(e:GetHandler())
+        e1:SetDescription(aux.Stringid(id, 3)) -- String 3: "Cannot Special Summon from Extra Deck..."
+        e1:SetType(EFFECT_TYPE_FIELD)
+        e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
+        e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET + EFFECT_FLAG_CLIENT_HINT)
+        e1:SetRange(LOCATION_MZONE)
+        e1:SetTargetRange(1, 0)
+        e1:SetTarget(s.splimit)
+        e1:SetReset(RESET_EVENT + RESETS_STANDARD)
+        tc:RegisterEffect(e1, true)
+    end
 end
-function s.get_declarable_levels(g1,g2)
-	local opts={}
-	for lv=2,4 do
-		local ct=g1:FilterCount(s.nlvfilter,nil,lv)
-		if ct>1 or (ct>0 and g2:IsExists(s.nlvfilter,1,nil,lv)) then
-			table.insert(opts,lv)
-		end
-	end
-	return table.unpack(opts)
+
+function s.splimit(e, c, sump, sumtype, sumpos, targetp, se)
+    return c:IsLocation(LOCATION_EXTRA) and not c:IsSetCard(0x308)
 end
---Cannot Special Summon from the Extra Deck, except Synchro Monsters
-function s.splimit(e,c,sump,sumtype,sumpos,targetp,se)
-	return not c:IsType(TYPE_SYNCHRO) and c:IsLocation(LOCATION_EXTRA)
+
+-- ====================================================================
+-- Filtro da Brenda
+-- ====================================================================
+function s.brfilter(c)
+    -- Checa se existe a Brenda (ID 777001840) pelo nome original no campo
+    return c:IsFaceup() and c:GetOriginalCode() == 777001840
 end
-function s.lizfilter(e,c)
-	return not c:IsOriginalType(TYPE_SYNCHRO)
+
+function s.brendacon(e, tp, eg, ep, ev, re, r, rp)
+    return Duel.IsExistingMatchingCard(s.brfilter, tp, LOCATION_MZONE, 0, 1, nil)
+end
+
+-- ====================================================================
+-- Efeito 3a: Retornar do Campo para a Mão
+-- ====================================================================
+function s.thtg1(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return e:GetHandler():IsAbleToHand() end
+    Duel.SetOperationInfo(0, CATEGORY_TOHAND, e:GetHandler(), 1, 0, 0)
+end
+
+function s.thop1(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    if c:IsRelateToEffect(e) then
+        Duel.SendtoHand(c, nil, REASON_EFFECT)
+    end
+end
+
+-- ====================================================================
+-- Efeito 3b: Adicionar do GY para a Mão
+-- ====================================================================
+function s.thcost2(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return Duel.IsExistingMatchingCard(Card.IsDiscardable, tp, LOCATION_HAND, 0, 1, nil) end
+    Duel.DiscardHand(tp, Card.IsDiscardable, 1, 1, REASON_COST + REASON_DISCARD)
+end
+
+function s.thtg2(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return e:GetHandler():IsAbleToHand() end
+    Duel.SetOperationInfo(0, CATEGORY_TOHAND, e:GetHandler(), 1, 0, 0)
+end
+
+function s.thop2(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    if c:IsRelateToEffect(e) then
+        Duel.SendtoHand(c, nil, REASON_EFFECT)
+    end
 end

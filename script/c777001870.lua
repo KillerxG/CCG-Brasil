@@ -5,7 +5,7 @@ function s.initial_effect(c)
     c:EnableReviveLimit()
 	--Synchro Summon
 	Synchro.AddProcedure(c,nil,1,1,Synchro.NonTunerEx(Card.IsSetCard,0x308),1,99,s.exmatfilter)
-	--(1)Special Summon 1 Level 4 or lower Beast or Beast-Warrior Tuner monster from your Deck
+	--(1)Special Summon 1 Level 4 or lower Beast-Warrior Tuner monster from your Deck
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -24,20 +24,10 @@ function s.initial_effect(c)
 	e2:SetCode(EFFECT_NONTUNER)
 	e2:SetRange(LOCATION_MZONE)
 	c:RegisterEffect(e2)
-	--(3)Level Change
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,1))
-	e3:SetType(EFFECT_TYPE_IGNITION)
-	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetCountLimit(1)
-	e3:SetTarget(s.lvtg)
-	e3:SetOperation(s.lvop)
-	c:RegisterEffect(e3)
 	--(4)Special Summon itself
 	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,2))
-	e4:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOKEN)
+	e4:SetDescription(aux.Stringid(id,1))
+	e4:SetCategory(CATEGORY_LVCHANGE+CATEGORY_SPECIAL_SUMMON+CATEGORY_TOKEN)
 	e4:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e4:SetType(EFFECT_TYPE_IGNITION)
 	e4:SetRange(LOCATION_GRAVE)
@@ -54,7 +44,7 @@ function s.hspcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSynchroSummoned()
 end
 function s.hspfilter(c,e,tp)
-	return c:IsType(TYPE_TUNER) and c:IsLevelBelow(4) and c:IsRace(RACE_BEAST|RACE_BEASTWARRIOR) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE)
+	return c:IsType(TYPE_TUNER) and c:IsLevelBelow(4) and c:IsRace(RACE_BEASTWARRIOR) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE)
 end
 function s.hsptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
@@ -115,7 +105,7 @@ function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 end
 function s.operation(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
-	if tc:IsFacedown() or not tc:IsRelateToEffect(e) or tc:IsImmuneToEffect(e) or tc:GetLevel()<2 then return end
+	if tc:IsFacedown() or not tc:IsRelateToEffect(e) or tc:IsImmuneToEffect(e) or tc:GetLevel()<3 then return end
 	local c=e:GetHandler()
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
@@ -146,8 +136,8 @@ function s.operation(e,tp,eg,ep,ev,re,r,rp)
 end
 --Cannot Special Summon monsters from the Extra Deck, except Synchro monsters
 function s.splimit(e,c)
-	return c:IsLocation(LOCATION_EXTRA) and not c:IsType(TYPE_SYNCHRO)
+	return c:IsLocation(LOCATION_EXTRA) and not (c:IsType(TYPE_SYNCHRO) and c:IsRace(RACE_BEASTWARRIOR))
 end
 function s.lizfilter(e,c)
-	return not c:IsOriginalType(TYPE_SYNCHRO)
+	return not (c:IsOriginalType(TYPE_SYNCHRO) and c:IsOriginalRace(RACE_BEASTWARRIOR))
 end
