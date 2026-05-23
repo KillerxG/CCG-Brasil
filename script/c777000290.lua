@@ -31,7 +31,7 @@ function s.value(e,c)
 end
 --(2)Special Summon
 function s.spfilter(c)
-	return c:IsAttribute(ATTRIBUTE_LIGHT) and not c:IsPublic()
+	return (c:IsAttribute(ATTRIBUTE_LIGHT) and not c:IsSetCard(0x276)) and not c:IsPublic()
 end
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_HAND,0,1,e:GetHandler()) end

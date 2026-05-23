@@ -2,6 +2,9 @@
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
+	--Link summon method
+	c:EnableReviveLimit()
+	Link.AddProcedure(c,s.matfilter,1,1)
 	--(1)Banish card from Deck
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
@@ -35,6 +38,10 @@ function s.initial_effect(c)
 	local e4=e3:Clone()
 	e4:SetCode(EFFECT_SET_BASE_DEFENSE)
 	c:RegisterEffect(e4)
+end
+--Link summon method
+function s.matfilter(c,lc,sumtype,tp)
+	return c:IsSetCard(0x276,lc,sumtype,tp) and not c:IsType(TYPE_LINK,lc,sumtype,tp)
 end
 --(1)Banish card from Deck
 function s.dfilter(c,rc)
