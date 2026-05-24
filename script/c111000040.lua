@@ -7,23 +7,6 @@ function s.initial_effect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	c:RegisterEffect(e1)
-	--(1)Neither Player can Special Summon Link
-    local e2 = Effect.CreateEffect(c)
-    e2:SetType(EFFECT_TYPE_FIELD)
-    e2:SetRange(LOCATION_FZONE)
-    e2:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
-    e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-    e2:SetTargetRange(1, 1)
-    e2:SetTarget(s.splimit)
-    c:RegisterEffect(e2)
-	--(2)Unaffected
-    local e3 = Effect.CreateEffect(c)
-    e3:SetType(EFFECT_TYPE_SINGLE)
-    e3:SetCode(EFFECT_IMMUNE_EFFECT)
-    e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-    e3:SetRange(LOCATION_FZONE)
-    e3:SetValue(1)
-    c:RegisterEffect(e3)
 	--(3)You cannot activate Field Spells
 	local e4 = Effect.CreateEffect(c)
     e4:SetType(EFFECT_TYPE_FIELD)
@@ -42,7 +25,7 @@ function s.initial_effect(c)
     e5:SetTarget(s.tgtg)
     e5:SetOperation(s.tgop)
     c:RegisterEffect(e5)
-	--(5)Your or your opponent Lose LP
+	--(5)You or your opponent Lose LP
 	local e6 = Effect.CreateEffect(c)
     e6:SetDescription(aux.Stringid(id, 1))
     e6:SetType(EFFECT_TYPE_IGNITION)
@@ -69,7 +52,7 @@ function s.initial_effect(c)
 	e8:SetTarget(s.tktg)
 	e8:SetOperation(s.tkop)
 	c:RegisterEffect(e8)
-	-- Efeito 1 (e9, e10, e11): Nenhum jogador pode Invocar Fish, Aqua ou Sea Serpent
+	-- Efeito 1 (e9, e10, e11): Nenhum jogador pode Invocar Plant, Insect, Fish, Aqua ou Sea Serpent
     local e9 = Effect.CreateEffect(c)
     e9:SetType(EFFECT_TYPE_FIELD)
     e9:SetCode(EFFECT_CANNOT_SUMMON)
@@ -206,7 +189,7 @@ end
 -- Efeito (e9, e10, e11): Filtro de Bloqueio de Invocação
 -- ==========================================================
 function s.sumlimit(e, c, sump, sumtype, sumpos, target_p)
-    return c:IsRace(RACE_FISH | RACE_AQUA | RACE_SEASERPENT)
+    return c:IsRace(RACE_FISH | RACE_AQUA | RACE_SEASERPENT | RACE_PLANT | RACE_INSECT)
 end
 
 -- ==========================================================
