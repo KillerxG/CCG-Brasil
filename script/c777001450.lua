@@ -1,73 +1,118 @@
---Siver Fangs Pray
---Scripted by KillerxG
-local s,id=GetID()
+-- Silver Fangs' Sacred Scriptures
+-- Scripted by Gemini
+local s, id = GetID()
+
 function s.initial_effect(c)
-	--(1)Draw
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_DRAW+CATEGORY_RECOVER)
-	e1:SetType(EFFECT_TYPE_ACTIVATE)
-	e1:SetCode(EVENT_FREE_CHAIN)
-	e1:SetCountLimit(1,id)
-	e1:SetCost(s.drcost)
-	e1:SetTarget(s.drtg)
-	e1:SetOperation(s.drop)
-	c:RegisterEffect(e1)
-	--(2)Gain LP
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_RECOVER)
-	e2:SetType(EFFECT_TYPE_IGNITION)
-	e2:SetCode(EVENT_FREE_CHAIN)
-	e2:SetRange(LOCATION_GRAVE)
-	e2:SetCountLimit(1,id+1)
-	e2:SetTarget(s.lptg)
-	e2:SetOperation(s.lpop)
-	c:RegisterEffect(e2)
-end
---(1)Draw
-function s.drcostfilter(c)
-	return c:IsMonster() and c:IsSetCard(0x307)	and c:IsAbleToGraveAsCost()
-end
-function s.drcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.drcostfilter,tp,LOCATION_HAND,0,1,nil) end
-		Duel.DiscardHand(tp,s.drcostfilter,1,1,REASON_COST+REASON_DISCARD)
-end
-function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsPlayerCanDraw(tp,2) end
-	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,2)
-end
-function s.drop(e,tp,eg,ep,ev,re,r,rp)
-	local tp=e:GetHandlerPlayer()
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-	if Duel.Draw(tp,2,REASON_EFFECT)>0 
-		and Duel.GetLP(tp)<Duel.GetLP(1-tp) then
-			Duel.BreakEffect()
-			Duel.Recover(tp,1000,REASON_EFFECT)
-	end
-end
---(2)Gain LP
-function s.costfilter(c)
-	return c:IsMonster() and not c:IsPublic()
-end
-function s.lptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_HAND,0,1,nil) end
-	if e:GetLabel()==1 then
-		e:SetLabel(0)
-	end
-end
-function s.lpop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_HAND,0,1,1,nil)
-	if #g==0 then return end
-	Duel.ConfirmCards(1-tp,g)
-	Duel.ShuffleHand(tp)
-	local tc=g:GetFirst()
-	if tc:IsMonster() then
-		Duel.Recover(tp,tc:GetLevel()*200,REASON_EFFECT)
-	end
-	if tc:IsMonster() and tc:IsSetCard(0x307) then
-		Duel.BreakEffect()
-		Duel.Recover(tp,tc:GetLevel()*400,REASON_EFFECT)
-	end
+    -- Efeito 1: Busca e Retorno para a Mão (caso controle a Kyara)
+    local e1 = Effect.CreateEffect(c)
+    e1:SetDescription(aux.Stringid(id, 0))
+    e1:SetCategory(CATEGORY_TOHAND + CATEGORY_SEARCH)
+    e1:SetType(EFFECT_TYPE_ACTIVATE)
+    e1:SetCode(EVENT_FREE_CHAIN)
+    e1:SetCountLimit(1, id)
+    e1:SetTarget(s.thtg)
+    e1:SetOperation(s.thop)
+    c:RegisterEffect(e1)
+
+    -- Efeito 2: Setar ou Adicionar do GY
+    local e2 = Effect.CreateEffect(c)
+    e2:SetDescription(aux.Stringid(id, 1))
+    e2:SetType(EFFECT_TYPE_IGNITION)
+    e2:SetRange(LOCATION_GRAVE)
+    e2:SetCountLimit(1, id + 1)
+    e2:SetCondition(s.gycon)
+    e2:SetTarget(s.gytg)
+    e2:SetOperation(s.gyop)
+    c:RegisterEffect(e2)
 end
 
+-- ====================================================================
+-- Efeito 1: Buscar do Deck e Recuperar da Magia
+-- ====================================================================
+function s.thfilter(c)
+    return c:IsSetCard(0x307) and not c:IsCode(id) and c:IsAbleToHand()
+end
+
+function s.kyarafilter(c)
+    -- Procura o ID 777001320 pelo nome original
+    return c:IsFaceup() and c:GetOriginalCode() == 777001320
+end
+
+function s.thtg(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return Duel.IsExistingMatchingCard(s.thfilter, tp, LOCATION_DECK, 0, 1, nil) end
+    Duel.SetOperationInfo(0, CATEGORY_TOHAND, nil, 1, tp, LOCATION_DECK)
+end
+
+function s.thop(e, tp, eg, ep, ev, re, r, rp)
+    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_ATOHAND)
+    local g = Duel.SelectMatchingCard(tp, s.thfilter, tp, LOCATION_DECK, 0, 1, 1, nil)
+    
+    if #g > 0 and Duel.SendtoHand(g, nil, REASON_EFFECT) > 0 then
+        Duel.ConfirmCards(1 - tp, g)
+        
+        local c = e:GetHandler()
+        -- CORREÇÃO: Adicionado "and c:GetFlagEffect(id) == 0". 
+        -- Se ela tiver a flag de ter vindo do GY, a escolha de voltar para a mão NÃO aparece!
+        if c:IsRelateToEffect(e) and Duel.IsExistingMatchingCard(s.kyarafilter, tp, LOCATION_MZONE, 0, 1, nil) 
+            and c:GetFlagEffect(id) == 0 then
+            
+            if Duel.SelectYesNo(tp, aux.Stringid(id, 2)) then
+                Duel.BreakEffect()
+                c:CancelToGrave() 
+                Duel.SendtoHand(c, nil, REASON_EFFECT) 
+            end
+        end
+    end
+end
+
+-- ====================================================================
+-- Efeito 2: Setar do Cemitério ou Adicionar à Mão (Kyara)
+-- ====================================================================
+function s.gycon(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    return c:GetTurnID() ~= Duel.GetTurnCount()
+        and Duel.GetLP(tp) > Duel.GetLP(1 - tp) 
+        and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard, 0x307), tp, LOCATION_MZONE, 0, 1, nil)
+end
+
+function s.gytg(e, tp, eg, ep, ev, re, r, rp, chk)
+    local c = e:GetHandler()
+    local b1 = c:IsSSetable()
+    local b2 = Duel.IsExistingMatchingCard(s.kyarafilter, tp, LOCATION_MZONE, 0, 1, nil) and c:IsAbleToHand()
+    if chk == 0 then return b1 or b2 end
+    
+    if b2 then
+        Duel.SetPossibleOperationInfo(0, CATEGORY_TOHAND, c, 1, 0, 0)
+    end
+    if b1 then
+        Duel.SetPossibleOperationInfo(0, CATEGORY_LEAVE_GRAVE, c, 1, 0, 0)
+    end
+end
+
+function s.gyop(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    if not c:IsRelateToEffect(e) then return end
+    
+    local b1 = c:IsSSetable()
+    local b2 = Duel.IsExistingMatchingCard(s.kyarafilter, tp, LOCATION_MZONE, 0, 1, nil) and c:IsAbleToHand()
+    
+    if b2 and (not b1 or Duel.SelectYesNo(tp, aux.Stringid(id, 3))) then
+        Duel.SendtoHand(c, nil, REASON_EFFECT)
+        Duel.ConfirmCards(1 - tp, c)
+    elseif b1 then
+        Duel.SSet(tp, c)
+        
+        -- O SEGREDO: Registra a flag invisível na carta para o efeito 1 saber que ela veio do GY
+        c:RegisterFlagEffect(id, RESET_EVENT + RESETS_STANDARD, 0, 1)
+        
+        -- Regra: Banir quando deixar o campo
+        local e1 = Effect.CreateEffect(c)
+        e1:SetDescription(3300)
+        e1:SetType(EFFECT_TYPE_SINGLE)
+        e1:SetCode(EFFECT_LEAVE_FIELD_REDIRECT)
+        e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE + EFFECT_FLAG_CLIENT_HINT)
+        e1:SetReset(RESET_EVENT + RESETS_REDIRECT)
+        e1:SetValue(LOCATION_REMOVED)
+        c:RegisterEffect(e1)
+    end
+end
