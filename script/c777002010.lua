@@ -1,146 +1,143 @@
---Master of Rockslash - Haruna
---Scripted by KillerxG
-local s,id=GetID()
+-- Master of Rockslash - Haruna
+-- Scripted by Gemini
+local s, id = GetID()
+
 function s.initial_effect(c)
-	c:EnableReviveLimit()
-	c:SetSPSummonOnce(id)
-	--(1)Special Summon condition
-	local e0=Effect.CreateEffect(c)
-	e0:SetType(EFFECT_TYPE_SINGLE)
-	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-	e0:SetValue(aux.FALSE)
-	c:RegisterEffect(e0)
-	--(2)Special Summon itself from the hand
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
-	e1:SetCode(EFFECT_SPSUMMON_PROC)
-	e1:SetRange(LOCATION_HAND)
-	e1:SetCondition(s.spcon)
-	c:RegisterEffect(e1)
-    --(3)Foolish and damage
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetCategory(CATEGORY_DAMAGE+CATEGORY_DECKDES)
-	e2:SetType(EFFECT_TYPE_IGNITION)
-	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetCountLimit(1)
-	e2:SetTarget(s.dam1tg)
-	e2:SetOperation(s.dam1op)
-	c:RegisterEffect(e2)
-	--(4)Damage
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,1))
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e3:SetCode(EVENT_CHAINING)
-	e3:SetRange(LOCATION_SZONE)
-	e3:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-	e3:SetOperation(s.regop)
-	c:RegisterEffect(e3)
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,1))
-	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e4:SetCode(EVENT_CHAIN_SOLVED)
-	e4:SetRange(LOCATION_SZONE)
-	e4:SetCondition(s.damcon)
-	e4:SetOperation(s.damop)
-	c:RegisterEffect(e4)
-	--(5)Make your opponent send 1 monster to GY
-	local e5=Effect.CreateEffect(c)
-	e5:SetDescription(aux.Stringid(id,2))
-	e5:SetCategory(CATEGORY_TOGRAVE)
-	e5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e5:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DELAY)
-	e5:SetCode(EVENT_DAMAGE)
-	e5:SetRange(LOCATION_MZONE)
-	e5:SetCountLimit(1,id)
-	e5:SetCondition(s.rtcon)
-	e5:SetTarget(s.tgtg)
-	e5:SetOperation(s.tgop)
-	c:RegisterEffect(e5)
-	--(6)Cannot be destroyed by effects that do not target it
-	local e6=Effect.CreateEffect(c)
-	e6:SetType(EFFECT_TYPE_SINGLE)
-	e6:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
-	e6:SetRange(LOCATION_MZONE)
-	e6:SetValue(s.indvalue)
-	c:RegisterEffect(e6)
+    -- Carta Nomi (Não pode ser Normal Summoned/Set)
+    c:EnableReviveLimit()
+    -- Limite oficial da Boss: Você só pode Invocar por Invocação-Especial a Haruna uma vez por turno
+    c:SetSPSummonOnce(id)
+
+    -- Efeito 1: Condição de Invocação-Especial
+    local e1 = Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_FIELD)
+    e1:SetCode(EFFECT_SPSUMMON_PROC)
+    e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
+    e1:SetRange(LOCATION_HAND)
+    e1:SetCondition(s.spcon)
+    c:RegisterEffect(e1)
+
+    -- Efeito 2: Proteção - Indestrutível por efeitos que não dêem alvo nela
+    local e2 = Effect.CreateEffect(c)
+    e2:SetType(EFFECT_TYPE_SINGLE)
+    e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+    e2:SetRange(LOCATION_MZONE)
+    e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
+    e2:SetValue(s.indval)
+    c:RegisterEffect(e2)
+
+    -- Efeito 3: Dano de Batalha de monstros "Rockslash" vira Dano de Efeito (Vassal Rule)
+    local e3 = Effect.CreateEffect(c)
+    e3:SetType(EFFECT_TYPE_FIELD)
+    e3:SetCode(EFFECT_BATTLE_DAMAGE_TO_EFFECT)
+    e3:SetRange(LOCATION_MZONE)
+    e3:SetTargetRange(LOCATION_MZONE, 0) -- Afeta o seu campo
+    e3:SetTarget(s.bdtg)
+    c:RegisterEffect(e3)
+
+    -- Efeito 4: Gatilho - Monstro enviado para o GY do oponente -> 500 Dano
+    local e4 = Effect.CreateEffect(c)
+    e4:SetDescription(aux.Stringid(id, 0))
+    e4:SetCategory(CATEGORY_DAMAGE)
+    e4:SetType(EFFECT_TYPE_FIELD + EFFECT_TYPE_TRIGGER_F) -- Gatilho Mandatório (Sem "You can")
+    e4:SetCode(EVENT_TO_GRAVE)
+    e4:SetRange(LOCATION_MZONE)
+    e4:SetCondition(s.damcon)
+    e4:SetTarget(s.damtg)
+    e4:SetOperation(s.damop)
+    c:RegisterEffect(e4)
+
+    -- Efeito 5: Quick Effect - Destruir e causar 600 Dano
+    local e5 = Effect.CreateEffect(c)
+    e5:SetDescription(aux.Stringid(id, 1))
+    e5:SetCategory(CATEGORY_DESTROY + CATEGORY_DAMAGE)
+    e5:SetType(EFFECT_TYPE_QUICK_O)
+    e5:SetCode(EVENT_FREE_CHAIN)
+    e5:SetRange(LOCATION_MZONE)
+    e5:SetProperty(EFFECT_FLAG_CARD_TARGET)
+    e5:SetHintTiming(0, TIMINGS_CHECK_MONSTER_E + TIMING_END_PHASE)
+    e5:SetCountLimit(1, id) -- HOPT do Quick Effect
+    e5:SetTarget(s.destg)
+    e5:SetOperation(s.desop)
+    c:RegisterEffect(e5)
 end
---(2)Special Summon itself from the hand
-function s.selfspfilter(c)
-	return c:IsSetCard(0x309) and c:IsMonster() and c:IsFaceup()
+
+-- ====================================================================
+-- Efeito 1: Condição de Invocação-Especial (3 Nomes Diferentes)
+-- ====================================================================
+function s.spfilter(c)
+    return c:IsSetCard(0x309) and c:IsType(TYPE_MONSTER) and (c:IsFaceup() or not c:IsLocation(LOCATION_MZONE))
 end
-function s.spcon(e,c)
-	if c==nil then return true end
-	local tp=e:GetHandlerPlayer()
-	local g=Duel.GetMatchingGroup(s.selfspfilter,tp,LOCATION_GRAVE+LOCATION_MZONE,0,nil)
-	return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and #g>=3 and g:GetClassCount(Card.GetCode)>=3
+
+function s.spcon(e, c)
+    if c == nil then return true end
+    local tp = c:GetControler()
+    -- Pega todos os "Rockslash" válidos no Campo e Cemitério
+    local g = Duel.GetMatchingGroup(s.spfilter, tp, LOCATION_MZONE + LOCATION_GRAVE, 0, nil)
+    
+    -- Checa se há espaço na mesa e se há pelo menos 3 códigos (nomes) originais diferentes no grupo
+    return Duel.GetLocationCount(tp, LOCATION_MZONE) > 0
+        and g:GetClassCount(Card.GetCode) >= 3
 end
---(3)Foolish and damage
-function s.fil1ter(c)
-	return c:IsSetCard(0X309) and c:IsMonster() and c:IsAbleToGrave()
+
+-- ====================================================================
+-- Efeito 2: Proteção Contra Destruição Sem Alvo
+-- ====================================================================
+function s.indval(e, re, rp)
+    -- Se o efeito que ativou NÃO possuir a flag de dar alvo, a Haruna é indestrutível (retorna true)
+    if not re:IsHasProperty(EFFECT_FLAG_CARD_TARGET) then return true end
+    -- Se tiver a flag de dar alvo, checa se a Haruna está entre as cartas escolhidas na Corrente
+    local g = Duel.GetChainInfo(0, CHAININFO_TARGET_CARDS)
+    return not g or not g:IsContains(e:GetHandler())
 end
-function s.ctfilter(c)
-	return c:IsSummonType(SUMMON_TYPE_SPECIAL)
+
+-- ====================================================================
+-- Efeito 3: Converter Dano de Batalha -> Dano de Efeito
+-- ====================================================================
+function s.bdtg(e, c)
+    -- Aplica a conversão apenas para monstros "Rockslash"
+    return c:IsSetCard(0x309)
 end
-function s.dam1tg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.fil1ter,tp,LOCATION_DECK+LOCATION_HAND,0,1,nil)
-		and Duel.IsExistingMatchingCard(s.ctfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
-	local ct=Duel.GetMatchingGroupCount(s.ctfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
-	Duel.SetTargetPlayer(1-tp)
-	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,ct*600)
+
+-- ====================================================================
+-- Efeito 4: Gatilho de Envio pro GY do Oponente
+-- ====================================================================
+function s.cfilter(c, tp)
+    -- Verifica se a carta que foi pro GY é monstro e está sob controle do oponente
+    return c:IsType(TYPE_MONSTER) and c:IsControler(1 - tp)
 end
-function s.dam1op(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-	local g=Duel.SelectMatchingCard(tp,s.fil1ter,tp,LOCATION_DECK+LOCATION_HAND,0,1,1,nil)
-	if #g>0 then
-		Duel.SendtoGrave(g,REASON_EFFECT)
-			local ct=Duel.GetOperatedGroup():FilterCount(Card.IsLocation,nil,LOCATION_GRAVE)
-			if ct>0 then
-				local p=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER)
-				local ct=Duel.GetMatchingGroupCount(s.ctfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
-				Duel.Damage(p,ct*600,REASON_EFFECT)
-			end
-	end
+
+function s.damcon(e, tp, eg, ep, ev, re, r, rp)
+    return eg:IsExists(s.cfilter, 1, nil, tp)
 end
---(4)Damage
-function s.damcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return ep~=tp and c:GetFlagEffect(id)~=0
+
+function s.damtg(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return true end
+    Duel.SetOperationInfo(0, CATEGORY_DAMAGE, nil, 0, 1 - tp, 500)
 end
-function s.regop(e,tp,eg,ep,ev,re,r,rp)
-	e:GetHandler():RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD-RESET_TURN_SET+RESET_CHAIN,0,1)
+
+function s.damop(e, tp, eg, ep, ev, re, r, rp)
+    Duel.Damage(1 - tp, 500, REASON_EFFECT)
 end
-function s.damop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_CARD,0,id)
-	Duel.Damage(1-tp,600,REASON_EFFECT)
+
+-- ====================================================================
+-- Efeito 5: Quick Effect (Destruir e Queimar)
+-- ====================================================================
+function s.destg(e, tp, eg, ep, ev, re, r, rp, chk, chkc)
+    if chkc then return chkc:IsControler(1 - tp) and chkc:IsLocation(LOCATION_ONFIELD) end
+    if chk == 0 then return Duel.IsExistingTarget(nil, tp, 0, LOCATION_ONFIELD, 1, nil) end
+    
+    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_DESTROY)
+    local g = Duel.SelectTarget(tp, nil, tp, 0, LOCATION_ONFIELD, 1, 1, nil)
+    
+    Duel.SetOperationInfo(0, CATEGORY_DESTROY, g, 1, 0, 0)
+    Duel.SetOperationInfo(0, CATEGORY_DAMAGE, nil, 0, 1 - tp, 600)
 end
---(5)Make your opponent send 1 monster to GY
-function s.rtcon(e,tp,eg,ep,ev,re,r,rp)
-	return ep~=tp and (r&REASON_BATTLE)==0 and re
-end
-function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetFieldGroupCount(tp,0,LOCATION_MZONE)>0 end
-	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,0,LOCATION_MZONE)
-end
-function s.tgop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(nil,1-tp,LOCATION_MZONE,0,nil)
-	if #g>0 then
-		Duel.Hint(HINT_SELECTMSG,1-tp,HINTMSG_TOGRAVE)
-		local sg=g:Select(1-tp,1,1,nil)
-		Duel.HintSelection(sg)
-		local atk=sg:GetFirst():GetTextAttack()
-		if Duel.SendtoGrave(sg,REASON_RULE,PLAYER_NONE,1-tp) then
-			Duel.Damage(1-tp,atk/2,REASON_EFFECT)
-		end
-	end
-end
---(6)Cannot be destroyed by effects that do not target it
-function s.indvalue(e,re,rp,c)
-	if not re:IsHasProperty(EFFECT_FLAG_CARD_TARGET) then return true end
-	local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
-	return not g:IsContains(c)
+
+function s.desop(e, tp, eg, ep, ev, re, r, rp)
+    local tc = Duel.GetFirstTarget()
+    -- Se a destruição tiver sucesso, aciona o dano de efeito
+    if tc and tc:IsRelateToEffect(e) and Duel.Destroy(tc, REASON_EFFECT) > 0 then
+        Duel.Damage(1 - tp, 600, REASON_EFFECT)
+    end
 end

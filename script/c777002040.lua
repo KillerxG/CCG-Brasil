@@ -1,78 +1,95 @@
---Rockslash Fighter - Jones
---Scripted by KillerxG
-local s,id=GetID()
+-- Rockslash Fighter - Jones
+-- Scripted by Gemini
+local s, id = GetID()
+
 function s.initial_effect(c)
-	--(1)Special Summon
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_DAMAGE+CATEGORY_SPECIAL_SUMMON)
-	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e1:SetProperty(EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DELAY)
-	e1:SetCode(EVENT_SUMMON_SUCCESS)
-	e1:SetCountLimit(1,id)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
-	c:RegisterEffect(e1)
-	local e2=e1:Clone()
-	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
-	c:RegisterEffect(e2)
-	--(2)Destroy 1 S/T your opponent controls
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,2))
-	e3:SetCategory(CATEGORY_DESTROY+CATEGORY_DAMAGE)
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e3:SetCode(EVENT_DAMAGE)
-	e3:SetProperty(EFFECT_FLAG_DELAY)
-	e3:SetRange(LOCATION_GRAVE)
-	e3:SetCountLimit(1,id+1)
-	e3:SetCondition(s.descon)
-	e3:SetTarget(s.destg)
-	e3:SetOperation(s.desop)
-	c:RegisterEffect(e3)
+    -- Efeito 1: Special Summon da Mão (ou GY se controlar Haruna) ao ocorrer Dano de Efeito
+    local e1 = Effect.CreateEffect(c)
+    e1:SetDescription(aux.Stringid(id, 0))
+    e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
+    e1:SetType(EFFECT_TYPE_FIELD + EFFECT_TYPE_TRIGGER_O)
+    e1:SetCode(EVENT_DAMAGE)
+    e1:SetProperty(EFFECT_FLAG_DELAY)
+    e1:SetRange(LOCATION_HAND + LOCATION_GRAVE)
+    e1:SetCountLimit(1, id)
+    e1:SetCondition(s.spcon)
+    e1:SetTarget(s.sptg)
+    e1:SetOperation(s.spop)
+    c:RegisterEffect(e1)
+
+    -- Efeito 2: Causar Dano baseado no número de monstros (Ignition Effect)
+    local e2 = Effect.CreateEffect(c)
+    e2:SetDescription(aux.Stringid(id, 1))
+    e2:SetCategory(CATEGORY_DAMAGE)
+    e2:SetType(EFFECT_TYPE_IGNITION)
+    e2:SetRange(LOCATION_MZONE)
+    e2:SetCountLimit(1, id + 1)
+    e2:SetCondition(s.damcon)
+    e2:SetTarget(s.damtg)
+    e2:SetOperation(s.damop)
+    c:RegisterEffect(e2)
 end
---(1)Special Summon
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
-	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,400)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
+
+-- ====================================================================
+-- Filtro Global da Haruna
+-- ====================================================================
+function s.harunafilter(c)
+    return c:IsFaceup() and c:GetOriginalCode() == 777002010
 end
-function s.spfilter(c,e,tp)
-	return c:IsSetCard(0x309) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP) and not c:IsCode(id)
+
+-- ====================================================================
+-- Efeito 1: Special Summon (Mão ou GY) no Dano de Efeito (Main Phase)
+-- ====================================================================
+function s.spcon(e, tp, eg, ep, ev, re, r, rp)
+    -- Verifica se estamos na Main Phase 1 ou Main Phase 2
+    local ph = Duel.GetCurrentPhase()
+    if ph ~= PHASE_MAIN1 and ph ~= PHASE_MAIN2 then return false end
+    
+    -- Verifica se o dano foi causado por um efeito
+    return (r & REASON_EFFECT) ~= 0
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_GRAVE,0,nil,e,tp)
-	if Duel.Damage(1-tp,400,REASON_EFFECT)~=0 and #g>0 and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
-		Duel.BreakEffect()
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local sg=g:Select(tp,1,1,nil)
-		Duel.SpecialSummon(sg,0,tp,tp,false,false,POS_FACEUP)
-	end
+
+function s.sptg(e, tp, eg, ep, ev, re, r, rp, chk)
+    local c = e:GetHandler()
+    local in_gy = c:IsLocation(LOCATION_GRAVE)
+    local has_haruna = Duel.IsExistingMatchingCard(s.harunafilter, tp, LOCATION_MZONE, 0, 1, nil)
+    
+    if chk == 0 then
+        -- Se estiver no GY, é obrigatório ter a Haruna no campo
+        if in_gy and not has_haruna then return false end
+        return Duel.GetLocationCount(tp, LOCATION_MZONE) > 0
+            and c:IsCanBeSpecialSummoned(e, 0, tp, false, false)
+    end
+    Duel.SetOperationInfo(0, CATEGORY_SPECIAL_SUMMON, c, 1, 0, 0)
 end
---(2)Destroy 1 S/T your opponent controls
-function s.dmgfilter(c)
-	return c:IsSetCard(0x309) and c:IsFaceup()
+
+function s.spop(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    if c:IsRelateToEffect(e) then
+        Duel.SpecialSummon(c, 0, tp, tp, false, false, POS_FACEUP)
+    end
 end
-function s.descon(e,tp,eg,ep,ev,re,r,rp)
-	return r&REASON_EFFECT~=0 and ep~=tp
+
+-- ====================================================================
+-- Efeito 2: Queimar a Vida baseado na quantidade de monstros no campo
+-- ====================================================================
+function s.damcon(e, tp, eg, ep, ev, re, r, rp)
+    -- Só pode ativar se controlar a Haruna
+    return Duel.IsExistingMatchingCard(s.harunafilter, tp, LOCATION_MZONE, 0, 1, nil)
 end
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local g=Duel.GetFieldGroup(tp,0,LOCATION_SZONE)
-	if chk==0 then return #g>0 end
-	local ebg=Duel.GetMatchingGroup(s.dmgfilter,tp,LOCATION_MZONE|LOCATION_GRAVE,0,nil)
-	local dam=ebg:GetClassCount(Card.GetCode)*200
-	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
-	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,dam)
+
+function s.damtg(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return Duel.GetFieldGroupCount(tp, LOCATION_MZONE, LOCATION_MZONE) > 0 end
+    
+    -- Conta todos os monstros de ambos os lados do campo
+    local ct = Duel.GetFieldGroupCount(tp, LOCATION_MZONE, LOCATION_MZONE)
+    Duel.SetOperationInfo(0, CATEGORY_DAMAGE, nil, 0, 1 - tp, ct * 200)
 end
-function s.desop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-	local tg=Duel.SelectMatchingCard(tp,nil,tp,0,LOCATION_SZONE,1,1,nil)
-	if #tg==0 then return end
-	Duel.HintSelection(tg,true)
-	if Duel.Destroy(tg,REASON_EFFECT)>0 then
-		local g=Duel.GetMatchingGroup(s.dmgfilter,tp,LOCATION_MZONE|LOCATION_GRAVE,0,nil)
-		if #g==0 then return end
-		local dam=g:GetClassCount(Card.GetCode)*200
-		Duel.BreakEffect()
-		Duel.Damage(1-tp,dam,REASON_EFFECT)
-	end
+
+function s.damop(e, tp, eg, ep, ev, re, r, rp)
+    -- Faz a contagem novamente na resolução para garantir precisão caso monstros tenham saído do campo
+    local ct = Duel.GetFieldGroupCount(tp, LOCATION_MZONE, LOCATION_MZONE)
+    if ct > 0 then
+        Duel.Damage(1 - tp, ct * 200, REASON_EFFECT)
+    end
 end
