@@ -4,7 +4,7 @@ local id=161999999
 if not ActionDuel then
 
 	function Card.IsActionCard(c)
-		return c:IsType(TYPE_ACTION) and not c.af
+		return c:IsType(TYPE_ACTION) and not c.af and not c:IsType(TYPE_FIELD) and not c:IsOriginalCode(id)
 	end
 
 	function Card.IsActionSpell(c)
@@ -136,18 +136,23 @@ if not ActionDuel then
 			c:RegisterFlagEffect(COVER_ACTION,0,0,0)
 		end
 	end
+
 	function ActionDuel.linklimit(e,c,sump,sumtype)
 		return c:IsType(TYPE_LINK) and Duel.GetFlagEffect(sump,ACTION_DUEL_LINK_UNLOCK)==0
 	end
+
 	function ActionDuel.fieldimmune(e,te)
 		return true
 	end
+
 	function ActionDuel.pendfilter(c)
 		return c:IsMonster() and c:IsType(TYPE_PENDULUM)
 	end
+
 	function ActionDuel.pendfilter2(c,code)
 		return ActionDuel.pendfilter(c) and not c:IsCode(code)
 	end
+
 	function ActionDuel.haspendpair(tp)
 		local g=Duel.GetMatchingGroup(ActionDuel.pendfilter,tp,LOCATION_HAND,0,nil)
 		for tc in aux.Next(g) do
@@ -157,13 +162,16 @@ if not ActionDuel then
 		end
 		return false
 	end
+
 	function ActionDuel.linkunlockcon(e,tp,eg,ep,ev,re,r,rp)
 		return Duel.GetFlagEffect(tp,ACTION_DUEL_LINK_UNLOCK)==0
 			and ActionDuel.haspendpair(tp)
 	end
+
 	function ActionDuel.linkunlocktg(e,tp,eg,ep,ev,re,r,rp,chk)
 		if chk==0 then return ActionDuel.haspendpair(tp) end
 	end
+
 	function ActionDuel.linkunlockop(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.GetFlagEffect(tp,ACTION_DUEL_LINK_UNLOCK)>0 then return end
 		if not ActionDuel.haspendpair(tp) then return end
@@ -251,6 +259,7 @@ if not ActionDuel then
 			end
 		end
 	end
+
 	function ActionDuel.returnop(e)
 		local c=e:GetLabelObject()
 		local tp=c:GetControler()
@@ -258,6 +267,7 @@ if not ActionDuel then
 			Duel.MoveToField(c,tp,tp,LOCATION_FZONE,POS_FACEUP,true)
 		end
 	end
+
 	------------------------------------------------------------------------------
 	--Check whether tp already has an Action Card in hand
 	function ActionDuel.handcheck(tp)
@@ -267,6 +277,7 @@ if not ActionDuel then
 			return Duel.IsExistingMatchingCard(Card.IsActionCard,tp,LOCATION_HAND,0,1,nil)
 		end
 	end
+
 	function ActionDuel.phaseflag()
 		local ph=Duel.GetCurrentPhase()
 		if ph==PHASE_MAIN1 then
@@ -278,14 +289,17 @@ if not ActionDuel then
 		end
 		return 0
 	end
+
 	function ActionDuel.phaseused(tp,flag)
 		return ActionDuel.phase_used and ActionDuel.phase_used[tp] and ActionDuel.phase_used[tp][flag]
 	end
+
 	function ActionDuel.markphaseused(tp,flag)
 		if not ActionDuel.phase_used then ActionDuel.phase_used={[0]={},[1]={}} end
 		ActionDuel.phase_used[tp]=ActionDuel.phase_used[tp] or {}
 		ActionDuel.phase_used[tp][flag]=true
 	end
+
 	function ActionDuel.removepoolcard(t,code)
 		for i=#t,1,-1 do
 			if t[i]==code then
@@ -294,6 +308,7 @@ if not ActionDuel then
 			end
 		end
 	end
+
 	function ActionDuel.condition(e,tp,eg,ep,ev,re,r,rp)
 		local flag=ActionDuel.phaseflag()
 		return (not ActionDuel.handcheck(tp) or string.find(e:GetLabelObject():GetLabelObject().af,'m'))
@@ -301,6 +316,7 @@ if not ActionDuel then
 			and not ActionDuel.phaseused(tp,flag)
 			and not e:GetHandler():IsStatus(STATUS_CHAINING)
 	end
+
 	function ActionDuel.target(e,tp,eg,ep,ev,re,r,rp,chk)
 		local c=e:GetHandler()
 		local originalField=e:GetLabelObject():GetLabelObject()
@@ -309,6 +325,7 @@ if not ActionDuel then
 		local ac=Duel.GetRandomNumber(1,#t)
 		e:SetLabel(t[ac])
 	end
+
 	function ActionDuel.operation(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.GetCurrentChain()>0 and not Duel.SelectYesNo(tp,aux.Stringid(id,0)) then return end
 		local originalField=e:GetLabelObject():GetLabelObject()
@@ -342,6 +359,7 @@ if not ActionDuel then
 		Duel.SendtoHand(token,nil,REASON_EFFECT)
 		ActionDuel.chktrap(token,tokenp,e)
 	end
+
 	function ActionDuel.chktrap(tc,tp,e)
 		if tc and tc:IsTrap() and tc:CheckActivateEffect(false,false,false)
 			and Duel.GetLocationCount(tp,LOCATION_SZONE) then
