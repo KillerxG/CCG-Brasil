@@ -3,6 +3,12 @@ local id=161999999
 
 if not ActionDuel then
 
+	function ActionDuelDebug(tp,msg)
+		if Debug and Debug.Message then
+			Debug.Message("[ActionDuel] "..msg)
+		end
+	end
+
 	function Card.IsActionCard(c)
 		return c:IsType(TYPE_ACTION) and not c.af and not c:IsType(TYPE_FIELD) and not c:IsOriginalCode(id)
 	end
@@ -37,7 +43,7 @@ if not ActionDuel then
 		e1:SetCountLimit(1)
 		e1:SetOperation(ActionDuel.op)
 		Duel.RegisterEffect(e1,0)
-		-- Add Action Card
+
 		local e2=Effect.GlobalEffect()
 		e2:SetDescription(aux.Stringid(id,0))
 		e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
@@ -50,16 +56,18 @@ if not ActionDuel then
 		e2:SetOperation(ActionDuel.operation)
 		local e3=e2:Clone()
 		e3:SetCode(EVENT_CHAINING)
+
 		local e4=Effect.GlobalEffect()
 		e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_GRANT)
 		e4:SetTargetRange(LOCATION_SZONE,LOCATION_SZONE)
 		e4:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 		e4:SetLabelObject(e2)
 		Duel.RegisterEffect(e4,0)
+
 		local e5=e4:Clone()
 		e5:SetLabelObject(e3)
 		Duel.RegisterEffect(e5,0)
-		--act ac in hand
+
 		local e6=Effect.GlobalEffect()
 		e6:SetType(EFFECT_TYPE_FIELD)
 		e6:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_IGNORE_RANGE+EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_SET_AVAILABLE)
@@ -67,15 +75,17 @@ if not ActionDuel then
 		e6:SetTargetRange(0xff,0xff)
 		e6:SetTarget(aux.TargetBoolFunction(Card.IsActionSpell))
 		Duel.RegisterEffect(e6,0)
+
 		local e7=e6:Clone()
 		e7:SetDescription(aux.Stringid(id,7))
 		e7:SetCode(EFFECT_QP_ACT_IN_NTPHAND)
 		Duel.RegisterEffect(e7,0)
+
 		local e8=e6:Clone()
 		e8:SetDescription(aux.Stringid(id,7))
 		e8:SetCode(EFFECT_QP_ACT_IN_SET_TURN)
 		Duel.RegisterEffect(e8,0)
-		--cover
+
 		local e9=Effect.GlobalEffect()
 		e9:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 		e9:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_IGNORE_RANGE+EFFECT_FLAG_IGNORE_IMMUNE)
@@ -83,7 +93,7 @@ if not ActionDuel then
 		e9:SetCondition(ActionDuel.covercon)
 		e9:SetOperation(ActionDuel.coverop)
 		Duel.RegisterEffect(e9,0)
-		-- Link Summon restriction
+
 		local e10=Effect.GlobalEffect()
 		e10:SetType(EFFECT_TYPE_FIELD)
 		e10:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
@@ -91,7 +101,7 @@ if not ActionDuel then
 		e10:SetTargetRange(1,1)
 		e10:SetTarget(ActionDuel.linklimit)
 		Duel.RegisterEffect(e10,0)
-		-- Unlock Link Summons for the turn
+
 		local e11=Effect.GlobalEffect()
 		e11:SetDescription(aux.Stringid(id,10))
 		e11:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
@@ -101,19 +111,21 @@ if not ActionDuel then
 		e11:SetCondition(ActionDuel.linkunlockcon)
 		e11:SetTarget(ActionDuel.linkunlocktg)
 		e11:SetOperation(ActionDuel.linkunlockop)
+
 		local e12=Effect.GlobalEffect()
 		e12:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_GRANT)
 		e12:SetTargetRange(LOCATION_SZONE,LOCATION_SZONE)
 		e12:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 		e12:SetLabelObject(e11)
 		Duel.RegisterEffect(e12,0)
-		-- Field Spells are unaffected by effects
+
 		local e13=Effect.GlobalEffect()
 		e13:SetType(EFFECT_TYPE_SINGLE)
 		e13:SetProperty(EFFECT_FLAG_SINGLE_RANGE+EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_IGNORE_IMMUNE)
 		e13:SetCode(EFFECT_IMMUNE_EFFECT)
 		e13:SetRange(LOCATION_FZONE)
 		e13:SetValue(ActionDuel.fieldimmune)
+
 		local e14=Effect.GlobalEffect()
 		e14:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_GRANT)
 		e14:SetTargetRange(LOCATION_FZONE,LOCATION_FZONE)
@@ -136,18 +148,23 @@ if not ActionDuel then
 			c:RegisterFlagEffect(COVER_ACTION,0,0,0)
 		end
 	end
+
 	function ActionDuel.linklimit(e,c,sump,sumtype)
 		return c:IsType(TYPE_LINK) and Duel.GetFlagEffect(sump,ACTION_DUEL_LINK_UNLOCK)==0
 	end
+
 	function ActionDuel.fieldimmune(e,te)
 		return true
 	end
+
 	function ActionDuel.pendfilter(c)
 		return c:IsMonster() and c:IsType(TYPE_PENDULUM)
 	end
+
 	function ActionDuel.pendfilter2(c,code)
 		return ActionDuel.pendfilter(c) and not c:IsCode(code)
 	end
+
 	function ActionDuel.haspendpair(tp)
 		local g=Duel.GetMatchingGroup(ActionDuel.pendfilter,tp,LOCATION_HAND,0,nil)
 		for tc in aux.Next(g) do
@@ -157,13 +174,16 @@ if not ActionDuel then
 		end
 		return false
 	end
+
 	function ActionDuel.linkunlockcon(e,tp,eg,ep,ev,re,r,rp)
 		return Duel.GetFlagEffect(tp,ACTION_DUEL_LINK_UNLOCK)==0
 			and ActionDuel.haspendpair(tp)
 	end
+
 	function ActionDuel.linkunlocktg(e,tp,eg,ep,ev,re,r,rp,chk)
 		if chk==0 then return ActionDuel.haspendpair(tp) end
 	end
+
 	function ActionDuel.linkunlockop(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.GetFlagEffect(tp,ACTION_DUEL_LINK_UNLOCK)>0 then return end
 		if not ActionDuel.haspendpair(tp) then return end
@@ -204,13 +224,14 @@ if not ActionDuel then
 		for p=0,1 do
 			local tc=Duel.CreateToken(p,actionFieldToBeUsed[1])
 			e:SetLabelObject(tc)
-			--redirect
+
 			local e1=Effect.CreateEffect(tc)
 			e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
 			e1:SetCode(EVENT_LEAVE_FIELD)
 			e1:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_CANNOT_DISABLE)
 			e1:SetOperation(function(e) Duel.SendtoDeck(e:GetHandler(),nil,-2,REASON_RULE) end)
 			tc:RegisterEffect(e1)
+
 			local e2=Effect.CreateEffect(tc)
 			e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 			e2:SetCode(EVENT_CHAIN_END)
@@ -218,32 +239,36 @@ if not ActionDuel then
 			e2:SetLabelObject(tc)
 			e2:SetOperation(ActionDuel.returnop)
 			Duel.RegisterEffect(e2,0)
-			--unaffectable
+
 			local ea=Effect.CreateEffect(tc)
 			ea:SetType(EFFECT_TYPE_SINGLE)
 			ea:SetCode(EFFECT_CANNOT_TO_DECK)
 			ea:SetRange(LOCATION_SZONE)
 			ea:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_SINGLE_RANGE+EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_CANNOT_DISABLE)
 			tc:RegisterEffect(ea)
+
 			local eb=ea:Clone()
 			eb:SetCode(EFFECT_CANNOT_REMOVE)
 			tc:RegisterEffect(eb)
+
 			local ec=ea:Clone()
 			ec:SetCode(EFFECT_CANNOT_TO_HAND)
 			tc:RegisterEffect(ec)
+
 			local ed=ea:Clone()
 			ed:SetCode(EFFECT_CANNOT_TO_GRAVE)
 			tc:RegisterEffect(ed)
+
 			local ee=ea:Clone()
 			ee:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
 			ee:SetValue(1)
 			tc:RegisterEffect(ee)
-			-- add ability Yell when Vanilla mode activated
+
 			if Duel.IsExistingMatchingCard(Card.IsCode,tp,0xff,0xff,1,nil,CARD_VANILLA_MODE) then
 				table.insert(tc.tableAction,CARD_POTENTIAL_YELL)
 				table.insert(tc.tableAction,CARD_ABILITY_YELL)
 			end
-			-- move to field
+
 			if Duel.CheckLocation(tc:GetOwner(),LOCATION_FZONE,0) then
 				Duel.MoveToField(tc,tc:GetOwner(),tc:GetOwner(),LOCATION_FZONE,POS_FACEUP,true)
 			else
@@ -251,6 +276,7 @@ if not ActionDuel then
 			end
 		end
 	end
+
 	function ActionDuel.returnop(e)
 		local c=e:GetLabelObject()
 		local tp=c:GetControler()
@@ -258,8 +284,7 @@ if not ActionDuel then
 			Duel.MoveToField(c,tp,tp,LOCATION_FZONE,POS_FACEUP,true)
 		end
 	end
-	------------------------------------------------------------------------------
-	--Check whether tp already has an Action Card in hand
+
 	function ActionDuel.handcheck(tp)
 		if Duel.IsPlayerAffectedByEffect(tp,CARD_EARTHBOUND_TUNDRA) then
 			return Duel.IsExistingMatchingCard(Card.IsActionCard,tp,LOCATION_HAND,0,2,nil)
@@ -267,6 +292,11 @@ if not ActionDuel then
 			return Duel.IsExistingMatchingCard(Card.IsActionCard,tp,LOCATION_HAND,0,1,nil)
 		end
 	end
+
+	function ActionDuel.handcount(tp)
+		return Duel.GetMatchingGroupCount(Card.IsActionCard,tp,LOCATION_HAND,0,nil)
+	end
+
 	function ActionDuel.phaseflag()
 		local ph=Duel.GetCurrentPhase()
 		if ph==PHASE_MAIN1 then
@@ -278,14 +308,17 @@ if not ActionDuel then
 		end
 		return 0
 	end
+
 	function ActionDuel.phaseused(tp,flag)
 		return ActionDuel.phase_used and ActionDuel.phase_used[tp] and ActionDuel.phase_used[tp][flag]
 	end
+
 	function ActionDuel.markphaseused(tp,flag)
 		if not ActionDuel.phase_used then ActionDuel.phase_used={[0]={},[1]={}} end
 		ActionDuel.phase_used[tp]=ActionDuel.phase_used[tp] or {}
 		ActionDuel.phase_used[tp][flag]=true
 	end
+
 	function ActionDuel.removepoolcard(t,code)
 		for i=#t,1,-1 do
 			if t[i]==code then
@@ -294,32 +327,70 @@ if not ActionDuel then
 			end
 		end
 	end
+
 	function ActionDuel.fieldallowsmultiple(c)
 		return c and c.af and string.find(c.af,'m')
 	end
+
+	function ActionDuel.getpool(c)
+		return c and c.tableAction or tableActionGeneric
+	end
+
 	function ActionDuel.condition(e,tp,eg,ep,ev,re,r,rp)
 		local c=e:GetHandler()
 		local flag=ActionDuel.phaseflag()
-		return (not ActionDuel.handcheck(tp) or ActionDuel.fieldallowsmultiple(c))
-			and flag~=0
-			and not ActionDuel.phaseused(tp,flag)
-			and not c:IsStatus(STATUS_CHAINING)
+		local pool=ActionDuel.getpool(c)
+
+		if flag==0 then return false end
+		if c:IsStatus(STATUS_CHAINING) then return false end
+		if #pool==0 then return false end
+
+		-- Diagnostico: deixa a opcao aparecer em fase valida para a operation dizer o motivo real.
+		return true
 	end
+
 	function ActionDuel.target(e,tp,eg,ep,ev,re,r,rp,chk)
 		local c=e:GetHandler()
-		local t=c.tableAction or tableActionGeneric
-		if chk==0 then return #t>0 end
-		local ac=Duel.GetRandomNumber(1,#t)
-		e:SetLabel(t[ac])
+		local pool=ActionDuel.getpool(c)
+		if chk==0 then return #pool>0 end
+		local ac=Duel.GetRandomNumber(1,#pool)
+		e:SetLabel(pool[ac])
 	end
+
 	function ActionDuel.operation(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.GetCurrentChain()>0 and not Duel.SelectYesNo(tp,aux.Stringid(id,0)) then return end
+
 		local c=e:GetHandler()
-		if ActionDuel.handcheck(tp) and not ActionDuel.fieldallowsmultiple(c) then return end
 		local flag=ActionDuel.phaseflag()
-		if flag==0 or ActionDuel.phaseused(tp,flag) then return end
+		local pool=ActionDuel.getpool(c)
+		local hand=ActionDuel.handcheck(tp)
+		local handct=ActionDuel.handcount(tp)
+		local used=ActionDuel.phaseused(tp,flag)
+		local allowmulti=ActionDuel.fieldallowsmultiple(c)
+
+		ActionDuelDebug(tp,"phase="..tostring(Duel.GetCurrentPhase()).." flag="..tostring(flag).." hand="..tostring(hand).." handct="..tostring(handct).." used="..tostring(used).." pool="..tostring(#pool).." handler="..tostring(c and c:GetCode() or 0))
+
+		if flag==0 then
+			ActionDuelDebug(tp,"BLOCK: PHASE")
+			return
+		end
+		if #pool==0 then
+			ActionDuelDebug(tp,"BLOCK: POOL")
+			return
+		end
+		if hand and not allowmulti then
+			ActionDuelDebug(tp,"BLOCK: HANDCHECK")
+			return
+		end
+		if used then
+			ActionDuelDebug(tp,"BLOCK: USED")
+			return
+		end
+
+		ActionDuelDebug(tp,"OK: ADD ACTION CARD")
 		ActionDuel.markphaseused(tp,flag)
 		Duel.RegisterFlagEffect(tp,flag,0,0,1)
+
 		local tokenp=tp
 		local send_to_grave=false
 		if Duel.SelectYesNo(1-tp,aux.Stringid(id,1)) then
@@ -334,8 +405,9 @@ if not ActionDuel then
 				send_to_grave=true
 			end
 		end
+
 		local token=Duel.CreateToken(tokenp,e:GetLabel())
-		if ActionDuel.fieldallowsmultiple(c) and c.tableAction then
+		if allowmulti and c.tableAction then
 			ActionDuel.removepoolcard(c.tableAction,e:GetLabel())
 		end
 		if send_to_grave then
@@ -345,6 +417,7 @@ if not ActionDuel then
 		Duel.SendtoHand(token,nil,REASON_EFFECT)
 		ActionDuel.chktrap(token,tokenp,e)
 	end
+
 	function ActionDuel.chktrap(tc,tp,e)
 		if tc and tc:IsTrap() and tc:CheckActivateEffect(false,false,false)
 			and Duel.GetLocationCount(tp,LOCATION_SZONE) then
