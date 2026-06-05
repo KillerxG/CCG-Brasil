@@ -29,9 +29,6 @@ if not ActionDuel then
 	ActionDuel={}
 
 	function ActionDuel.Start()
-		ActionDuel.phase_used={[0]={},[1]={}}
-		ActionDuel.current_action_phase=0
-
 		local e1=Effect.GlobalEffect()
 		e1:SetProperty(EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_NO_TURN_RESET)
 		e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
@@ -40,63 +37,28 @@ if not ActionDuel then
 		e1:SetOperation(ActionDuel.op)
 		Duel.RegisterEffect(e1,0)
 
-		local ep1=Effect.GlobalEffect()
-		ep1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-		ep1:SetCode(EVENT_PHASE+PHASE_MAIN1)
-		ep1:SetOperation(function() ActionDuel.current_action_phase=1 end)
-		Duel.RegisterEffect(ep1,0)
-
-		local ep2=Effect.GlobalEffect()
-		ep2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-		ep2:SetCode(EVENT_PHASE+PHASE_BATTLE_START)
-		ep2:SetOperation(function() ActionDuel.current_action_phase=2 end)
-		Duel.RegisterEffect(ep2,0)
-
-		local ep3=Effect.GlobalEffect()
-		ep3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-		ep3:SetCode(EVENT_PHASE+PHASE_BATTLE)
-		ep3:SetOperation(function() ActionDuel.current_action_phase=2 end)
-		Duel.RegisterEffect(ep3,0)
-
-		local ep4=Effect.GlobalEffect()
-		ep4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-		ep4:SetCode(EVENT_PHASE+PHASE_MAIN2)
-		ep4:SetOperation(function() ActionDuel.current_action_phase=3 end)
-		Duel.RegisterEffect(ep4,0)
-
-		local ep5=Effect.GlobalEffect()
-		ep5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-		ep5:SetCode(EVENT_PHASE+PHASE_END)
-		ep5:SetOperation(function() ActionDuel.current_action_phase=0 end)
-		Duel.RegisterEffect(ep5,0)
-
-		-- Add Action Card
-		local e2=Effect.GlobalEffect()
-		e2:SetDescription(aux.Stringid(id,0))
-		e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-		e2:SetRange(LOCATION_FZONE)
-		e2:SetCode(EVENT_FREE_CHAIN)
-		e2:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-		e2:SetLabelObject(e1)
-		e2:SetCondition(ActionDuel.condition)
-		e2:SetTarget(ActionDuel.target)
-		e2:SetOperation(ActionDuel.operation)
-
+		-- Add Action Card: Main Phase 1
+		local e2=ActionDuel.createsearcheffect(ActionDuel.condition_m1,id+101)
+		ActionDuel.grantsearcheffect(e2)
 		local e3=e2:Clone()
 		e3:SetCode(EVENT_CHAINING)
+		ActionDuel.grantsearcheffect(e3)
 
-		local e4=Effect.GlobalEffect()
-		e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_GRANT)
-		e4:SetTargetRange(LOCATION_SZONE,LOCATION_SZONE)
-		e4:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-		e4:SetLabelObject(e2)
-		Duel.RegisterEffect(e4,0)
-
+		-- Add Action Card: Battle Phase
+		local e4=ActionDuel.createsearcheffect(ActionDuel.condition_bp,id+102)
+		ActionDuel.grantsearcheffect(e4)
 		local e5=e4:Clone()
-		e5:SetLabelObject(e3)
-		Duel.RegisterEffect(e5,0)
+		e5:SetCode(EVENT_CHAINING)
+		ActionDuel.grantsearcheffect(e5)
 
-		-- act ac in hand
+		-- Add Action Card: Main Phase 2
+		local e15=ActionDuel.createsearcheffect(ActionDuel.condition_m2,id+103)
+		ActionDuel.grantsearcheffect(e15)
+		local e16=e15:Clone()
+		e16:SetCode(EVENT_CHAINING)
+		ActionDuel.grantsearcheffect(e16)
+
+		--act ac in hand
 		local e6=Effect.GlobalEffect()
 		e6:SetType(EFFECT_TYPE_FIELD)
 		e6:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_IGNORE_RANGE+EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_SET_AVAILABLE)
@@ -115,7 +77,7 @@ if not ActionDuel then
 		e8:SetCode(EFFECT_QP_ACT_IN_SET_TURN)
 		Duel.RegisterEffect(e8,0)
 
-		-- cover
+		--cover
 		local e9=Effect.GlobalEffect()
 		e9:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 		e9:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_IGNORE_RANGE+EFFECT_FLAG_IGNORE_IMMUNE)
@@ -330,34 +292,47 @@ if not ActionDuel then
 		end
 	end
 
-	function ActionDuel.phaseflag()
-		if ActionDuel.current_action_phase==1 then
-			return id+101
-		elseif ActionDuel.current_action_phase==2 then
-			return id+102
-		elseif ActionDuel.current_action_phase==3 then
-			return id+103
-		end
+	function ActionDuel.cansearch(e,tp)
+		local c=e:GetHandler()
+		return (not ActionDuel.handcheck(tp) or ActionDuel.fieldallowsmultiple(c))
+			and not c:IsStatus(STATUS_CHAINING)
+	end
 
+	function ActionDuel.condition_m1(e,tp,eg,ep,ev,re,r,rp)
+		return Duel.GetCurrentPhase()==PHASE_MAIN1 and ActionDuel.cansearch(e,tp)
+	end
+
+	function ActionDuel.condition_bp(e,tp,eg,ep,ev,re,r,rp)
 		local ph=Duel.GetCurrentPhase()
-		if ph==PHASE_MAIN1 then
-			return id+101
-		elseif ph==PHASE_BATTLE_START or ph==PHASE_BATTLE_STEP or ph==PHASE_BATTLE then
-			return id+102
-		elseif ph==PHASE_MAIN2 then
-			return id+103
-		end
-		return 0
+		return (ph==PHASE_BATTLE_START or ph==PHASE_BATTLE_STEP or ph==PHASE_BATTLE)
+			and ActionDuel.cansearch(e,tp)
 	end
 
-	function ActionDuel.phaseused(tp,flag)
-		return ActionDuel.phase_used and ActionDuel.phase_used[tp] and ActionDuel.phase_used[tp][flag]
+	function ActionDuel.condition_m2(e,tp,eg,ep,ev,re,r,rp)
+		return Duel.GetCurrentPhase()==PHASE_MAIN2 and ActionDuel.cansearch(e,tp)
 	end
 
-	function ActionDuel.markphaseused(tp,flag)
-		if not ActionDuel.phase_used then ActionDuel.phase_used={[0]={},[1]={}} end
-		ActionDuel.phase_used[tp]=ActionDuel.phase_used[tp] or {}
-		ActionDuel.phase_used[tp][flag]=true
+	function ActionDuel.createsearcheffect(condition,count_code)
+		local e=Effect.GlobalEffect()
+		e:SetDescription(aux.Stringid(id,0))
+		e:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+		e:SetRange(LOCATION_FZONE)
+		e:SetCode(EVENT_FREE_CHAIN)
+		e:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+		e:SetCondition(condition)
+		e:SetTarget(ActionDuel.target)
+		e:SetOperation(ActionDuel.operation)
+		e:SetCountLimit(1,count_code)
+		return e
+	end
+
+	function ActionDuel.grantsearcheffect(search_effect)
+		local ge=Effect.GlobalEffect()
+		ge:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_GRANT)
+		ge:SetTargetRange(LOCATION_SZONE,LOCATION_SZONE)
+		ge:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+		ge:SetLabelObject(search_effect)
+		Duel.RegisterEffect(ge,0)
 	end
 
 	function ActionDuel.removepoolcard(t,code)
@@ -373,15 +348,6 @@ if not ActionDuel then
 		return c and c.af and string.find(c.af,'m')
 	end
 
-	function ActionDuel.condition(e,tp,eg,ep,ev,re,r,rp)
-		local c=e:GetHandler()
-		local flag=ActionDuel.phaseflag()
-		return (not ActionDuel.handcheck(tp) or ActionDuel.fieldallowsmultiple(c))
-			and flag~=0
-			and not ActionDuel.phaseused(tp,flag)
-			and not c:IsStatus(STATUS_CHAINING)
-	end
-
 	function ActionDuel.target(e,tp,eg,ep,ev,re,r,rp,chk)
 		local c=e:GetHandler()
 		local t=c.tableAction or tableActionGeneric
@@ -395,12 +361,6 @@ if not ActionDuel then
 
 		local c=e:GetHandler()
 		if ActionDuel.handcheck(tp) and not ActionDuel.fieldallowsmultiple(c) then return end
-
-		local flag=ActionDuel.phaseflag()
-		if flag==0 or ActionDuel.phaseused(tp,flag) then return end
-
-		ActionDuel.markphaseused(tp,flag)
-		Duel.RegisterFlagEffect(tp,flag,0,0,1)
 
 		local tokenp=tp
 		local send_to_grave=false
