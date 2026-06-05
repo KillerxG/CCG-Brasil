@@ -3,12 +3,6 @@ local id=161999999
 
 if not ActionDuel then
 
-	function ActionDuelDebug(tp,msg)
-		if Debug and Debug.Message then
-			Debug.Message("[ActionDuel] "..msg)
-		end
-	end
-
 	function Card.IsActionCard(c)
 		return c:IsType(TYPE_ACTION) and not c.af and not c:IsType(TYPE_FIELD) and not c:IsOriginalCode(id)
 	end
@@ -36,6 +30,38 @@ if not ActionDuel then
 
 	function ActionDuel.Start()
 		ActionDuel.phase_used={[0]={},[1]={}}
+		ActionDuel.current_action_phase=0
+
+		local ep1=Effect.GlobalEffect()
+		ep1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+		ep1:SetCode(EVENT_PHASE+PHASE_MAIN1)
+		ep1:SetOperation(function() ActionDuel.current_action_phase=1 end)
+		Duel.RegisterEffect(ep1,0)
+
+		local ep2=Effect.GlobalEffect()
+		ep2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+		ep2:SetCode(EVENT_PHASE+PHASE_BATTLE_START)
+		ep2:SetOperation(function() ActionDuel.current_action_phase=2 end)
+		Duel.RegisterEffect(ep2,0)
+
+		local ep3=Effect.GlobalEffect()
+		ep3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+		ep3:SetCode(EVENT_PHASE+PHASE_BATTLE)
+		ep3:SetOperation(function() ActionDuel.current_action_phase=2 end)
+		Duel.RegisterEffect(ep3,0)
+
+		local ep4=Effect.GlobalEffect()
+		ep4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+		ep4:SetCode(EVENT_PHASE+PHASE_MAIN2)
+		ep4:SetOperation(function() ActionDuel.current_action_phase=3 end)
+		Duel.RegisterEffect(ep4,0)
+
+		local ep5=Effect.GlobalEffect()
+		ep5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+		ep5:SetCode(EVENT_PHASE+PHASE_END)
+		ep5:SetOperation(function() ActionDuel.current_action_phase=0 end)
+		Duel.RegisterEffect(ep5,0)
+
 		local e1=Effect.GlobalEffect()
 		e1:SetProperty(EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_NO_TURN_RESET)
 		e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
@@ -293,11 +319,15 @@ if not ActionDuel then
 		end
 	end
 
-	function ActionDuel.handcount(tp)
-		return Duel.GetMatchingGroupCount(Card.IsActionCard,tp,LOCATION_HAND,0,nil)
-	end
-
 	function ActionDuel.phaseflag()
+		if ActionDuel.current_action_phase==1 then
+			return id+101
+		elseif ActionDuel.current_action_phase==2 then
+			return id+102
+		elseif ActionDuel.current_action_phase==3 then
+			return id+103
+		end
+
 		local ph=Duel.GetCurrentPhase()
 		if ph==PHASE_MAIN1 then
 			return id+101
@@ -340,13 +370,11 @@ if not ActionDuel then
 		local c=e:GetHandler()
 		local flag=ActionDuel.phaseflag()
 		local pool=ActionDuel.getpool(c)
-
-		if flag==0 then return false end
-		if c:IsStatus(STATUS_CHAINING) then return false end
-		if #pool==0 then return false end
-
-		-- Diagnostico: deixa a opcao aparecer em fase valida para a operation dizer o motivo real.
-		return true
+		return (not ActionDuel.handcheck(tp) or ActionDuel.fieldallowsmultiple(c))
+			and flag~=0
+			and not ActionDuel.phaseused(tp,flag)
+			and not c:IsStatus(STATUS_CHAINING)
+			and #pool>0
 	end
 
 	function ActionDuel.target(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -363,31 +391,12 @@ if not ActionDuel then
 		local c=e:GetHandler()
 		local flag=ActionDuel.phaseflag()
 		local pool=ActionDuel.getpool(c)
-		local hand=ActionDuel.handcheck(tp)
-		local handct=ActionDuel.handcount(tp)
-		local used=ActionDuel.phaseused(tp,flag)
-		local allowmulti=ActionDuel.fieldallowsmultiple(c)
 
-		ActionDuelDebug(tp,"phase="..tostring(Duel.GetCurrentPhase()).." flag="..tostring(flag).." hand="..tostring(hand).." handct="..tostring(handct).." used="..tostring(used).." pool="..tostring(#pool).." handler="..tostring(c and c:GetCode() or 0))
+		if flag==0 then return end
+		if #pool==0 then return end
+		if ActionDuel.handcheck(tp) and not ActionDuel.fieldallowsmultiple(c) then return end
+		if ActionDuel.phaseused(tp,flag) then return end
 
-		if flag==0 then
-			ActionDuelDebug(tp,"BLOCK: PHASE")
-			return
-		end
-		if #pool==0 then
-			ActionDuelDebug(tp,"BLOCK: POOL")
-			return
-		end
-		if hand and not allowmulti then
-			ActionDuelDebug(tp,"BLOCK: HANDCHECK")
-			return
-		end
-		if used then
-			ActionDuelDebug(tp,"BLOCK: USED")
-			return
-		end
-
-		ActionDuelDebug(tp,"OK: ADD ACTION CARD")
 		ActionDuel.markphaseused(tp,flag)
 		Duel.RegisterFlagEffect(tp,flag,0,0,1)
 
@@ -407,7 +416,7 @@ if not ActionDuel then
 		end
 
 		local token=Duel.CreateToken(tokenp,e:GetLabel())
-		if allowmulti and c.tableAction then
+		if ActionDuel.fieldallowsmultiple(c) and c.tableAction then
 			ActionDuel.removepoolcard(c.tableAction,e:GetLabel())
 		end
 		if send_to_grave then
