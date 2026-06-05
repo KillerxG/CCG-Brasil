@@ -29,6 +29,7 @@ if not ActionDuel then
 	ActionDuel={}
 
 	function ActionDuel.Start()
+		ActionDuel.phase_used={[0]={},[1]={}}
 		local e1=Effect.GlobalEffect()
 		e1:SetProperty(EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_IGNORE_IMMUNE+EFFECT_FLAG_NO_TURN_RESET)
 		e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
@@ -277,6 +278,14 @@ if not ActionDuel then
 		end
 		return 0
 	end
+	function ActionDuel.phaseused(tp,flag)
+		return ActionDuel.phase_used and ActionDuel.phase_used[tp] and ActionDuel.phase_used[tp][flag]
+	end
+	function ActionDuel.markphaseused(tp,flag)
+		if not ActionDuel.phase_used then ActionDuel.phase_used={[0]={},[1]={}} end
+		ActionDuel.phase_used[tp]=ActionDuel.phase_used[tp] or {}
+		ActionDuel.phase_used[tp][flag]=true
+	end
 	function ActionDuel.removepoolcard(t,code)
 		for i=#t,1,-1 do
 			if t[i]==code then
@@ -289,7 +298,7 @@ if not ActionDuel then
 		local flag=ActionDuel.phaseflag()
 		return (not ActionDuel.handcheck(tp) or string.find(e:GetLabelObject():GetLabelObject().af,'m'))
 			and flag~=0
-			and Duel.GetFlagEffect(tp,flag)==0
+			and not ActionDuel.phaseused(tp,flag)
 			and not e:GetHandler():IsStatus(STATUS_CHAINING)
 	end
 	function ActionDuel.target(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -305,7 +314,8 @@ if not ActionDuel then
 		local originalField=e:GetLabelObject():GetLabelObject()
 		if ActionDuel.handcheck(tp) and not string.find(originalField.af,'m') then return end
 		local flag=ActionDuel.phaseflag()
-		if flag==0 or Duel.GetFlagEffect(tp,flag)>0 then return end
+		if flag==0 or ActionDuel.phaseused(tp,flag) then return end
+		ActionDuel.markphaseused(tp,flag)
 		Duel.RegisterFlagEffect(tp,flag,0,0,1)
 		local tokenp=tp
 		local send_to_grave=false
