@@ -1,109 +1,111 @@
---Draconic Warrior - Ryuzu
---Scripted by KillerxG
-local s,id=GetID()
+-- Draconic Maiden - Ryuzu
+-- Scripted by Gemini
+local s, id = GetID()
+
 function s.initial_effect(c)
-	--(1)Special Summon itself from the hand
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e1:SetType(EFFECT_TYPE_IGNITION)
-	e1:SetRange(LOCATION_HAND)
-	e1:SetCountLimit(1,id)
-	e1:SetCondition(s.spcon)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
-	c:RegisterEffect(e1)
-	--(2)Banish
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_TODECK+CATEGORY_REMOVE)
-	e2:SetType(EFFECT_TYPE_IGNITION)
-	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetCountLimit(1,id+1)
-	e2:SetTarget(s.tdtg)
-	e2:SetOperation(s.tdop)
-	c:RegisterEffect(e2)
-	--(3)No Battle/Effect damage
-	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_FIELD)
-	e3:SetCode(EFFECT_AVOID_BATTLE_DAMAGE)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e3:SetTargetRange(1,0)
-	e3:SetCondition(s.blazecheck)
-	c:RegisterEffect(e3)
-	local e4=Effect.CreateEffect(c)
-	e4:SetType(EFFECT_TYPE_FIELD)
-	e4:SetCode(EFFECT_CHANGE_DAMAGE)
-	e4:SetRange(LOCATION_MZONE)
-	e4:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e4:SetTargetRange(1,0)
-	e4:SetCondition(s.blazecheck)
-	e4:SetValue(s.damval)
-	c:RegisterEffect(e4)
-	local e3=e4:Clone()
-	e3:SetCode(EFFECT_NO_EFFECT_DAMAGE)
-	c:RegisterEffect(e3)
+    -- Efeito 1: Special Summon Inerente da Mão (Se controlar "Draconic")
+    local e1 = Effect.CreateEffect(c)
+    e1:SetDescription(aux.Stringid(id, 0))
+    e1:SetType(EFFECT_TYPE_FIELD)
+    e1:SetCode(EFFECT_SPSUMMON_PROC)
+    e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
+    e1:SetRange(LOCATION_HAND)
+    -- O "once per turn this way" exige a flag OATH para limitar a tentativa de invocação inerente
+    e1:SetCountLimit(1, id, EFFECT_COUNT_CODE_OATH)
+    e1:SetCondition(s.spcon)
+    c:RegisterEffect(e1)
+
+    -- Efeito 2: Dano de Batalha e Efeito vira 0 (Se controlar o Blaze)
+    local e2 = Effect.CreateEffect(c)
+    e2:SetType(EFFECT_TYPE_FIELD)
+    e2:SetCode(EFFECT_AVOID_BATTLE_DAMAGE)
+    e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+    e2:SetRange(LOCATION_MZONE)
+    e2:SetTargetRange(1, 0) -- Afeta você
+    e2:SetCondition(s.damcon)
+    c:RegisterEffect(e2)
+    local e3 = e2:Clone()
+    e3:SetCode(EFFECT_NO_EFFECT_DAMAGE)
+    c:RegisterEffect(e3)
+
+    -- Efeito 3: Normal/Special Summon -> Banir S/T e Reciclar Dragão
+    local e4 = Effect.CreateEffect(c)
+    e4:SetDescription(aux.Stringid(id, 1))
+    e4:SetCategory(CATEGORY_REMOVE + CATEGORY_TODECK)
+    e4:SetType(EFFECT_TYPE_SINGLE + EFFECT_TYPE_TRIGGER_O)
+    e4:SetProperty(EFFECT_FLAG_DELAY + EFFECT_FLAG_CARD_TARGET)
+    e4:SetCode(EVENT_SUMMON_SUCCESS)
+    e4:SetCountLimit(1, id + 1)
+    e4:SetTarget(s.rmtg)
+    e4:SetOperation(s.rmop)
+    c:RegisterEffect(e4)
+    local e5 = e4:Clone()
+    e5:SetCode(EVENT_SPSUMMON_SUCCESS)
+    c:RegisterEffect(e5)
 end
---(1)Special Summon itself from the hand
-function s.plfilter(c,tp)
-	return c:IsSetCard(0x300) and c:IsContinuousSpellTrap() and not c:IsForbidden() and c:CheckUniqueOnField(tp)
+
+-- ====================================================================
+-- Efeito 1: Special Summon da Mão
+-- ====================================================================
+function s.draconicfilter(c)
+    return c:IsFaceup() and c:IsSetCard(0x300)
 end
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,0x300),tp,LOCATION_MZONE,0,1,nil)
+
+function s.spcon(e, c)
+    if c == nil then return true end
+    local tp = c:GetControler()
+    return Duel.GetLocationCount(tp, LOCATION_MZONE) > 0
+        and Duel.IsExistingMatchingCard(s.draconicfilter, tp, LOCATION_MZONE, 0, 1, nil)
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
+
+-- ====================================================================
+-- Efeito 2: Proteção de Dano (Blaze)
+-- ====================================================================
+function s.blazefilter(c)
+    return c:IsFaceup() and c:GetOriginalCode() == 777000680
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if not c:IsRelateToEffect(e) then return end
-	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP) and Duel.GetLocationCount(tp,LOCATION_SZONE)>0 
-		and Duel.IsExistingMatchingCard(s.plfilter,tp,LOCATION_DECK,0,1,nil,tp) and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
-		local sc=Duel.SelectMatchingCard(tp,s.plfilter,tp,LOCATION_DECK,0,1,1,nil,tp):GetFirst()
-			if sc then
-				Duel.MoveToField(sc,tp,tp,LOCATION_SZONE,POS_FACEUP,true)
-			end
-	end
+
+function s.damcon(e)
+    local tp = e:GetHandlerPlayer()
+    return Duel.IsExistingMatchingCard(s.blazefilter, tp, LOCATION_MZONE, 0, 1, nil)
 end
---(2)Banish
+
+-- ====================================================================
+-- Efeito 3: Banir S/T e Embaralhar
+-- ====================================================================
+function s.rmfilter(c)
+    return c:IsType(TYPE_SPELL + TYPE_TRAP) and c:IsAbleToRemove()
+end
+
 function s.tdfilter(c)
-	return (c:IsFaceup() or c:IsLocation(LOCATION_GRAVE)) and (c:IsRace(RACE_DRAGON) or c:IsAttribute(ATTRIBUTE_FIRE)) and c:IsAbleToDeck()
+    -- Ao lidar com o banimento, é padrão verificar se a carta está virada para cima para ter certeza de que o jogo pode ler sua raça
+    return c:IsFaceup() and c:IsRace(RACE_DRAGON) and c:IsAbleToDeck()
 end
-function s.filter(c)
-	return c:IsSpellTrap() and c:IsAbleToRemove()
+
+function s.rmtg(e, tp, eg, ep, ev, re, r, rp, chk, chkc)
+    if chkc then return chkc:IsLocation(LOCATION_ONFIELD) and chkc:IsControler(1 - tp) and s.rmfilter(chkc) end
+    if chk == 0 then return Duel.IsExistingTarget(s.rmfilter, tp, 0, LOCATION_ONFIELD, 1, nil) end
+    
+    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_REMOVE)
+    local g = Duel.SelectTarget(tp, s.rmfilter, tp, 0, LOCATION_ONFIELD, 1, 1, nil)
+    
+    Duel.SetOperationInfo(0, CATEGORY_REMOVE, g, 1, 0, 0)
+    Duel.SetPossibleOperationInfo(0, CATEGORY_TODECK, nil, 1, tp, LOCATION_REMOVED)
 end
-function s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsOnField() and s.filter(chkc) and chkc:IsControler(1-tp) end
-	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,0,LOCATION_ONFIELD,1,e:GetHandler()) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectTarget(tp,s.filter,tp,0,LOCATION_ONFIELD,1,1,e:GetHandler())
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
-end
-function s.tdop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc:IsRelateToEffect(e) then
-		if Duel.Remove(tc,POS_FACEUP,REASON_EFFECT) and Duel.IsExistingMatchingCard(s.tdfilter,tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,nil) 
-			and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
-			local td=Duel.SelectMatchingCard(tp,s.tdfilter,tp,LOCATION_GRAVE|LOCATION_REMOVED,0,1,1,nil)
-			Duel.SendtoDeck(td,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
-		end
-	end
-end
---(3)No Battle/Effect damage
-function s.cfilter1(c)
-	return c:IsFaceup() and c:IsOriginalCodeRule(777000680)
-end
-function s.blazecheck(e)
-	local tp=e:GetHandlerPlayer()
-	return Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_MZONE,0,1,nil)
-end
-function s.damval(e,re,val,r,rp,rc)
-	if (r&REASON_EFFECT)~=0 then return 0
-	else return val end
+
+function s.rmop(e, tp, eg, ep, ev, re, r, rp)
+    local tc = Duel.GetFirstTarget()
+    
+    -- Verifica se o alvo ainda está no campo e consegue ser banido com sucesso
+    if tc and tc:IsRelateToEffect(e) and Duel.Remove(tc, POS_FACEUP, REASON_EFFECT) > 0 then
+        local g = Duel.GetMatchingGroup(s.tdfilter, tp, LOCATION_REMOVED, 0, nil)
+        
+        -- O "then you can" permite a opção de embaralhar o dragão se você quiser
+        if #g > 0 and Duel.SelectYesNo(tp, aux.Stringid(id, 2)) then
+            Duel.BreakEffect()
+            Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_TODECK)
+            local sg = g:Select(tp, 1, 1, nil)
+            Duel.SendtoDeck(sg, nil, SEQ_DECKSHUFFLE, REASON_EFFECT)
+        end
+    end
 end
