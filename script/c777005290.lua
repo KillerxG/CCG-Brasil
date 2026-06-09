@@ -4,7 +4,10 @@ local s,id=GetID()
 function s.initial_effect(c)	
 	c:EnableReviveLimit()
 	--Fusion Summon
-	Fusion.AddProcMixN(c,true,true,s.ffilter,2)
+	Fusion.AddProcMix(c,true,true,s.matfilter,aux.FilterBoolFunctionEx(Card.IsAttribute,ATTRIBUTE_FIRE))
+	c:AddMustBeFusionSummoned()
+	--Special Summon this card (from your Extra Deck) by banishing the above materials from your field and/or GY
+	Fusion.AddContactProc(c,s.contactfil,s.contactop,false,nil,1)
 	--(1)Banish
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
@@ -42,8 +45,17 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 --Fusion Summon
-function s.ffilter(c,fc,sumtype,tp)
-	return c:IsLevelAbove(5) and (c:IsAttribute(ATTRIBUTE_FIRE,fc,sumtype,tp) or c:IsRace(RACE_PYRO,fc,sumtype,tp))
+function s.matfilter(c,fc,sumtype,tp)
+	return c:IsLevelAbove(7) and c:IsAttribute(ATTRIBUTE_FIRE,fc,sumtype,tp)
+end
+--Special Summon this card (from your Extra Deck) by banishing the above materials from your field and/or GY
+function s.contactfil(tp)
+	local loc=LOCATION_MZONE|LOCATION_GRAVE
+	if Duel.IsPlayerAffectedByEffect(tp,CARD_SPIRIT_ELIMINATION) then loc=LOCATION_MZONE end
+	return Duel.GetMatchingGroup(Card.IsAbleToRemoveAsCost,tp,loc,0,nil)
+end
+function s.contactop(g)
+	Duel.Remove(g,POS_FACEUP,REASON_COST|REASON_MATERIAL)
 end
 --(1)Banish
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
