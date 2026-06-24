@@ -44,30 +44,7 @@ function s.initial_effect(c)
     e7:SetTarget(s.destg)
     e7:SetOperation(s.desop)
     c:RegisterEffect(e7)
-	--(5)Self Bomb
-	local e8=Effect.CreateEffect(c)
-    e8:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
-    e8:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-    e8:SetCode(EVENT_SUMMON_SUCCESS)
-    e8:SetOperation(s.regop)
-    c:RegisterEffect(e8)
-    local e9=e8:Clone()
-    e9:SetCode(EVENT_SPSUMMON_SUCCESS)
-    c:RegisterEffect(e9)
-    local e10=e8:Clone()
-    e10:SetCode(EVENT_FLIP_SUMMON_SUCCESS)
-    c:RegisterEffect(e10)
-	local e11=Effect.CreateEffect(c)
-    e11:SetDescription(aux.Stringid(id,1))
-    e11:SetCategory(CATEGORY_TOGRAVE+CATEGORY_REMOVE)
-    e11:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
-    e11:SetRange(LOCATION_MZONE)
-    e11:SetCode(EVENT_PHASE+PHASE_END)
-    e11:SetCountLimit(1)
-    e11:SetCondition(s.gycon)
-    e11:SetTarget(s.gytg)
-    e11:SetOperation(s.gyop)
-    c:RegisterEffect(e11)
+	
 end
 --(1)Opponent's monsters must attack this card
 function s.atkval(e, c)
@@ -95,33 +72,6 @@ function s.desop(e, tp, eg, ep, ev, re, r, rp)
             if atk > 0 then
                 Duel.Damage(1 - tp, atk, REASON_EFFECT)
             end
-        end
-    end
-end
---(5)Self Bomb
-function s.regop(e,tp,eg,ep,ev,re,r,rp)
-    e:GetHandler():RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1,Duel.GetTurnCount())
-end
-function s.gycon(e, tp, eg, ep, ev, re, r, rp)
-    local c = e:GetHandler()
-    return Duel.GetTurnPlayer()==tp 
-        and c:GetFlagEffect(id)>0 
-        and c:GetFlagEffectLabel(id)~=Duel.GetTurnCount()
-end
-function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return true end
-    local c=e:GetHandler()
-    Duel.SetPossibleOperationInfo(0,CATEGORY_TOGRAVE,c,1,0,0)
-    Duel.SetPossibleOperationInfo(0,CATEGORY_REMOVE,c,1,0,0)
-end
-
-function s.gyop(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    if c:IsRelateToEffect(e) then
-        if c:IsAbleToGrave() then
-            Duel.SendtoGrave(c,REASON_EFFECT)
-        else
-            Duel.Remove(c,POS_FACEUP,REASON_EFFECT)
         end
     end
 end

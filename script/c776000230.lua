@@ -50,30 +50,7 @@ function s.initial_effect(c)
 	e4:SetOperation(s.desop)
 	e4:SetHintTiming(0,TIMING_STANDBY_PHASE|TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E|TIMING_SSET)
 	c:RegisterEffect(e4)
-	--(5)Self Bomb
-	local e5=Effect.CreateEffect(c)
-    e5:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
-    e5:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-    e5:SetCode(EVENT_SUMMON_SUCCESS)
-    e5:SetOperation(s.regop)
-    c:RegisterEffect(e5)
-    local e6=e5:Clone()
-    e6:SetCode(EVENT_SPSUMMON_SUCCESS)
-    c:RegisterEffect(e6)
-    local e7=e5:Clone()
-    e7:SetCode(EVENT_FLIP_SUMMON_SUCCESS)
-    c:RegisterEffect(e7)
-	local e8=Effect.CreateEffect(c)
-    e8:SetDescription(aux.Stringid(id,2))
-    e8:SetCategory(CATEGORY_TOGRAVE+CATEGORY_REMOVE)
-    e8:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
-    e8:SetRange(LOCATION_MZONE)
-    e8:SetCode(EVENT_PHASE+PHASE_END)
-    e8:SetCountLimit(1)
-    e8:SetCondition(s.gycon)
-    e8:SetTarget(s.gytg)
-    e8:SetOperation(s.gyop)
-    c:RegisterEffect(e8)
+	
 	--(6)Revive
 	local e9=Effect.CreateEffect(c)
 	e9:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
@@ -126,33 +103,7 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Destroy(tc,REASON_EFFECT)
 	end
 end
---(5)Self Bomb
-function s.regop(e,tp,eg,ep,ev,re,r,rp)
-    e:GetHandler():RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1,Duel.GetTurnCount())
-end
-function s.gycon(e, tp, eg, ep, ev, re, r, rp)
-    local c = e:GetHandler()
-    return Duel.GetTurnPlayer()==tp 
-        and c:GetFlagEffect(id)>0 
-        and c:GetFlagEffectLabel(id)~=Duel.GetTurnCount()
-end
-function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return true end
-    local c=e:GetHandler()
-    Duel.SetPossibleOperationInfo(0,CATEGORY_TOGRAVE,c,1,0,0)
-    Duel.SetPossibleOperationInfo(0,CATEGORY_REMOVE,c,1,0,0)
-end
 
-function s.gyop(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    if c:IsRelateToEffect(e) then
-        if c:IsAbleToGrave() then
-            Duel.SendtoGrave(c,REASON_EFFECT)
-        else
-            Duel.Remove(c,POS_FACEUP,REASON_EFFECT)
-        end
-    end
-end
 --(6)Revive
 function s.spr(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
