@@ -8,7 +8,7 @@ function s.initial_effect(c)
 	--Cannot be Normal Summoned/Set
 	c:EnableReviveLimit()
 	--You can only control 1
-	c:SetUniqueOnField(1,0,id)
+	c:SetUniqueOnField(1,0,69890967)
 	--(1)Cannot Special Summon
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)

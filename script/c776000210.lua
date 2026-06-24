@@ -6,7 +6,7 @@ function s.initial_effect(c)
 	--Divine Hierarchy Rank 1
 	DivineHierarchyMod.Register(c,1)
 	--You can only control 1
-	c:SetUniqueOnField(1,0,id)
+	c:SetUniqueOnField(1,0,10000020)
 	--Summon with 3 tribute
 	local e1=aux.AddNormalSummonProcedure(c,true,false,3,3)
 	local e2=aux.AddNormalSetProcedure(c)	

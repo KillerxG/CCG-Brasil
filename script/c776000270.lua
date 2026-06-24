@@ -8,7 +8,7 @@ function s.initial_effect(c)
 	--Cannot be Normal Summoned/Set
 	c:EnableReviveLimit()
 	--You can only control 1
-	c:SetUniqueOnField(1,0,id)
+	c:SetUniqueOnField(1,0,30604579)
 	--Synchro summon procedure
 	Synchro.AddProcedure(c,nil,1,1,Synchro.NonTuner(nil),2,99)
 	--(1)Negate the effects of a monster the opponent controls
