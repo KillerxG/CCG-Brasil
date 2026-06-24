@@ -49,11 +49,17 @@ function DivineHierarchyMod.Start()
 			and re and re:IsSpellTrapEffect() and c:HasFlagEffect(FLAG_DIVINE_HIERARCHY_MOD) end
 		return true
 	end
+	local function battlelevelpierce(c,hr)
+		if not c or not c:IsMonster() then return false end
+		local lv=c:GetOriginalLevel()
+		return (hr==1 and lv>=10) or (hr==2 and lv>=12)
+	end
 	local function tglimit(e,c)
 		if not c then return false end
 		local hr=e:GetHandler():GetFlagEffectLabel(FLAG_DIVINE_HIERARCHY_MOD)
+		if not hr or battlelevelpierce(c,hr) then return false end
 		local other=c:GetFlagEffectLabel(FLAG_DIVINE_HIERARCHY_MOD)
-		return hr and (not other or hr>other)
+		return not other or hr>other
 	end
 	local function stgcon(e,tp,eg,ep,ev,re,r,rp)
 		local c=e:GetHandler()
