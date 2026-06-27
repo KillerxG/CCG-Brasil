@@ -1,98 +1,125 @@
---Phantom Gunners Strike
---Scripted by KillerxG
-local s,id=GetID()
+-- Phantom Gunners Strike
+-- Scripted by Gemini
+local s, id = GetID()
+
 function s.initial_effect(c)
-	--Activate
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_ACTIVATE)
-	e1:SetCode(EVENT_FREE_CHAIN)
-	e1:SetHintTiming(0,TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
-	c:RegisterEffect(e1)
-	--(1)Destroy Deck
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetCategory(CATEGORY_DECKDES)
-	e2:SetType(EFFECT_TYPE_QUICK_O)
-	e2:SetRange(LOCATION_SZONE)
-	e2:SetCode(EVENT_FREE_CHAIN)
-	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e2:SetHintTiming(0,TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E+TIMING_BATTLE_START)
-	e2:SetCountLimit(1,id)
-	e2:SetTarget(s.distg)
-	e2:SetOperation(s.disop)
-	c:RegisterEffect(e2)
-	--(2)Extra Mill
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,1))
-	e3:SetCategory(CATEGORY_DECKDES)
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e3:SetRange(LOCATION_SZONE)
-	e3:SetCode(EVENT_TO_GRAVE)
-	e3:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_PLAYER_TARGET)
-	e3:SetCountLimit(1,id+1)
-	e3:SetCondition(s.condtion)
-	e3:SetTarget(s.target)
-	e3:SetOperation(s.operation)
-	c:RegisterEffect(e3)
-	--(2)Mill when destroyed
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,2))
-	e4:SetCategory(CATEGORY_DECKDES)
-	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e4:SetProperty(EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DELAY)
-	e4:SetCountLimit(1,id+2)
-	e4:SetCode(EVENT_DESTROYED)
-	e4:SetCondition(s.mlcon)
-	e4:SetTarget(s.mltg)
-	e4:SetOperation(s.mlop)
-	c:RegisterEffect(e4)
+    -- Efeito 1: Ativação Padrão
+    local e1 = Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_ACTIVATE)
+    e1:SetCode(EVENT_FREE_CHAIN)
+    e1:SetHintTiming(0, TIMINGS_CHECK_MONSTER_E + TIMING_MAIN_END)
+    c:RegisterEffect(e1)
+
+    -- Efeito 2: Mill Contínuo ao oponente invocar do déqui/Extra Deck
+    local e2 = Effect.CreateEffect(c)
+    e2:SetType(EFFECT_TYPE_FIELD + EFFECT_TYPE_CONTINUOUS)
+    e2:SetCode(EVENT_SPSUMMON_SUCCESS)
+    e2:SetRange(LOCATION_SZONE)
+    e2:SetCondition(s.millcon)
+    e2:SetOperation(s.millop)
+    c:RegisterEffect(e2)
+
+    -- Efeito 3: Destruir "até" o número de Phantom Gunners (Quick Effect)
+    local e3 = Effect.CreateEffect(c)
+    e3:SetDescription(aux.Stringid(id, 0))
+    e3:SetCategory(CATEGORY_DESTROY)
+    e3:SetType(EFFECT_TYPE_QUICK_O)
+    e3:SetCode(EVENT_FREE_CHAIN)
+    e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
+    e3:SetRange(LOCATION_SZONE)
+    e3:SetHintTiming(0, TIMINGS_CHECK_MONSTER_E + TIMING_MAIN_END)
+    e3:SetCountLimit(1, id)
+    e3:SetTarget(s.destg)
+    e3:SetOperation(s.desop)
+    c:RegisterEffect(e3)
+
+    -- Efeito 4: Setar do GY
+    local e4 = Effect.CreateEffect(c)
+    e4:SetDescription(aux.Stringid(id, 1))
+    e4:SetType(EFFECT_TYPE_QUICK_O)
+    e4:SetCode(EVENT_FREE_CHAIN)
+    e4:SetRange(LOCATION_GRAVE)
+    e4:SetHintTiming(0, TIMING_END_PHASE)
+    e4:SetCountLimit(1, id + 1)
+    e4:SetCondition(s.setcon)
+    e4:SetTarget(s.settg)
+    e4:SetOperation(s.setop)
+    c:RegisterEffect(e4)
 end
---(1)Destroy Deck
-function s.filter(c)
-	return c:IsSetCard(0x302) and c:IsType(TYPE_MONSTER) and c:IsFaceup()
+
+-- ====================================================================
+-- Efeito 2: Punir a invocação do déqui / Extra Deck
+-- ====================================================================
+function s.cfilter(c, tp)
+    -- Verifica se foi o oponente (1 - tp) que invocou E se veio do déqui ou Extra Deck
+    return c:IsSummonPlayer(1 - tp) and c:IsPreviousLocation(LOCATION_DECK + LOCATION_EXTRA)
 end
-function s.distg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local ct=Duel.GetMatchingGroupCount(s.filter,tp,LOCATION_MZONE,0,nil)
-	if chk==0 then return ct>0 and Duel.IsPlayerCanDiscardDeck(1-tp,ct) end
-	Duel.SetOperationInfo(0,CATEGORY_DECKDES,nil,0,1-tp,ct)
+
+function s.millcon(e, tp, eg, ep, ev, re, r, rp)
+    return eg:IsExists(s.cfilter, 1, nil, tp)
 end
-function s.disop(e,tp,eg,ep,ev,re,r,rp)
-	if not e:GetHandler():IsRelateToEffect(e) then return end
-	local ct=Duel.GetMatchingGroupCount(s.filter,tp,LOCATION_MZONE,0,nil)
-	if ct>0 then
-		Duel.DiscardDeck(1-tp,ct,REASON_EFFECT)
-	end
+
+function s.millop(e, tp, eg, ep, ev, re, r, rp)
+    -- Dá um "pisco" visual na carta para o oponente saber de onde veio o mill
+    Duel.Hint(HINT_CARD, 0, id)
+    Duel.DiscardDeck(1 - tp, 2, REASON_EFFECT)
 end
---(2)Extra Mill
-function s.desfilter(c,e,tp)
-	return c:IsPreviousLocation(LOCATION_DECK) and c:IsControler(1-tp) and c:IsReason(REASON_EFFECT)
+
+-- ====================================================================
+-- Efeito 3: Destruir Outras Cartas (Flexível: 1 até count)
+-- ====================================================================
+function s.pgfilter(c)
+    return c:IsFaceup() and c:IsSetCard(0x302)
 end
-function s.condtion(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsExists(s.desfilter,1,nil,e,tp) and re and re:GetHandler():GetCode()~=id
+
+function s.destg(e, tp, eg, ep, ev, re, r, rp, chk, chkc)
+    if chkc then return chkc:IsOnField() end
+    if chk == 0 then
+        local count = Duel.GetMatchingGroupCount(s.pgfilter, tp, LOCATION_ONFIELD, 0, nil)
+        return count > 0 and Duel.IsExistingTarget(nil, tp, LOCATION_ONFIELD, LOCATION_ONFIELD, 1, nil)
+    end
+    
+    local count = Duel.GetMatchingGroupCount(s.pgfilter, tp, LOCATION_ONFIELD, 0, nil)
+    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_DESTROY)
+    -- Agora permite selecionar de 1 ATÉ o máximo de Phantom Gunners contados
+    local g = Duel.SelectTarget(tp, nil, tp, LOCATION_ONFIELD, LOCATION_ONFIELD, 1, count, nil)
+    Duel.SetOperationInfo(0, CATEGORY_DESTROY, g, #g, 0, 0)
 end
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsPlayerCanDiscardDeck(1-tp,2) end
-	Duel.SetOperationInfo(0,CATEGORY_DECKDES,nil,0,1-tp,2)
+
+function s.desop(e, tp, eg, ep, ev, re, r, rp)
+    local tg = Duel.GetTargetCards(e)
+    if #tg > 0 then
+        Duel.Destroy(tg, REASON_EFFECT)
+    end
 end
-function s.operation(e,tp,eg,ep,ev,re,r,rp)
-	Duel.DiscardDeck(1-tp,2,REASON_EFFECT)
+
+-- ====================================================================
+-- Efeito 4: Setar do Cemitério
+-- ====================================================================
+function s.killerfilter(c)
+    return c:IsFaceup() and c:GetOriginalCode() == 777000960
 end
---(3)Mill when destroyed
-function s.filter(c)
-	return c:IsSetCard(0x302) and c:IsType(TYPE_MONSTER)
+
+function s.setcon(e, tp, eg, ep, ev, re, r, rp)
+    return Duel.IsExistingMatchingCard(s.killerfilter, tp, LOCATION_MZONE, 0, 1, nil)
 end
-function s.mlcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return rp==1-tp and c:IsReason(REASON_EFFECT) and c:IsPreviousLocation(LOCATION_SZONE) and c:IsPreviousControler(tp)
+
+function s.settg(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return e:GetHandler():IsSSetable() end
+    Duel.SetOperationInfo(0, CATEGORY_LEAVE_GRAVE, e:GetHandler(), 1, 0, 0)
 end
-function s.mltg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local ct=Duel.GetMatchingGroup(s.filter,tp,LOCATION_GRAVE,0,nil):GetClassCount(Card.GetCode)
-	if chk==0 then return ct>0 and Duel.IsPlayerCanDiscardDeck(1-tp,ct) end
-	Duel.SetOperationInfo(0,CATEGORY_DECKDES,nil,0,1-tp,ct)
-end
-function s.mlop(e,tp,eg,ep,ev,re,r,rp)
-	local ct=Duel.GetMatchingGroup(s.filter,tp,LOCATION_GRAVE,0,nil):GetClassCount(Card.GetCode)
-	if ct>0 and Duel.IsPlayerCanDiscardDeck(1-tp,ct) then 
-		Duel.DiscardDeck(1-tp,ct,REASON_EFFECT)
-	end
+
+function s.setop(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    if c:IsRelateToEffect(e) and c:IsSSetable() then
+        Duel.SSet(tp, c)
+        local e1 = Effect.CreateEffect(c)
+        e1:SetDescription(3300)
+        e1:SetType(EFFECT_TYPE_SINGLE)
+        e1:SetCode(EFFECT_LEAVE_FIELD_REDIRECT)
+        e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE + EFFECT_FLAG_CLIENT_HINT)
+        e1:SetReset(RESET_EVENT + RESETS_REDIRECT)
+        e1:SetValue(LOCATION_REMOVED)
+        c:RegisterEffect(e1)
+    end
 end

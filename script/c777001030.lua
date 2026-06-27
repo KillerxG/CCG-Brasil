@@ -1,170 +1,150 @@
---Phantom Gunners Sniper
---Scripted by KillerxG
-local s,id=GetID()
-function s.initial_effect(c)	
-	--(1)Special Summon
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e1:SetType(EFFECT_TYPE_IGNITION)
-	e1:SetRange(LOCATION_MZONE)
-	e1:SetCountLimit(1,id)
-	e1:SetCost(s.cost)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
-	c:RegisterEffect(e1)
-	--(2)Deck Out
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_DECKDES+CATEGORY_SPECIAL_SUMMON)
-	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DAMAGE_CAL)
-	e2:SetCode(EVENT_TO_GRAVE)
-	e2:SetCountLimit(1,id+1)
-	e2:SetCondition(s.immcon)
-	e2:SetTarget(s.target)
-	e2:SetOperation(s.operation)
-	c:RegisterEffect(e2)	
-	--(3)Equip it self
-	local e3=Effect.CreateEffect(c)
-	e3:SetCategory(CATEGORY_EQUIP)
-	e3:SetType(EFFECT_TYPE_IGNITION)
-	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e3:SetRange(LOCATION_HAND+LOCATION_GRAVE)
-	e3:SetCountLimit(1,id+2)
-	e3:SetTarget(s.eqtg)
-	e3:SetOperation(s.eqop)
-	c:RegisterEffect(e3)	
-	--(4)"Phantom Gunners" monster can attack directly
-	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_FIELD)
-	e3:SetCode(EFFECT_DIRECT_ATTACK)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetTargetRange(LOCATION_MZONE,0)
-	e3:SetCondition(s.killercheck)
-	e3:SetTarget(aux.TargetBoolFunction(Card.IsSetCard,0x302))
-	c:RegisterEffect(e3)
-	--(5)Battle damage is halved if attacking directly
-	local e4=Effect.CreateEffect(c)
-	e4:SetType(EFFECT_TYPE_FIELD)
-	e4:SetCode(EFFECT_CHANGE_BATTLE_DAMAGE)
-	e4:SetRange(LOCATION_MZONE)
-	e4:SetTargetRange(LOCATION_MZONE,0)
-	e4:SetTarget(aux.TargetBoolFunction(Card.IsSetCard,0x302))
-	e4:SetCondition(s.rdmgcond)
-	e4:SetValue(aux.ChangeBattleDamage(1,HALF_DAMAGE))
-	c:RegisterEffect(e4)
+-- Phantom Gunners Assassin
+-- Scripted by Gemini
+local s, id = GetID()
+Duel.LoadScript("proc_union_mod.lua")
+function s.initial_effect(c)
+	-- Union Procedure
+	aux.AddUnionProcedureMod(c,s.unionfilter,true,true)
+    -- Efeito 1: Ignition -> Equipar 1 Union do déqui/GY e destruir 1 carta
+    local e1 = Effect.CreateEffect(c)
+    e1:SetDescription(aux.Stringid(id, 0))
+    e1:SetCategory(CATEGORY_EQUIP + CATEGORY_DESTROY)
+    e1:SetType(EFFECT_TYPE_IGNITION)
+    e1:SetRange(LOCATION_MZONE)
+    e1:SetCountLimit(1, id)
+    e1:SetTarget(s.eqtg)
+    e1:SetOperation(s.eqop)
+    c:RegisterEffect(e1)
+
+    -- Efeito 2: Enviado do Campo para o GY -> Mill 2 do déqui, Reviver -> Restrição
+    local e2 = Effect.CreateEffect(c)
+    e2:SetDescription(aux.Stringid(id, 1))
+    e2:SetCategory(CATEGORY_DECKDES + CATEGORY_SPECIAL_SUMMON)
+    e2:SetType(EFFECT_TYPE_SINGLE + EFFECT_TYPE_TRIGGER_O)
+    e2:SetProperty(EFFECT_FLAG_DELAY)
+    e2:SetCode(EVENT_TO_GRAVE)
+    e2:SetCountLimit(1, id + 1)
+    e2:SetCondition(s.gycon)
+    e2:SetTarget(s.gytg)
+    e2:SetOperation(s.gyop)
+    c:RegisterEffect(e2)
 end
---(1)Special Summon
-function s.desfilter(c,tp)
-	return c:IsFaceup() and c:IsSetCard(0x302)
+-- Union Procedure
+function s.unionfilter(c)
+	return c:IsFaceup() and c:IsRace(RACE_WARRIOR) and c:IsAttribute(ATTRIBUTE_DARK)
 end
-function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.desfilter,tp,LOCATION_ONFIELD,0,1,e:GetHandler(),tp) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-local g=Duel.SelectMatchingCard(tp,s.desfilter,tp,LOCATION_ONFIELD,0,1,1,e:GetHandler(),tp)
-	Duel.SendtoGrave(g,REASON_COST)
+-- ====================================================================
+-- Efeito 1: Equipar Union e Destruir
+-- ====================================================================
+function s.eqfilter(c, tp)
+    -- Confere se é um monstro Union do arquétipo e se pode ser colocado na S/T Zone
+    return c:IsSetCard(0x302) and c:IsType(TYPE_UNION) and not c:IsForbidden() and c:CheckUniqueOnField(tp)
 end
-function s.spfilter(c,e,tp)
-	return c:IsSetCard(0x302) and c:IsLevelBelow(4) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE) and not c:IsCode(id)
+
+function s.eqtg(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return Duel.GetLocationCount(tp, LOCATION_SZONE) > 0
+        and Duel.IsExistingMatchingCard(s.eqfilter, tp, LOCATION_DECK + LOCATION_GRAVE, 0, 1, nil, tp) end
+    Duel.SetOperationInfo(0, CATEGORY_EQUIP, nil, 1, tp, LOCATION_DECK + LOCATION_GRAVE)
+    -- Destruição opcional não alveja, então apenas declaramos a possibilidade para o sistema
+    Duel.SetPossibleOperationInfo(0, CATEGORY_DESTROY, nil, 1, 1 - tp, LOCATION_ONFIELD)
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local ft=Duel.GetLocationCount(tp,LOCATION_MZONE)
-	if e:GetHandler():GetSequence()<5 then ft=ft+1 end
-	if chk==0 then return ft>0 and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil,e,tp) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,0,LOCATION_DECK)
+
+function s.eqlimit(e, c)
+    return c == e:GetLabelObject()
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_DECK,0,1,1,nil,e,tp)
-	if #g>0 then
-		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP_DEFENSE)
-	end
+
+function s.eqop(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    -- Se o monstro não estiver mais em campo virado pra cima ou faltar espaço, cancela
+    if Duel.GetLocationCount(tp, LOCATION_SZONE) <= 0 or c:IsFacedown() or not c:IsRelateToEffect(e) then return end
+    
+    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_EQUIP)
+    -- O NecroValleyFilter garante que a carta possa ser puxada do GY mesmo se o Necrovalley estiver ativo (pois vai se equipar a você)
+    local g = Duel.SelectMatchingCard(tp, aux.NecroValleyFilter(s.eqfilter), tp, LOCATION_DECK + LOCATION_GRAVE, 0, 1, 1, nil, tp)
+    local eqc = g:GetFirst()
+    
+    if eqc and Duel.Equip(tp, eqc, c) then
+        -- Registra o limite do equipamento
+        local e1 = Effect.CreateEffect(c)
+        e1:SetType(EFFECT_TYPE_SINGLE)
+        e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+        e1:SetCode(EFFECT_EQUIP_LIMIT)
+        e1:SetValue(s.eqlimit)
+        e1:SetLabelObject(c)
+        e1:SetReset(RESET_EVENT + RESETS_STANDARD)
+        eqc:RegisterEffect(e1)
+        
+        -- Garante a mecânica nativa de monstro Union
+        local e2 = Effect.CreateEffect(c)
+        e2:SetType(EFFECT_TYPE_SINGLE)
+        e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+        e2:SetCode(EFFECT_UNION_STATUS)
+        e2:SetReset(RESET_EVENT + RESETS_STANDARD)
+        eqc:RegisterEffect(e2)
+        
+        if aux.SetUnionState then
+            aux.SetUnionState(eqc)
+        end
+        
+        -- "and if you do, you can destroy 1 card your opponent controls"
+        local dg = Duel.GetMatchingGroup(nil, tp, 0, LOCATION_ONFIELD, nil)
+        if #dg > 0 and Duel.SelectYesNo(tp, aux.Stringid(id, 2)) then
+            Duel.BreakEffect()
+            Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_DESTROY)
+            local sg = dg:Select(tp, 1, 1, nil)
+            Duel.HintSelection(sg) -- Pisca o alvo escolhido na tela do oponente
+            Duel.Destroy(sg, REASON_EFFECT)
+        end
+    end
 end
---(2)Deck Out
-function s.immcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:IsPreviousLocation(LOCATION_ONFIELD)
+
+-- ====================================================================
+-- Efeito 2: Mill, Reviver e Trava do Extra Deck
+-- ====================================================================
+function s.gycon(e, tp, eg, ep, ev, re, r, rp)
+    return e:GetHandler():IsPreviousLocation(LOCATION_ONFIELD)
 end
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 
-		and Duel.IsPlayerCanDiscardDeck(1-tp,2) end
-	Duel.SetOperationInfo(0,CATEGORY_DECKDES,nil,0,1-tp,2)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
+
+function s.gytg(e, tp, eg, ep, ev, re, r, rp, chk)
+    local c = e:GetHandler()
+    if chk == 0 then 
+        return Duel.GetFieldGroupCount(tp, 0, LOCATION_DECK) >= 2
+            and Duel.GetLocationCount(tp, LOCATION_MZONE) > 0
+            and c:IsCanBeSpecialSummoned(e, 0, tp, false, false) 
+    end
+    Duel.SetOperationInfo(0, CATEGORY_DECKDES, nil, 0, 1 - tp, 2)
+    Duel.SetOperationInfo(0, CATEGORY_SPECIAL_SUMMON, c, 1, 0, 0)
 end
-function s.operation(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if Duel.DiscardDeck(1-tp,2,REASON_EFFECT) then
-		Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
-		Duel.SpecialSummonComplete()
-		--(2.1)Lock Summon
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_FIELD)
-		e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
-		e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-		e1:SetTargetRange(1,0)
-		e1:SetTarget(s.splimit)
-		e1:SetReset(RESET_PHASE+PHASE_END)
-		Duel.RegisterEffect(e1,tp)
-		aux.RegisterClientHint(e:GetHandler(),nil,tp,1,0,aux.Stringid(id,2),nil)
-		--(2.2)Lizard check
-		aux.addTempLizardCheck(e:GetHandler(),tp,s.lizfilter)
-	end
+
+function s.killerfilter(c)
+    return c:IsFaceup() and c:GetOriginalCode() == 777000960
 end
---(2.1)Lock Summon
-function s.splimit(e,c)
-	return not (c:IsRace(RACE_WARRIOR) and c:IsAttribute(ATTRIBUTE_DARK)) and c:IsLocation(LOCATION_EXTRA)
+
+function s.splimit(e, c, sump, sumtype, sumpos, targetp, se)
+    return c:IsLocation(LOCATION_EXTRA) and not (c:IsAttribute(ATTRIBUTE_DARK) and c:IsRace(RACE_WARRIOR))
 end
---(2.2)Lizard check
-function s.lizfilter(e,c)
-	return not (c:IsOriginalRace(RACE_WARRIOR) and c:IsOriginalAttribute(ATTRIBUTE_DARK))
-end
---(3)Equip it self
-function s.eqfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x302) and c:IsType(TYPE_MONSTER)
-end
-function s.eqtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.eqfilter(chkc) end
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_SZONE)>0
-		and Duel.IsExistingTarget(s.eqfilter,tp,LOCATION_MZONE,0,1,e:GetHandler()) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_EQUIP)
-	Duel.SelectTarget(tp,s.eqfilter,tp,LOCATION_MZONE,0,1,1,e:GetHandler())
-	Duel.SetOperationInfo(0,CATEGORY_EQUIP,e:GetHandler(),1,0,0)
-end
-function s.eqop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if not c:IsRelateToEffect(e) then return end
-	if c:IsLocation(LOCATION_MZONE) and c:IsFacedown() then return end
-	local tc=Duel.GetFirstTarget()
-	if Duel.GetLocationCount(tp,LOCATION_SZONE)<=0 or tc:GetControler()~=tp or tc:IsFacedown() or not tc:IsRelateToEffect(e) then
-		Duel.SendtoGrave(c,REASON_EFFECT)
-		return
-	end
-	Duel.Equip(tp,c,tc,true)
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_EQUIP_LIMIT)
-	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-	e1:SetLabelObject(tc)
-	e1:SetValue(s.eqlimit)
-	c:RegisterEffect(e1)
-end
-function s.eqlimit(e,c)
-	return c==e:GetLabelObject()
-end
---(4)"Phantom Gunners" monster can attack directly
-function s.cfilter1(c)
-	return c:IsFaceup() and c:IsOriginalCodeRule(777000960)
-end
-function s.killercheck(e)
-	local tp=e:GetHandlerPlayer()
-	return Duel.IsExistingMatchingCard(s.cfilter1,tp,LOCATION_MZONE,0,1,nil)
-end
---(5)Battle damage is halved if attacking directly
-function s.rdmgcond(e)
-	local tp=e:GetHandlerPlayer()
-	local c=Duel.GetAttacker()
-	return Duel.GetAttackTarget()==nil and c:GetEffectCount(EFFECT_DIRECT_ATTACK)<2
-		and Duel.GetFieldGroupCount(tp,0,LOCATION_MZONE)>0 --if there are 0 monsters, it's not attacking directly using this effect
+
+function s.gyop(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    
+    local ct = Duel.DiscardDeck(1 - tp, 2, REASON_EFFECT)
+    local og = Duel.GetOperatedGroup()
+    
+    if ct > 0 and og:FilterCount(Card.IsLocation, nil, LOCATION_GRAVE) == 2 then
+        if c:IsRelateToEffect(e) then
+            Duel.SpecialSummon(c, 0, tp, tp, false, false, POS_FACEUP)
+        end
+    end
+    
+    if not Duel.IsExistingMatchingCard(s.killerfilter, tp, LOCATION_MZONE, 0, 1, nil) then
+        local e1 = Effect.CreateEffect(c)
+        e1:SetType(EFFECT_TYPE_FIELD)
+        e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
+        e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET + EFFECT_FLAG_CLIENT_HINT)
+        e1:SetDescription(aux.Stringid(id, 3))
+        e1:SetTargetRange(1, 0)
+        e1:SetTarget(s.splimit)
+        e1:SetReset(RESET_PHASE + PHASE_END)
+        Duel.RegisterEffect(e1, tp)
+    end
 end

@@ -1,114 +1,139 @@
---Leader of Phantom Gunners - Killer
---Scripted by KillerxG
-local s,id=GetID()
+-- Leader of Phantom Gunners - Killer
+-- Scripted by Gemini
+local s, id = GetID()
+
 function s.initial_effect(c)
-	c:EnableReviveLimit()
-	c:SetSPSummonOnce(id)
-	--(1)Special Summon condition
-	local e0=Effect.CreateEffect(c)
-	e0:SetType(EFFECT_TYPE_SINGLE)
-	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-	e0:SetValue(aux.FALSE)
-	c:RegisterEffect(e0)
-	--(2)Special Summon itself from the hand
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
-	e1:SetCode(EFFECT_SPSUMMON_PROC)
-	e1:SetRange(LOCATION_HAND)
-	e1:SetCondition(s.spcon)
-	c:RegisterEffect(e1)
-	--(3)Unaffected
-    local e3=Effect.CreateEffect(c)
-    e3:SetType(EFFECT_TYPE_SINGLE)
-    e3:SetCode(EFFECT_IMMUNE_EFFECT)
-    e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	-- "You can only Special Summon 'Leader of Phantom Gunners - Killer(s)' once per turn."
+    c:SetSPSummonOnce(id)
+    -- Restrição absoluta: "Cannot be Normal Summoned/Set. Must be Special Summoned..."
+    c:EnableReviveLimit()
+    local e0 = Effect.CreateEffect(c)
+    e0:SetType(EFFECT_TYPE_SINGLE)
+    e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE + EFFECT_FLAG_UNCOPYABLE)
+    e0:SetCode(EFFECT_SPSUMMON_CONDITION)
+    c:RegisterEffect(e0)    
+
+    -- Efeito 1: Special Summon Inerente (Da mão) 
+    -- Tendo 3+ "Phantom Gunners" originais monstros com nomes diferentes (Campo/GY)
+    local e1 = Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_FIELD)
+    e1:SetCode(EFFECT_SPSUMMON_PROC)
+    e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
+    e1:SetRange(LOCATION_HAND)
+    e1:SetCondition(s.spcon)
+    c:RegisterEffect(e1)
+
+    -- Efeito 2: Imune a efeitos de Magia/Armadilha
+    local e2 = Effect.CreateEffect(c)
+    e2:SetType(EFFECT_TYPE_SINGLE)
+    e2:SetCode(EFFECT_IMMUNE_EFFECT)
+    e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+    e2:SetRange(LOCATION_MZONE)
+    e2:SetValue(s.efilter)
+    c:RegisterEffect(e2)
+
+    -- Efeito 3: Gatilho -> Se efeito de outro "Phantom Gunners" for ativado -> Mill 4 (Soft OPT)
+    local e3 = Effect.CreateEffect(c)
+    e3:SetDescription(aux.Stringid(id, 0))
+    e3:SetCategory(CATEGORY_DECKDES)
+    e3:SetType(EFFECT_TYPE_FIELD + EFFECT_TYPE_TRIGGER_O)
+    e3:SetProperty(EFFECT_FLAG_DELAY)
+    e3:SetCode(EVENT_CHAINING)
     e3:SetRange(LOCATION_MZONE)
-    e3:SetValue(s.unfilter)
+    e3:SetCountLimit(1)
+    e3:SetCondition(s.millcon)
+    e3:SetTarget(s.milltg)
+    e3:SetOperation(s.millop)
     c:RegisterEffect(e3)
-	--(4)Destroy
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,1))
-	e4:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e4:SetType(EFFECT_TYPE_QUICK_O)
-	e4:SetCode(EVENT_FREE_CHAIN)
-	e4:SetHintTiming(0,TIMING_STANDBY_PHASE|TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
-	e4:SetRange(LOCATION_MZONE)
-	e4:SetCountLimit(1,id)
-	e4:SetTarget(s.destg)
-	e4:SetOperation(s.desop)
-	c:RegisterEffect(e4)
-	--(5)Deck Out
-	local e5=Effect.CreateEffect(c)
-	e5:SetDescription(aux.Stringid(id,2))
-	e5:SetCategory(CATEGORY_DECKDES)
-	e5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e5:SetCode(EVENT_CHAINING)
-	e5:SetRange(LOCATION_MZONE)
-	e5:SetCountLimit(1)
-	e5:SetCondition(s.ddcon)
-	e5:SetTarget(s.ddtg)
-	e5:SetOperation(s.ddop)
-	c:RegisterEffect(e5)
+
+    -- Efeito 4: Quick Effect -> Mill 4 por cada 1000 ATK do alvo (Hard OPT)
+    local e4 = Effect.CreateEffect(c)
+    e4:SetDescription(aux.Stringid(id, 1))
+    e4:SetCategory(CATEGORY_DECKDES)
+    e4:SetType(EFFECT_TYPE_QUICK_O)
+    e4:SetProperty(EFFECT_FLAG_CARD_TARGET)
+    e4:SetCode(EVENT_FREE_CHAIN)
+    e4:SetRange(LOCATION_MZONE)
+    e4:SetHintTiming(0, TIMINGS_CHECK_MONSTER_E + TIMING_MAIN_END)
+    e4:SetCountLimit(1, id + 1)
+    e4:SetTarget(s.atktg)
+    e4:SetOperation(s.atkop)
+    c:RegisterEffect(e4)
 end
---(2)Special Summon itself from the hand
-function s.selfspfilter(c)
-	return c:IsSetCard(0x302) and c:IsMonster() and c:IsFaceup()
+
+-- ====================================================================
+-- Efeito 1: Condição de Invocação-Especial da Mão
+-- ====================================================================
+function s.spcfilter(c)
+    -- Checa se pertence ao arquétipo, se a essência original é Monstro e se está visível para a engine
+    return c:IsSetCard(0x302) and c:IsOriginalType(TYPE_MONSTER) and (c:IsFaceup() or c:IsLocation(LOCATION_GRAVE))
 end
-function s.spcon(e,c)
-	if c==nil then return true end
-	local tp=e:GetHandlerPlayer()
-	local g=Duel.GetMatchingGroup(s.selfspfilter,tp,LOCATION_GRAVE+LOCATION_MZONE,0,nil)
-	return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and #g>=3 and g:GetClassCount(Card.GetCode)>=3
+
+function s.spcon(e, c)
+    if c == nil then return true end
+    local tp = c:GetControler()
+    if Duel.GetLocationCount(tp, LOCATION_MZONE) <= 0 then return false end
+    
+    local g = Duel.GetMatchingGroup(s.spcfilter, tp, LOCATION_ONFIELD + LOCATION_GRAVE, 0, nil)
+    -- GetClassCount avalia nativamente quantos nomes diferentes estão no bolo da variável "g"
+    return g:GetClassCount(Card.GetOriginalCode) >= 3
 end
---(3)Unaffected
-function s.unfilter(e,te)
-	return te:IsActiveType(TYPE_SPELL+TYPE_TRAP) and te:GetOwnerPlayer()~=e:GetHandlerPlayer()
+
+-- ====================================================================
+-- Efeito 2: Imunidade a S/T
+-- ====================================================================
+function s.efilter(e, te)
+    return te:IsActiveType(TYPE_SPELL + TYPE_TRAP)
 end
---(4)Destroy
-function s.filter(c,tp)
-	return c:IsFaceup() and c:IsMonster() 
-		and (c:GetLink()>0 or c:GetLevel()>0 or c:GetRank()>0)
+
+-- ====================================================================
+-- Efeito 3: Mill 4 Passivo (Reagindo a outro Phantom Gunners)
+-- ====================================================================
+function s.millcon(e, tp, eg, ep, ev, re, r, rp)
+    local rc = re:GetHandler()
+    -- Garante que o efeito veio do seu lado, que é efeito de monstro, do arquétipo e não é o próprio Killer
+    return rp == tp and re:IsActiveType(TYPE_MONSTER) and rc:IsSetCard(0x302) and rc ~= e:GetHandler()
 end
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and s.filter(chkc,tp) end
-	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,0,LOCATION_MZONE,1,nil,tp) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-	local tc=Duel.SelectTarget(tp,s.filter,tp,0,LOCATION_MZONE,1,1,nil,tp):GetFirst()
-	local ct=tc:GetLevel()
-	Duel.SetOperationInfo(0,CATEGORY_DESTROY,tc,1,0,0)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_DECKDES,nil,0,1-tp,ct)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_TOGRAVE,Duel.GetDecktopGroup(1-tp,ct),ct,tp,LOCATION_DECK)
+
+function s.milltg(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return Duel.GetFieldGroupCount(tp, 0, LOCATION_DECK) >= 4 end
+    Duel.SetOperationInfo(0, CATEGORY_DECKDES, nil, 0, 1 - tp, 4)
 end
-function s.desop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc:IsRelateToEffect(e) and Duel.Destroy(tc,REASON_EFFECT)>0 then
-		local ct=tc:GetLevel()
-				if tc:IsType(TYPE_XYZ) then
-					ct=tc:GetOriginalRank()
-					end
-						if tc:IsType(TYPE_LINK) then
-							ct=tc:GetLink()
-		end
-		if ct>0 and Duel.IsPlayerCanDiscardDeck(1-tp,ct) and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
-			Duel.BreakEffect()
-			Duel.DiscardDeck(1-tp,ct,REASON_EFFECT)
-		end
-	end
+
+function s.millop(e, tp, eg, ep, ev, re, r, rp)
+    Duel.DiscardDeck(1 - tp, 4, REASON_EFFECT)
 end
---(5)Deck Out
-function s.ddcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	local rc=re:GetHandler()
-	return re:IsActiveType(TYPE_MONSTER) and rc~=c
-		and rc:IsSetCard(0x302) and rc:IsControler(tp)
+
+-- ====================================================================
+-- Efeito 4: Quick Effect (Mill Escalonado via ATK)
+-- ====================================================================
+function s.atkfilter(c)
+    -- Exige que o alvo tenha pelo menos 1000 ATK para o efeito ser ativável
+    return c:IsFaceup() and c:GetAttack() >= 1000
 end
-function s.ddtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
-	Duel.SetOperationInfo(0,CATEGORY_DECKDES,nil,0,tp,5)
+
+function s.atktg(e, tp, eg, ep, ev, re, r, rp, chk, chkc)
+    if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1 - tp) and s.atkfilter(chkc) end
+    if chk == 0 then return Duel.IsExistingTarget(s.atkfilter, tp, 0, LOCATION_MZONE, 1, nil)
+        and Duel.GetFieldGroupCount(tp, 0, LOCATION_DECK) > 0 end 
+        
+    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_TARGET)
+    local g = Duel.SelectTarget(tp, s.atkfilter, tp, 0, LOCATION_MZONE, 1, 1, nil)
+    
+    -- Calcula a estimativa para o display inicial do sistema
+    local mills = math.floor(g:GetFirst():GetAttack() / 1000) * 4
+    Duel.SetOperationInfo(0, CATEGORY_DECKDES, nil, 0, 1 - tp, mills)
 end
-function s.ddop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.DiscardDeck(1-tp,5,REASON_EFFECT)
+
+function s.atkop(e, tp, eg, ep, ev, re, r, rp)
+    local tc = Duel.GetFirstTarget()
+    -- Confere a relação e o ATK real no momento da resolução
+    if tc and tc:IsFaceup() and tc:IsRelateToEffect(e) then
+        local atk = tc:GetAttack()
+        local mills = math.floor(atk / 1000) * 4
+        
+        if mills > 0 then
+            Duel.DiscardDeck(1 - tp, mills, REASON_EFFECT)
+        end
+    end
 end
