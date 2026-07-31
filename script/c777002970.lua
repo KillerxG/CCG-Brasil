@@ -1,140 +1,129 @@
---Shinigami Dark Maiden
---Scripted by KillerxG
-local s,id=GetID()
+-- Shinigami Sanzu River
+-- Scripted by Gemini
+local s, id = GetID()
+
 function s.initial_effect(c)
-	c:AddSetcodesRule(id,true,0x314)--Waifu Arch
-	--(1)Sp Summon
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_HANDES)
-	e1:SetType(EFFECT_TYPE_IGNITION)
-	e1:SetRange(LOCATION_HAND)
-	e1:SetCountLimit(1,id)
-	e1:SetCost(s.spcost)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
-	c:RegisterEffect(e1)
-	--(2)Sp Summon
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_DRAW)
-	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e2:SetProperty(EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DELAY)
-	e2:SetCode(EVENT_RELEASE)
-	e2:SetCountLimit(1,id+1)
-	e2:SetTarget(s.thtg)
-	e2:SetOperation(s.thop)
-	c:RegisterEffect(e2)
-	local e3=e2:Clone()
-	e3:SetCode(EVENT_DESTROYED)
-	e3:SetCondition(s.thdescon)
-	c:RegisterEffect(e3)
-	--(3)Spirit Return
-	local sme,soe=Spirit.AddProcedure(c,EVENT_SPSUMMON_SUCCESS)
-	--Mandatory return
-	sme:SetCategory(CATEGORY_TOHAND)
-	sme:SetTarget(s.mrettg)
-	sme:SetOperation(s.retop)
-	--Optional return
-	soe:SetCategory(CATEGORY_TOHAND)
-	soe:SetTarget(s.orettg)
-	soe:SetOperation(s.retop)	
-	--(4)Send S/T to GY
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,2))
-	e4:SetCategory(CATEGORY_TOGRAVE)
-	e4:SetType(EFFECT_TYPE_IGNITION)
-	e4:SetRange(LOCATION_MZONE)
-	e4:SetCountLimit(1,id+2)
-	e4:SetTarget(s.tgtg)
-	e4:SetOperation(s.tgop)
-	c:RegisterEffect(e4)
-end
---(1)Sp Summon
-function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.CheckReleaseGroupCost(tp,Card.IsAttribute,1,true,nil,e:GetHandler(),ATTRIBUTE_DARK) end
-	local g=Duel.SelectReleaseGroupCost(tp,Card.IsAttribute,1,1,true,nil,e:GetHandler(),ATTRIBUTE_DARK)
-	Duel.Release(g,REASON_COST)
-end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false) and ((c:IsLocation(LOCATION_GRAVE) and not eg:IsContains(c)) 
-		or (c:IsLocation(LOCATION_HAND))) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
-end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) then
-		Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
-	end
-end
---(2)Sp Summon
-function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false)
-		and	Duel.IsPlayerCanDraw(tp,1) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
-	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
-end
-function s.thop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) then 
-		if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP) and Duel.IsPlayerCanDraw(tp,1) then
-			Duel.SetTargetPlayer(tp)
-			Duel.SetTargetParam(1)
-			Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
-			local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
-			Duel.Draw(p,d,REASON_EFFECT)
-		end
-	end
-end
-function s.thdescon(e,tp,eg,ep,ev,re,r,rp)
-	return rp==1-tp and e:GetHandler():IsPreviousControler(tp)
-end
---(3)Spirit Return
-function s.cursefilter(c)
-	return c:IsType(TYPE_TRAP) and c:IsSetCard(0x304b) --and c:IsSSetable()
-end
-function s.mrettg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
-	Spirit.MandatoryReturnTarget(e,tp,eg,ep,ev,re,r,rp,1)
-end
-function s.orettg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Spirit.OptionalReturnTarget(e,tp,eg,ep,ev,re,r,rp,0)  end
-	Spirit.OptionalReturnTarget(e,tp,eg,ep,ev,re,r,rp,1)
+    -- Ativação Padrão da Armadilha Contínua
+    local e0 = Effect.CreateEffect(c)
+    e0:SetType(EFFECT_TYPE_ACTIVATE)
+    e0:SetCode(EVENT_FREE_CHAIN)
+	e0:SetHintTiming(0,TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
+    c:RegisterEffect(e0)
+
+    -- Efeito 1: Todos os monstros que o controlador possui perdem 200 de ATK/DEF por cada carta no GY dele
+    local e1 = Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_FIELD)
+    e1:SetCode(EFFECT_UPDATE_ATTACK)
+    e1:SetRange(LOCATION_SZONE)
+    e1:SetTargetRange(LOCATION_MZONE, 0) -- Afeta apenas o lado de quem controla a Armadilha
+    e1:SetValue(s.atkval)
+    c:RegisterEffect(e1)
+    local e2 = e1:Clone()
+    e2:SetCode(EFFECT_UPDATE_DEFENSE)
+    c:RegisterEffect(e2)
+
+    -- Efeito 2: O controlador não pode Invocar por Invocação-Especial do próprio GY
+    local e3 = Effect.CreateEffect(c)
+    e3:SetType(EFFECT_TYPE_FIELD)
+    e3:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+    e3:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
+    e3:SetRange(LOCATION_SZONE)
+    e3:SetTargetRange(1, 0) -- Aplica a trava ao controlador da Armadilha
+    e3:SetTarget(s.splimit)
+    c:RegisterEffect(e3)
+
+    -- Efeito 3: Se o oponente do controlador possui o "Lord of Shinigamis - Darkness", o controlador não ativa efeitos no GY
+    local e4 = Effect.CreateEffect(c)
+    e4:SetType(EFFECT_TYPE_FIELD)
+    e4:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+    e4:SetCode(EFFECT_CANNOT_ACTIVATE)
+    e4:SetRange(LOCATION_SZONE)
+    e4:SetTargetRange(1, 0)
+    e4:SetCondition(s.actcon)
+    e4:SetValue(s.actlimit)
+    c:RegisterEffect(e4)
 	
+	-- Efeito Rápido/Ignição na Mão: Revelar e Colocar no Oponente
+    local e5 = Effect.CreateEffect(c)
+    e5:SetDescription(aux.Stringid(id, 0))
+    e5:SetType(EFFECT_TYPE_QUICK_O)
+	e5:SetCode(EVENT_FREE_CHAIN)
+	e5:SetHintTiming(0,TIMING_MAIN_END|TIMINGS_CHECK_MONSTER_E)
+    e5:SetRange(LOCATION_HAND)
+    e5:SetCountLimit(1, id)
+    e5:SetCondition(s.placecon)
+    e5:SetCost(s.placecost)
+    e5:SetTarget(s.placetg)
+    e5:SetOperation(s.placeop)
+    c:RegisterEffect(e5)
 end
-function s.retop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) and Duel.SendtoHand(c,nil,REASON_EFFECT)>0
-		and c:IsLocation(LOCATION_HAND) and Duel.IsExistingMatchingCard(s.cursefilter,tp,LOCATION_DECK,0,1,1,nil) and Duel.GetLocationCount(1-tp,LOCATION_SZONE)>0 then
-		local tc=Duel.SelectMatchingCard(tp,s.cursefilter,tp,LOCATION_DECK,0,1,1,nil):GetFirst()
-				if tc then
-					Duel.MoveToField(tc,tp,1-tp,LOCATION_SZONE,POS_FACEUP,true)
-				end
-	end
+
+-- ====================================================================
+-- Efeito 1: Perda Dinâmica de ATK/DEF
+-- ====================================================================
+function s.atkval(e, c)
+    local tp = e:GetHandlerPlayer()
+    -- Conta as cartas no Cemitério de quem está controlando esta Armadilha e multiplica
+    return Duel.GetFieldGroupCount(tp, LOCATION_GRAVE, 0) * -200
 end
---(4)Send S/T to GY
-function s.filter2(c)
-	return c:IsAttribute(ATTRIBUTE_DARK)
+
+-- ====================================================================
+-- Efeito 2: Trava de Special Summon (Apenas do próprio GY)
+-- ====================================================================
+function s.splimit(e, c, sump, sumtype, sumpos, targetp, se)
+    -- Impede que a invocação saia do Cemitério do jogador afetado
+    return c:IsLocation(LOCATION_GRAVE) and c:IsControler(targetp)
 end
-function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_SZONE) and chkc:IsAbleToGrave() end
-	if chk==0 then return Duel.IsExistingTarget(Card.IsAbleToGrave,tp,0,LOCATION_SZONE,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-	local g=Duel.SelectTarget(tp,Card.IsAbleToGrave,tp,0,LOCATION_SZONE,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,g,1,0,0)
+
+-- ====================================================================
+-- Efeito 3: Trava de Efeitos no Cemitério (Condicionada ao Boss)
+-- ====================================================================
+function s.darknessfilter(c)
+    -- Confere o código original exatamente como me passou
+    return c:IsFaceup() and c:GetOriginalCode() == 777001120
 end
-function s.tgop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc:IsRelateToEffect(e) then
-		Duel.SendtoGrave(tc,REASON_EFFECT)
-		local mg=Duel.GetMatchingGroup(s.filter2,tp,LOCATION_MZONE+LOCATION_HAND,0,e:GetHandler())
-		if #mg>0 and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
-			Duel.BreakEffect()
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
-			local sg=mg:Select(tp,1,1,nil)
-			Duel.Release(sg,REASON_EFFECT)			
-		end
-	end
+
+function s.actcon(e)
+    local tp = e:GetHandlerPlayer()
+    -- Confere se o Boss está do lado OPOSTO (0, LOCATION_MZONE) a quem controla a Armadilha
+    return Duel.IsExistingMatchingCard(s.darknessfilter, tp, 0, LOCATION_MZONE, 1, nil)
+end
+
+function s.actlimit(e, re, tp)
+    -- Trava qualquer efeito cuja ativação ocorra fisicamente dentro do Cemitério
+    return re:GetActivateLocation() == LOCATION_GRAVE
+end
+
+-- ====================================================================
+-- Efeito na Mão: Revelar e Colocar na Zona do Oponente
+-- ====================================================================
+function s.bossfilter(c)
+    -- Confere se você controla o Lorde
+    return c:IsFaceup() and c:GetOriginalCode() == 777001120
+end
+
+function s.placecon(e, tp, eg, ep, ev, re, r, rp)
+    return Duel.IsExistingMatchingCard(s.bossfilter, tp, LOCATION_MZONE, 0, 1, nil)
+end
+
+function s.placecost(e, tp, eg, ep, ev, re, r, rp, chk)
+    local c = e:GetHandler()
+    -- Confere se a carta não está pública (revelada por outro efeito) e revela como Custo
+    if chk == 0 then return not c:IsPublic() end
+    Duel.ConfirmCards(1 - tp, c)
+end
+
+function s.placetg(e, tp, eg, ep, ev, re, r, rp, chk)
+    -- O único alvo necessário é ter espaço na Zona de S/T do oponente
+    if chk == 0 then return Duel.GetLocationCount(1 - tp, LOCATION_SZONE) > 0 end
+end
+
+function s.placeop(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    if not c:IsRelateToEffect(e) then return end
+    
+    -- Coloca a carta diretamente virada para cima na zona do inimigo (1 - tp)
+    if Duel.GetLocationCount(1 - tp, LOCATION_SZONE) > 0 then
+        Duel.MoveToField(c, tp, 1 - tp, LOCATION_SZONE, POS_FACEUP, true)
+    end
 end

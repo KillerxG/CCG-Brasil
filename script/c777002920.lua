@@ -5,18 +5,17 @@ function s.initial_effect(c)
 	--Link Materials
 	c:EnableReviveLimit()
 	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsAttribute,ATTRIBUTE_DARK),2,nil,s.matcheck)
-	--(1)Set "Curse" and Special
-    local e1=Effect.CreateEffect(c)
-    e1:SetDescription(aux.Stringid(id,0))
-    e1:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_SET)
-    e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-    e1:SetCode(EVENT_SPSUMMON_SUCCESS)
-    e1:SetProperty(EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DELAY)
-    e1:SetCountLimit(1,id)
-    e1:SetCondition(s.tfcon)
-    e1:SetTarget(s.tftg)
-    e1:SetOperation(s.tfop)
-    c:RegisterEffect(e1)
+	--(1)Special Summon 1 DARK Spirit monster from your GY or Deck
+	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_ATKCHANGE)
+	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e1:SetProperty(EFFECT_FLAG_DELAY)
+	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e1:SetCondition(function(e) return e:GetHandler():IsLinkSummoned() end)
+	e1:SetTarget(s.sptg)
+	e1:SetOperation(s.spop)
+	c:RegisterEffect(e1)
 	--(2)Destroy
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
@@ -32,7 +31,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 	--(3)Pay or Destroy
 	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,0))
+	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e3:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e3:SetCode(EVENT_PHASE+PHASE_END)
@@ -45,37 +44,32 @@ end
 s.listed_card_types={TYPE_SPIRIT}
 --Link Materials
 function s.matcheck(g,lc,sumtype,tp)
-	return g:IsExists(Card.IsRace,1,nil,RACE_FIEND,lc,sumtype,tp)
+	return g:IsExists(Card.IsType,1,nil,TYPE_SPIRIT,lc,sumtype,tp)
 end
---(1)Set "Curse" and Special
-function s.tfcon(e,tp,eg,ep,ev,re,r,rp)
-  return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK)
-end
-function s.tffilter(c,tp)
-	return (c:IsSetCard(0x304b) or c:IsCode(84970821)) and c:IsTrap() and c:IsType(TYPE_CONTINUOUS) and c:IsSSetable()
-		and not c:IsType(TYPE_FIELD)
-end
+--(1)Special Summon 1 DARK Spirit monster from your GY or Deck
 function s.spfilter(c,e,tp)
-	return c:IsType(TYPE_SPIRIT) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE)
+	return c:IsType(TYPE_SPIRIT) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
-function s.tftg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetLocationCount(1-tp,LOCATION_SZONE)>0
-		and Duel.IsExistingMatchingCard(s.tffilter,tp,LOCATION_DECK,0,1,nil,tp) end
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK|LOCATION_GRAVE,0,1,nil,e,tp) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_DECK|LOCATION_GRAVE)
+	Duel.SetOperationInfo(0,CATEGORY_ATKCHANGE,e:GetHandler(),1,tp,500)
 end
-function s.tfop(e,tp,eg,ep,ev,re,r,rp)
-	if Duel.GetLocationCount(1-tp,LOCATION_SZONE)<=0 then return end
-	Duel.Hint(HINT_SELECTMSG,1-tp,HINTMSG_SET)
-	local tc=Duel.SelectMatchingCard(tp,s.tffilter,tp,LOCATION_DECK,0,1,1,nil,tp):GetFirst()
-	if tc and Duel.SSet(1-tp,tc)
-		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
-		local g=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_DECK,0,nil,e,tp)
-		if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-			local sg=g:Select(tp,1,1,nil)
-			if #sg==0 then return end
-			Duel.BreakEffect()
-			Duel.SpecialSummon(sg,0,tp,tp,false,false,POS_FACEUP_DEFENSE)
-		end
+function s.spop(e,tp,eg,ep,ev,re,r,rp)
+	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.spfilter),tp,LOCATION_DECK|LOCATION_GRAVE,0,1,1,nil,e,tp)
+	if #g>0 and Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)>0 then
+		local c=e:GetHandler()
+		if not c:IsRelateToEffect(e) then return end
+		--Gains 500 ATK until the end of the next turn
+		local e1=Effect.CreateEffect(c)
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_UPDATE_ATTACK)
+		e1:SetValue(500)
+		e1:SetReset(RESETS_STANDARD_DISABLE_PHASE_END,2)
+		c:RegisterEffect(e1)
 	end
 end
 --(2)Discard
@@ -107,11 +101,11 @@ function s.paycon(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.payop(e,tp,eg,ep,ev,re,r,rp)
   Duel.HintSelection(Group.FromCards(e:GetHandler()))
-  if Duel.CheckLPCost(tp,1000) and Duel.SelectYesNo(tp,aux.Stringid(id,4)) then
-    Duel.Hint(HINT_OPSELECTED,1-tp,aux.Stringid(id,5))
+  if Duel.CheckLPCost(tp,1000) and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+    Duel.Hint(HINT_OPSELECTED,1-tp,aux.Stringid(id,3))
     Duel.PayLPCost(tp,1000)
   else
-    Duel.Hint(HINT_OPSELECTED,1-tp,aux.Stringid(id,6))
+    Duel.Hint(HINT_OPSELECTED,1-tp,aux.Stringid(id,4))
     Duel.Destroy(e:GetHandler(),REASON_COST)
   end
 end

@@ -3,20 +3,20 @@
 local s,id=GetID()
 function s.initial_effect(c)
 	--Link Materials
-	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsAttribute,ATTRIBUTE_DARK),2,2,s.lcheck)
+	Link.AddProcedure(c, nil, 2, 2, s.lcheck)
 	c:EnableReviveLimit()
-	--(1)Add or Special
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_TOHAND)
-	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
-	e1:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
-	e1:SetCountLimit(1,id)
-	e1:SetCondition(s.thcon)
-	e1:SetTarget(s.thtg)
-	e1:SetOperation(s.thop)
-	c:RegisterEffect(e1)
+	-- Efeito: Se Link Summoned -> Add Spirit -> Seta "Virus"
+    local e1 = Effect.CreateEffect(c)
+    e1:SetDescription(aux.Stringid(id, 0))
+    e1:SetCategory(CATEGORY_TOHAND + CATEGORY_SEARCH)
+    e1:SetType(EFFECT_TYPE_SINGLE + EFFECT_TYPE_TRIGGER_O)
+    e1:SetProperty(EFFECT_FLAG_DELAY)
+    e1:SetCode(EVENT_SPSUMMON_SUCCESS)
+    e1:SetCountLimit(1, id)
+    e1:SetCondition(s.thcon)
+    e1:SetTarget(s.thtg)
+    e1:SetOperation(s.thop)
+    c:RegisterEffect(e1)
 	--(2)Can use 1 DARK Fiend Spirit monster in your hand as material when using this for a "Skarlet" monster
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD)
@@ -36,19 +36,9 @@ function s.initial_effect(c)
 	aux.GlobalCheck(s,function()
 		s.flagmap2={}
 	end)
-	--(3)Set 1 "Curse" Trap 
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,5))
-	e4:SetCategory(CATEGORY_SET)
-	e4:SetType(EFFECT_TYPE_IGNITION)
-	e4:SetRange(LOCATION_MZONE)
-	e4:SetCountLimit(1,id+2)
-	e4:SetTarget(s.settg)
-	e4:SetOperation(s.setop)
-	c:RegisterEffect(e4)
 	--(4)Pay or Destroy
 	local e5=Effect.CreateEffect(c)
-	e5:SetDescription(aux.Stringid(id,3))
+	e5:SetDescription(aux.Stringid(id,2))
 	e5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e5:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e5:SetCode(EVENT_PHASE+PHASE_END)
@@ -60,40 +50,67 @@ function s.initial_effect(c)
 end
 s.listed_card_types={TYPE_SPIRIT}
 --Link Materials
-function s.lcheck(g,lc,sumtype,tp)
-	return g:IsExists(Card.IsRace,1,nil,RACE_FIEND,lc,sumtype,tp)
+function s.lcheck(g, lc, sumtype, tp)
+    -- Garante que o grupo de materiais possui pelo menos 1 monstro Spirit
+    return g:IsExists(Card.IsType, 1, nil, TYPE_SPIRIT, lc, sumtype, tp)
 end
---(1)Add or Special
-function s.thcon(e,tp,eg,ep,ev,re,r,rp)
-	return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK)
+-- ====================================================================
+-- Efeito do Gatilho: Busca e Set
+-- ====================================================================
+function s.thcon(e, tp, eg, ep, ev, re, r, rp)
+    return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK)
 end
-function s.spfilter(c,ft,e,tp)
-	return c:IsType(TYPE_SPIRIT) and (c:IsAbleToHand() or (ft>0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false)))
+
+function s.thfilter(c)
+    return c:IsType(TYPE_SPIRIT) and c:IsAbleToHand()
 end
-function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then
-		local ft=Duel.GetLocationCount(tp,LOCATION_MZONE)
-		return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil,ft,e,tp)
-	end
+
+function s.thtg(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return Duel.IsExistingMatchingCard(s.thfilter, tp, LOCATION_DECK + LOCATION_GRAVE, 0, 1, nil) end
+    Duel.SetOperationInfo(0, CATEGORY_TOHAND, nil, 1, tp, LOCATION_DECK + LOCATION_GRAVE)
 end
-function s.thop(e,tp,eg,ep,ev,re,r,rp)
-	local ft=Duel.GetLocationCount(tp,LOCATION_MZONE)
-	Duel.Hint(HINT_SELECTMSG,tp,0)
-	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_DECK,0,1,1,nil,ft,e,tp)
-	if #g>0 then
-		local th=g:GetFirst():IsAbleToHand()
-		local sp=ft>0 and g:GetFirst():IsCanBeSpecialSummoned(e,0,tp,false,false)
-		local op=0
-		if th and sp then op=Duel.SelectOption(tp,aux.Stringid(id,0),aux.Stringid(id,1))
-		elseif th then op=0
-		else op=1 end
-		if op==0 then
-			Duel.SendtoHand(g,nil,REASON_EFFECT)
-			Duel.ConfirmCards(1-tp,g)
-		else
-			Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
-		end
-	end
+
+function s.virusfilter(c)
+    -- Lista de "Vírus" inserida por Hardcode usando os IDs fornecidos
+    local virus_ids = {
+        4931121,   -- Crush Card Virus
+        35027493,  -- Deck Devastation Virus
+        39163598,  -- Eradicator Epidemic Virus
+        54591086,  -- Full Force Virus
+        54974237,  -- Grinning Grave Virus
+        57728570,  -- Lair of Darkness (Se estiver na lista, é procurável se tiver um typo no ID, mantive o que você mandou)
+        84491298,  -- Smile Potion (Talvez um ID específico do seu custom)
+        85555787   -- Doom Virus Dragon (ou outra variante dependendo do custom)
+    }
+    
+    for _, vid in ipairs(virus_ids) do
+        if c:IsCode(vid) then return c:IsSSetable() end
+    end
+    return false
+end
+
+function s.thop(e, tp, eg, ep, ev, re, r, rp)
+    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_ATOHAND)
+    -- Busca protegida por NecroValley caso você escolha do Cemitério
+    local g = Duel.SelectMatchingCard(tp, aux.NecroValleyFilter(s.thfilter), tp, LOCATION_DECK + LOCATION_GRAVE, 0, 1, 1, nil)
+    
+    if #g > 0 and Duel.SendtoHand(g, nil, REASON_EFFECT) > 0 and g:GetFirst():IsLocation(LOCATION_HAND) then
+        Duel.ConfirmCards(1 - tp, g)
+        
+        -- "...and if you do, you can Set 1 "Virus" Trap from your Deck."
+        if Duel.GetLocationCount(tp, LOCATION_SZONE) > 0 
+            and Duel.IsExistingMatchingCard(s.virusfilter, tp, LOCATION_DECK, 0, 1, nil)
+            and Duel.SelectYesNo(tp, aux.Stringid(id, 1)) then
+            
+            Duel.BreakEffect()
+            Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_SET)
+            local vg = Duel.SelectMatchingCard(tp, s.virusfilter, tp, LOCATION_DECK, 0, 1, 1, nil)
+            
+            if #vg > 0 then
+                Duel.SSet(tp, vg:GetFirst())
+            end
+        end
+    end
 end
 --(2)Can use 1 DARK Fiend Spirit monster in your hand as material when using this for a "Skarlet" monster
 function s.eftg(e,c)
@@ -151,11 +168,11 @@ function s.paycon(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.payop(e,tp,eg,ep,ev,re,r,rp)
   Duel.HintSelection(Group.FromCards(e:GetHandler()))
-  if Duel.CheckLPCost(tp,500) and Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
-    Duel.Hint(HINT_OPSELECTED,1-tp,aux.Stringid(id,1))
+  if Duel.CheckLPCost(tp,500) and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+    Duel.Hint(HINT_OPSELECTED,1-tp,aux.Stringid(id,4))
     Duel.PayLPCost(tp,500)
   else
-    Duel.Hint(HINT_OPSELECTED,1-tp,aux.Stringid(id,2))
+    Duel.Hint(HINT_OPSELECTED,1-tp,aux.Stringid(id,5))
     Duel.Destroy(e:GetHandler(),REASON_COST)
   end
 end

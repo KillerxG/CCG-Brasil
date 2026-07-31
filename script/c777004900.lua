@@ -1,125 +1,95 @@
---East Wings Warrior, Chloe
---Scripted by KillerxG
-local s,id=GetID()
-function s.initial_effect(c)	
-	--(1)Special Summon itself
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
-	e1:SetCode(EFFECT_SPSUMMON_PROC)
-	e1:SetRange(LOCATION_HAND)
-	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
-	e1:SetCondition(s.spproccon)
-	e1:SetTarget(s.spproctg)
-	e1:SetOperation(s.spprocop)
-	c:RegisterEffect(e1)
-	--(2)Set 1 "East Wings" or "Sinful Spoils"
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetType(EFFECT_TYPE_IGNITION)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetCountLimit(1,id+1)
-	e2:SetTarget(s.settg)
-	e2:SetOperation(s.setop)
-	c:RegisterEffect(e2)
-	--(3)Effect Gain: Place
-	local e3=Effect.CreateEffect(c)
-	e3:SetCategory(CATEGORY_LEAVE_GRAVE)
-	e3:SetType(EFFECT_TYPE_IGNITION)
-	e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE+EFFECT_FLAG_CARD_TARGET)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetCountLimit(1)
-	e3:SetTarget(s.gypltg)
-	e3:SetOperation(s.gyplop)
-	e3:SetValue(1)
-	local e4=Effect.CreateEffect(c)
-	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_GRANT)
-	e4:SetRange(LOCATION_SZONE)
-	e4:SetTargetRange(LOCATION_MZONE,0)
-	e4:SetCondition(function(e) return e:GetHandler():IsContinuousSpell() end)
-	e4:SetTarget(s.eftg)
-	e4:SetLabelObject(e3)
-	c:RegisterEffect(e4)
+-- Shadow Chronicler of Mythos
+-- Scripted by Gemini
+local s, id = GetID()
+
+function s.initial_effect(c)
+    -- ====================================================================
+    -- Invocação Link: 1 monstro DARK Spirit
+    -- ====================================================================
+    c:EnableReviveLimit()
+    -- Link.AddProcedure(carta, filtro, min, max)
+    Link.AddProcedure(c, s.matfilter, 1, 1)
+
+    -- Efeito: Se Link Summoned -> Revelar Spirit na mão -> Buscar monstro de Nível maior
+    local e1 = Effect.CreateEffect(c)
+    e1:SetDescription(aux.Stringid(id, 0))
+    e1:SetCategory(CATEGORY_TOHAND + CATEGORY_SEARCH)
+    e1:SetType(EFFECT_TYPE_SINGLE + EFFECT_TYPE_TRIGGER_O)
+    e1:SetProperty(EFFECT_FLAG_DELAY)
+    e1:SetCode(EVENT_SPSUMMON_SUCCESS)
+    e1:SetCountLimit(1, id)
+    e1:SetCondition(s.thcon)
+    e1:SetCost(s.thcost)
+    e1:SetTarget(s.thtg)
+    e1:SetOperation(s.thop)
+    c:RegisterEffect(e1)
 end
---(1)Special Summon itself
-function s.tgfilter(c,tp,bool)
-	local tg_check=nil
-	if bool then
-		tg_check=c:IsAbleToHand() and c:IsFaceup() and c:IsMonsterCard() and c:IsContinuousSpell()
-	else
-		tg_check=c:IsAbleToHandAsCost() and c:IsFaceup() and c:IsMonsterCard() and c:IsContinuousSpell()
-	end
-	return tg_check and Duel.GetMZoneCount(tp,c)>0
+
+-- ====================================================================
+-- Filtro do Material Link
+-- ====================================================================
+function s.matfilter(c, lc, stype, tp)
+    -- Precisa ser simultaneamente DARK e Spirit
+    return c:IsAttribute(ATTRIBUTE_DARK, lc, stype, tp) and c:IsType(TYPE_SPIRIT, lc, stype, tp)
 end
-function s.spproccon(e,c)
-	if c==nil then return true end
-	local tp=e:GetHandlerPlayer()
-	local rg=Duel.GetMatchingGroup(s.tgfilter,tp,LOCATION_HAND|LOCATION_ONFIELD,0,c,tp,false)
-	return #rg>0 and aux.SelectUnselectGroup(rg,e,tp,1,1,nil,0)
+
+-- ====================================================================
+-- Efeito Gatilho: Revelar e Buscar
+-- ====================================================================
+function s.thcon(e, tp, eg, ep, ev, re, r, rp)
+    return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK)
 end
-function s.spproctg(e,tp,eg,ep,ev,re,r,rp,chk,c)
-	local rg=Duel.GetMatchingGroup(s.tgfilter,tp,LOCATION_HAND|LOCATION_ONFIELD,0,c,tp,false)
-	local g=aux.SelectUnselectGroup(rg,e,tp,1,1,nil,1,tp,HINTMSG_RTOHAND,nil,nil,true)
-	if #g>0 then
-		g:KeepAlive()
-		e:SetLabelObject(g)
-		return true
-	end
-	return false
+
+function s.thfilter(c, race, attr, lvl)
+    -- Verifica se tem o mesmo Tipo, Atributo e um Nível MAIOR
+    return c:IsType(TYPE_MONSTER) and c:IsRace(race) and c:IsAttribute(attr) 
+        and c:GetLevel() > lvl and c:IsAbleToHand()
 end
-function s.spprocop(e,tp,eg,ep,ev,re,r,rp,c)
-	local g=e:GetLabelObject()
-	if not g then return end
-	Duel.SendtoHand(g,tp,REASON_COST)
-	g:DeleteGroup()
+
+function s.costfilter(c, tp)
+    -- A carta na mão precisa ser Spirit, não estar pública (revelada) e TER um alvo válido no déqui
+    return c:IsType(TYPE_SPIRIT) and not c:IsPublic()
+        and Duel.IsExistingMatchingCard(s.thfilter, tp, LOCATION_DECK, 0, 1, nil, c:GetRace(), c:GetAttribute(), c:GetLevel())
 end
---(2)Set 1 "East Wings" or "Sinful Spoils"
-function s.setfilter(c)
-	return c:IsSetCard(0x314) and c:IsSpellTrap() and c:IsSSetable()
+
+function s.thcost(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return Duel.IsExistingMatchingCard(s.costfilter, tp, LOCATION_HAND, 0, 1, nil, tp) end
+    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_CONFIRM)
+    local g = Duel.SelectMatchingCard(tp, s.costfilter, tp, LOCATION_HAND, 0, 1, 1, nil, tp)
+    
+    Duel.ConfirmCards(1 - tp, g)
+    Duel.ShuffleHand(tp)
+    
+    local tc = g:GetFirst()
+    -- Cria uma relação segura entre a carta revelada e este efeito
+    tc:CreateEffectRelation(e)
+    -- Salva o objeto da carta para ser chamado na operação
+    e:SetLabelObject(tc)
 end
-function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) end
+
+function s.thtg(e, tp, eg, ep, ev, re, r, rp, chk)
+    -- A validação dura (se o alvo existe) já foi garantida dentro do s.costfilter acima
+    if chk == 0 then return true end
+    Duel.SetOperationInfo(0, CATEGORY_TOHAND, nil, 1, tp, LOCATION_DECK)
 end
-function s.setop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
-	local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_DECK,0,1,1,nil)
-	if #g>0 then
-		Duel.SSet(tp,g)
-	end
-end
---(3)Effect Gain: Place
-function s.eftg(e,c)
-	local g=e:GetHandler():GetColumnGroup(0,0)
-	return c:IsType(TYPE_EFFECT) and c:IsSetCard(0x314) and c:GetSequence()<5 and g:IsContains(c)
-end
-function s.gyplfilter(c)
-	return c:IsSetCard(0x314) and c:IsMonster() and not c:IsForbidden()
-end
-function s.gypltg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.gyplfilter(chkc) end
-	local c=e:GetHandler()
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_SZONE)>0 and Duel.IsExistingTarget(s.gyplfilter,tp,LOCATION_GRAVE,0,1,nil)	end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-	local g=Duel.SelectTarget(tp,s.gyplfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,g,1,0,0)
-end
-function s.gyplop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	local c=e:GetHandler()
-	if tc:IsRelateToEffect(e) and c:IsRelateToEffect(e) and not tc:IsImmuneToEffect(e) then
-		s.stplace(tc,tp,c)  
-	end
-end
-function s.stplace(c,tp,rc)
-	if not Duel.MoveToField(c,tp,c:GetOwner(),LOCATION_SZONE,POS_FACEUP,c:IsMonsterCard()) then return end
-	--Treated as a Continuous Spell
-	local e1=Effect.CreateEffect(rc)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-	e1:SetCode(EFFECT_CHANGE_TYPE)
-	e1:SetValue(TYPE_SPELL|TYPE_CONTINUOUS)
-	e1:SetReset(RESET_EVENT|(RESETS_STANDARD&~RESET_TURN_SET))
-	c:RegisterEffect(e1)
-	return true
+
+function s.thop(e, tp, eg, ep, ev, re, r, rp)
+    -- Resgata a carta revelada na mão
+    local tc = e:GetLabelObject()
+    
+    -- Se a carta ainda existe e a relação não foi quebrada
+    if tc and tc:IsRelateToEffect(e) then
+        -- Extrai os status exatos dela
+        local race = tc:GetRace()
+        local attr = tc:GetAttribute()
+        local lvl = tc:GetLevel()
+        
+        Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_ATOHAND)
+        local g = Duel.SelectMatchingCard(tp, s.thfilter, tp, LOCATION_DECK, 0, 1, 1, nil, race, attr, lvl)
+        
+        if #g > 0 then
+            Duel.SendtoHand(g, nil, REASON_EFFECT)
+            Duel.ConfirmCards(1 - tp, g)
+        end
+    end
 end

@@ -1,80 +1,120 @@
---Timerx Rush
---Scripted by KillerxG
-local s,id=GetID()
+-- Timerx Fissure
+-- Scripted by Gemini
+local s, id = GetID()
+
 function s.initial_effect(c)
-	--(1)Search
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_TODECK)
-	e1:SetType(EFFECT_TYPE_ACTIVATE)
-	e1:SetCode(EVENT_FREE_CHAIN)
-	e1:SetCountLimit(1,id)
-	e1:SetTarget(s.target)
-	e1:SetOperation(s.activate)
-	c:RegisterEffect(e1)
-	--(2)Draw
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_TODECK+CATEGORY_DRAW)
-	e2:SetType(EFFECT_TYPE_IGNITION)
-	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e2:SetRange(LOCATION_GRAVE)
-	e2:SetCode(EVENT_FREE_CHAIN)
-	e2:SetCountLimit(1,id+1)
-	e2:SetCost(aux.bfgcost)
-	e2:SetTarget(s.drtg)
-	e2:SetOperation(s.drop)
-	c:RegisterEffect(e2)
+    -- Efeito 1: Embaralhar Timerx e colocar cartas do oponente no fundo do déqui
+    local e1 = Effect.CreateEffect(c)
+    e1:SetDescription(aux.Stringid(id, 0))
+    e1:SetCategory(CATEGORY_TODECK)
+    e1:SetType(EFFECT_TYPE_ACTIVATE)
+    e1:SetCode(EVENT_FREE_CHAIN)
+    e1:SetHintTiming(0, TIMINGS_CHECK_MONSTER_E + TIMING_MAIN_END)
+    e1:SetCountLimit(1, id)
+    e1:SetCondition(s.actcon)
+    e1:SetTarget(s.acttg)
+    e1:SetOperation(s.actop)
+    c:RegisterEffect(e1)
+
+    -- Efeito 2: No Cemitério + Controlar Chronos -> Setar esta carta
+    local e2 = Effect.CreateEffect(c)
+    e2:SetDescription(aux.Stringid(id, 1))
+    e2:SetType(EFFECT_TYPE_QUICK_O)
+    e2:SetCode(EVENT_FREE_CHAIN)
+    e2:SetRange(LOCATION_GRAVE)
+    e2:SetHintTiming(0, TIMING_END_PHASE)
+    e2:SetCountLimit(1, id + 1)
+    e2:SetCondition(s.setcon)
+    e2:SetTarget(s.settg)
+    e2:SetOperation(s.setop)
+    c:RegisterEffect(e2)
 end
---(1)Search
-function s.filter(c)
-	return c:IsSetCard(0x305) and c:IsAbleToHand() and not c:IsCode(id)
+
+-- ====================================================================
+-- Efeito 1: Remoção e Ativador de Combos
+-- ====================================================================
+function s.lvl5filter(c)
+    -- Confere se você controla um "Timerx" de Nível 5 ou maior
+    return c:IsFaceup() and c:IsSetCard(0x305) and c:IsLevelAbove(5)
 end
-function s.filter2(c)
-	return c:IsSetCard(0x305) and c:IsMonster() and c:IsAbleToDeck()
+
+function s.actcon(e, tp, eg, ep, ev, re, r, rp)
+    return Duel.IsExistingMatchingCard(s.lvl5filter, tp, LOCATION_MZONE, 0, 1, nil)
 end
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK,0,1,nil) end
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE+LOCATION_HAND)
+
+function s.tdfilter(c)
+    -- Aceita os "Timerx" originais no campo (SZone ou MZone) e no Cemitério
+    return c:IsSetCard(0x305) and (c:IsType(TYPE_MONSTER) or c:IsOriginalType(TYPE_MONSTER)) 
+        and c:IsAbleToDeck() and (c:IsLocation(LOCATION_GRAVE) or c:IsFaceup())
 end
-function s.activate(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil)
-	if #g>0 then
-		Duel.SendtoHand(g,nil,REASON_EFFECT)
-		Duel.ConfirmCards(1-tp,g)
-		local mg=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.filter2),tp,LOCATION_GRAVE+LOCATION_HAND,0,nil)
-		if #mg>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
-			Duel.BreakEffect()
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
-			local sg=mg:Select(tp,1,1,nil)
-			Duel.SendtoDeck(sg,nil,2,REASON_EFFECT)
-		end
-	end
+
+function s.acttg(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return Duel.IsExistingMatchingCard(s.tdfilter, tp, LOCATION_ONFIELD + LOCATION_GRAVE, 0, 1, nil) end
+    Duel.SetOperationInfo(0, CATEGORY_TODECK, nil, 1, tp, LOCATION_ONFIELD + LOCATION_GRAVE)
+    Duel.SetPossibleOperationInfo(0, CATEGORY_TODECK, nil, 1, 1 - tp, LOCATION_ONFIELD)
 end
---(2)Draw
-function s.drfilter(c)
-	return c:IsSetCard(0x305) and c:IsMonster() and c:IsAbleToDeck()
+
+function s.actop(e, tp, eg, ep, ev, re, r, rp)
+    local g = Duel.GetMatchingGroup(aux.NecroValleyFilter(s.tdfilter), tp, LOCATION_ONFIELD + LOCATION_GRAVE, 0, nil)
+    if #g == 0 then return end
+    
+    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_TODECK)
+    -- Permite escolher "qualquer número" (de 1 até o máximo disponível)
+    local sg = g:Select(tp, 1, 99, nil)
+    
+    if #sg > 0 then
+        Duel.HintSelection(sg)
+        if Duel.SendtoDeck(sg, nil, SEQ_DECKSHUFFLE, REASON_EFFECT) > 0 then
+            
+            -- Confere quantos monstros efetivamente voltaram para o déqui / Extra Deck
+            local og = Duel.GetOperatedGroup()
+            local ct = og:FilterCount(Card.IsLocation, nil, LOCATION_DECK + LOCATION_EXTRA)
+            
+            if ct > 0 then
+                local opg = Duel.GetMatchingGroup(Card.IsAbleToDeck, tp, 0, LOCATION_ONFIELD, nil)
+                -- Opcional: "then you can place cards your opponent controls..."
+                if #opg > 0 and Duel.SelectYesNo(tp, aux.Stringid(id, 2)) then
+                    Duel.BreakEffect()
+                    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_TODECK)
+                    -- Permite selecionar "até o número de monstros embaralhados" (1 a ct)
+                    local btg = opg:Select(tp, 1, ct, nil)
+                    
+                    Duel.HintSelection(btg)
+                    Duel.SendtoDeck(btg, nil, SEQ_DECKBOTTOM, REASON_EFFECT)
+                end
+            end
+        end
+    end
 end
-function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.drfilter(chkc) end
-	if chk==0 then return Duel.IsPlayerCanDraw(tp,1) 
-		and Duel.IsExistingTarget(s.drfilter,tp,LOCATION_GRAVE,0,3,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
-	local g=Duel.SelectTarget(tp,s.drfilter,tp,LOCATION_GRAVE,0,3,3,nil)
-	Duel.SetOperationInfo(0,CATEGORY_TODECK,g,3,0,0)
-	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
+
+-- ====================================================================
+-- Efeito 2: Setar do Cemitério
+-- ====================================================================
+function s.chronosfilter(c)
+    return c:IsFaceup() and c:GetOriginalCodeRule() == 777000640
 end
-function s.drop(e,tp,eg,ep,ev,re,r,rp)
-	local tg=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
-	if not tg or tg:FilterCount(Card.IsRelateToEffect,nil,e)~=3 then return end
-	Duel.SendtoDeck(tg,nil,0,REASON_EFFECT)
-	local g=Duel.GetOperatedGroup()
-	if g:IsExists(Card.IsLocation,1,nil,LOCATION_DECK) then Duel.ShuffleDeck(tp) end
-	local ct=g:FilterCount(Card.IsLocation,nil,LOCATION_DECK+LOCATION_EXTRA)
-	if ct==3 then
-		Duel.BreakEffect()
-		Duel.Draw(tp,1,REASON_EFFECT)
-	end
+
+function s.setcon(e, tp, eg, ep, ev, re, r, rp)
+    return Duel.IsExistingMatchingCard(s.chronosfilter, tp, LOCATION_MZONE, 0, 1, nil)
+end
+
+function s.settg(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return e:GetHandler():IsSSetable() end
+    Duel.SetOperationInfo(0, CATEGORY_LEAVE_GRAVE, e:GetHandler(), 1, 0, 0)
+end
+
+function s.setop(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    if c:IsRelateToEffect(e) and c:IsSSetable() then
+        Duel.SSet(tp, c)
+        -- Trava para banir a carta quando ela deixar o campo
+        local e1 = Effect.CreateEffect(c)
+        e1:SetDescription(3300) -- Mensagem visual no sistema indicando o banimento pendente
+        e1:SetType(EFFECT_TYPE_SINGLE)
+        e1:SetCode(EFFECT_LEAVE_FIELD_REDIRECT)
+        e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE + EFFECT_FLAG_CLIENT_HINT)
+        e1:SetReset(RESET_EVENT + RESETS_REDIRECT)
+        e1:SetValue(LOCATION_REMOVED)
+        c:RegisterEffect(e1)
+    end
 end

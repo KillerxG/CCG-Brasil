@@ -1,142 +1,152 @@
---Shinigami of Moon - Carmilla
---Scripted by KillerxG
-local s,id=GetID()
+-- Shinigami Grimoire
+-- Scripted by Gemini
+local s, id = GetID()
+
 function s.initial_effect(c)
-	c:AddSetcodesRule(id,true,0x314)--Waifu Arch
-	--(1)Sp Summon
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_HANDES)
-	e1:SetType(EFFECT_TYPE_IGNITION)
-	e1:SetRange(LOCATION_HAND)
-	e1:SetCountLimit(1,id)
-	e1:SetCost(s.spcost)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
-	c:RegisterEffect(e1)
-	--(2)Sp Summon
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_DRAW)
-	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e2:SetProperty(EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DELAY)
-	e2:SetCode(EVENT_RELEASE)
-	e2:SetCountLimit(1,id+1)
-	e2:SetTarget(s.thtg)
-	e2:SetOperation(s.thop)
-	c:RegisterEffect(e2)
-	local e3=e2:Clone()
-	e3:SetCode(EVENT_DESTROYED)
-	e3:SetCondition(s.thdescon)
-	c:RegisterEffect(e3)
-	--(3)Spirit Return
-	local sme,soe=Spirit.AddProcedure(c,EVENT_SPSUMMON_SUCCESS)
-	--Mandatory return
-	sme:SetCategory(CATEGORY_TOHAND)
-	sme:SetTarget(s.mrettg)
-	sme:SetOperation(s.retop)
-	--Optional return
-	soe:SetCategory(CATEGORY_TOHAND)
-	soe:SetTarget(s.orettg)
-	soe:SetOperation(s.retop)	
-	--(4)Search
-	local e5=Effect.CreateEffect(c)
-	e5:SetDescription(aux.Stringid(id,1))
-	e5:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
-	e5:SetType(EFFECT_TYPE_IGNITION)
-	e5:SetRange(LOCATION_MZONE)
-	e5:SetCountLimit(1,id+2)
-	e5:SetTarget(s.target)
-	e5:SetOperation(s.activate)
-	c:RegisterEffect(e5)	
+    -- Efeito 1: Adicionar do Déqui (Custo Opcional de Tributo para busca dupla)
+    local e1 = Effect.CreateEffect(c)
+    e1:SetDescription(aux.Stringid(id, 0))
+    e1:SetCategory(CATEGORY_TOHAND + CATEGORY_SEARCH)
+    e1:SetType(EFFECT_TYPE_ACTIVATE)
+    e1:SetCode(EVENT_FREE_CHAIN)
+    e1:SetCountLimit(1, id)
+    e1:SetCost(s.thcost)
+    e1:SetTarget(s.thtg)
+    e1:SetOperation(s.thop)
+    c:RegisterEffect(e1)
+
+    -- Efeito 2: Setar do Cemitério e Tributar por efeito
+    local e2 = Effect.CreateEffect(c)
+    e2:SetDescription(aux.Stringid(id, 1))
+    e2:SetCategory(CATEGORY_LEAVE_GRAVE)
+    e2:SetType(EFFECT_TYPE_IGNITION)
+    e2:SetRange(LOCATION_GRAVE)
+    e2:SetCountLimit(1, id + 1)
+    e2:SetCondition(s.setcon)
+    e2:SetTarget(s.settg)
+    e2:SetOperation(s.setop)
+    c:RegisterEffect(e2)
 end
---(1)Sp Summon
-function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.CheckReleaseGroupCost(tp,Card.IsAttribute,1,true,nil,e:GetHandler(),ATTRIBUTE_DARK) end
-	local g=Duel.SelectReleaseGroupCost(tp,Card.IsAttribute,1,1,true,nil,e:GetHandler(),ATTRIBUTE_DARK)
-	Duel.Release(g,REASON_COST)
+
+-- ====================================================================
+-- Efeito 1: Busca e Tributo Opcional
+-- ====================================================================
+function s.cfilter(c)
+    return c:IsAttribute(ATTRIBUTE_DARK) and c:IsReleasable()
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false) and ((c:IsLocation(LOCATION_GRAVE) and not eg:IsContains(c)) 
-		or (c:IsLocation(LOCATION_HAND))) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
+
+function s.thfilter(c)
+    return c:IsSetCard(0x304) and c:IsType(TYPE_MONSTER) and c:IsAbleToHand()
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) then
-		Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
-	end
+
+function s.thfilter2(c, lv, code)
+    -- Filtro do segundo alvo: Mesmo nível, nome diferente
+    return c:IsSetCard(0x304) and c:IsType(TYPE_MONSTER) and c:IsAbleToHand()
+        and c:GetOriginalLevel() == lv and not c:IsCode(code)
 end
---(2)Sp Summon
-function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false)
-		and	Duel.IsPlayerCanDraw(tp,1) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
-	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
+
+function s.thfilter_double(c, tp)
+    -- Verifica se, para a carta 'c', existe pelo menos um par compatível no déqui
+    return s.thfilter(c) and Duel.IsExistingMatchingCard(s.thfilter2, tp, LOCATION_DECK, 0, 1, c, c:GetOriginalLevel(), c:GetCode())
 end
-function s.thop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) then 
-		if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP) and Duel.IsPlayerCanDraw(tp,1) then
-			Duel.SetTargetPlayer(tp)
-			Duel.SetTargetParam(1)
-			Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
-			local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
-			Duel.Draw(p,d,REASON_EFFECT)
-		end
-	end
+
+function s.thcost(e, tp, eg, ep, ev, re, r, rp, chk)
+    -- Salva na Label se o custo foi pago (0 = Não, 1 = Sim)
+    e:SetLabel(0)
+    if chk == 0 then return true end -- O target (s.thtg) já segura a validação base de busca
+    
+    -- Confere se pode tributar e se possui alvos viáveis para a busca dupla
+    if Duel.IsExistingMatchingCard(s.cfilter, tp, LOCATION_MZONE + LOCATION_HAND, 0, 1, nil)
+        and Duel.IsExistingMatchingCard(s.thfilter_double, tp, LOCATION_DECK, 0, 1, nil, tp)
+        and Duel.SelectYesNo(tp, aux.Stringid(id, 2)) then
+        
+        Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_RELEASE)
+        local g = Duel.SelectMatchingCard(tp, s.cfilter, tp, LOCATION_MZONE + LOCATION_HAND, 0, 1, 1, nil)
+        if #g > 0 and Duel.Release(g, REASON_COST) > 0 then
+            e:SetLabel(1)
+        end
+    end
 end
-function s.thdescon(e,tp,eg,ep,ev,re,r,rp)
-	return rp==1-tp and e:GetHandler():IsPreviousControler(tp)
+
+function s.thtg(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return Duel.IsExistingMatchingCard(s.thfilter, tp, LOCATION_DECK, 0, 1, nil) end
+    Duel.SetOperationInfo(0, CATEGORY_TOHAND, nil, 1, tp, LOCATION_DECK)
 end
---(3)Spirit Return
-function s.cursefilter(c)
-	return c:IsType(TYPE_TRAP) and c:IsSetCard(0x304b) --and c:IsSSetable()
+
+function s.thop(e, tp, eg, ep, ev, re, r, rp)
+    -- Recupera a informação do custo pago
+    local tributed = (e:GetLabel() == 1)
+    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_ATOHAND)
+    
+    local g1 = nil
+    if tributed then
+        -- Se tributou, obrigatoriamente força a escolha de um monstro que possua um par no déqui
+        g1 = Duel.SelectMatchingCard(tp, s.thfilter_double, tp, LOCATION_DECK, 0, 1, 1, nil, tp)
+    else
+        g1 = Duel.SelectMatchingCard(tp, s.thfilter, tp, LOCATION_DECK, 0, 1, 1, nil)
+    end
+    
+    if g1 and #g1 > 0 and Duel.SendtoHand(g1, nil, REASON_EFFECT) > 0 and g1:GetFirst():IsLocation(LOCATION_HAND) then
+        Duel.ConfirmCards(1 - tp, g1)
+        
+        -- Aplica a segunda busca obrigatória
+        if tributed then
+            Duel.BreakEffect()
+            local tc = g1:GetFirst()
+            Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_ATOHAND)
+            local g2 = Duel.SelectMatchingCard(tp, s.thfilter2, tp, LOCATION_DECK, 0, 1, 1, nil, tc:GetOriginalLevel(), tc:GetCode())
+            if #g2 > 0 then
+                Duel.SendtoHand(g2, nil, REASON_EFFECT)
+                Duel.ConfirmCards(1 - tp, g2)
+            end
+        end
+    end
 end
-function s.mrettg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
-	Spirit.MandatoryReturnTarget(e,tp,eg,ep,ev,re,r,rp,1)
+
+-- ====================================================================
+-- Efeito 2: Setar do Cemitério e Tributar por Efeito
+-- ====================================================================
+function s.bossfilter(c)
+    return c:IsFaceup() and c:GetOriginalCode() == 777001120
 end
-function s.orettg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Spirit.OptionalReturnTarget(e,tp,eg,ep,ev,re,r,rp,0)  end
-	Spirit.OptionalReturnTarget(e,tp,eg,ep,ev,re,r,rp,1)
-	
+
+function s.setcon(e, tp, eg, ep, ev, re, r, rp)
+    return Duel.IsExistingMatchingCard(s.bossfilter, tp, LOCATION_MZONE, 0, 1, nil)
 end
-function s.retop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) and Duel.SendtoHand(c,nil,REASON_EFFECT)>0
-		and c:IsLocation(LOCATION_HAND) and Duel.IsExistingMatchingCard(s.cursefilter,tp,LOCATION_DECK,0,1,1,nil) and Duel.GetLocationCount(1-tp,LOCATION_SZONE)>0 then
-		local tc=Duel.SelectMatchingCard(tp,s.cursefilter,tp,LOCATION_DECK,0,1,1,nil):GetFirst()
-				if tc then
-					Duel.MoveToField(tc,tp,1-tp,LOCATION_SZONE,POS_FACEUP,true)
-				end
-	end
+
+function s.settg(e, tp, eg, ep, ev, re, r, rp, chk)
+    local c = e:GetHandler()
+    if chk == 0 then return c:IsSSetable() end
+    Duel.SetOperationInfo(0, CATEGORY_LEAVE_GRAVE, c, 1, 0, 0)
 end
---(4)Search
-function s.filter(c)
-	return c:IsType(TYPE_MONSTER) and c:IsSetCard(0x304) and c:IsAbleToHand() and not c:IsCode(id)
+
+function s.effcfilter(c)
+    -- Diferente do custo padrão, esse efeito tributa por resolução (REASON_EFFECT)
+    return c:IsAttribute(ATTRIBUTE_DARK) and c:IsReleasableByEffect()
 end
-function s.filter2(c)
-	return c:IsAttribute(ATTRIBUTE_DARK)
-end
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK,0,1,nil) end
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
-end
-function s.activate(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_DECK,0,1,1,nil)
-	if #g>0 then
-		Duel.SendtoHand(g,nil,REASON_EFFECT)
-		Duel.ConfirmCards(1-tp,g)
-		local mg=Duel.GetMatchingGroup(s.filter2,tp,LOCATION_MZONE+LOCATION_HAND,0,e:GetHandler())
-		if #mg>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
-			Duel.BreakEffect()
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
-			local sg=mg:Select(tp,1,1,nil)
-			Duel.Release(sg,REASON_EFFECT)			
-		end
-	end
+
+function s.setop(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    if c:IsRelateToEffect(e) and c:IsSSetable() then
+        Duel.SSet(tp, c)
+        
+        -- Configura a penalidade de banimento nativamente na carta
+        local e1 = Effect.CreateEffect(c)
+        e1:SetDescription(3300)
+        e1:SetType(EFFECT_TYPE_SINGLE)
+        e1:SetCode(EFFECT_LEAVE_FIELD_REDIRECT)
+        e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE + EFFECT_FLAG_CLIENT_HINT)
+        e1:SetReset(RESET_EVENT + RESETS_REDIRECT)
+        e1:SetValue(LOCATION_REMOVED)
+        c:RegisterEffect(e1)
+        
+        -- Bônus opcional após Setar ("then you can...")
+        local g = Duel.GetMatchingGroup(s.effcfilter, tp, LOCATION_MZONE + LOCATION_HAND, 0, nil)
+        if #g > 0 and Duel.SelectYesNo(tp, aux.Stringid(id, 3)) then
+            Duel.BreakEffect()
+            Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_RELEASE)
+            local sg = g:Select(tp, 1, 1, nil)
+            Duel.Release(sg, REASON_EFFECT)
+        end
+    end
 end

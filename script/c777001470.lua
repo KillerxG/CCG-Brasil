@@ -1,127 +1,176 @@
---Lord of Shinigamis - Darkness
---Scripted by KillerxG
-local s,id=GetID()
+-- Shinigami of Oblivion - Giorgio
+-- Scripted by Gemini
+local s, id = GetID()
+
 function s.initial_effect(c)
-	c:EnableReviveLimit()
-	c:SetSPSummonOnce(id)
-	--(1)Special Summon condition
-	local e0=Effect.CreateEffect(c)
-	e0:SetType(EFFECT_TYPE_SINGLE)
-	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-	e0:SetValue(aux.FALSE)
-	c:RegisterEffect(e0)
-	--(2)Special Summon itself from the hand
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
-	e1:SetCode(EFFECT_SPSUMMON_PROC)
-	e1:SetRange(LOCATION_HAND)
-	e1:SetCondition(s.spcon)
-	c:RegisterEffect(e1)
-	--(3)Spirit may not return
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetCode(EFFECT_SPIRIT_MAYNOT_RETURN)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetTargetRange(LOCATION_MZONE,0)
-	c:RegisterEffect(e2)
-	--(4)Protection to Shinigamis
-	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_FIELD)
-	e3:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetTargetRange(LOCATION_ONFIELD,LOCATION_ONFIELD)
-	e3:SetTarget(s.indtg)
-	e3:SetValue(1)
-	c:RegisterEffect(e3)
-	local e4=e3:Clone()
-	e4:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
-	c:RegisterEffect(e4)
-	--(5)Activate Curse
-	local e5=Effect.CreateEffect(c)
-	e5:SetDescription(aux.Stringid(id,0))
-	e5:SetType(EFFECT_TYPE_QUICK_O)
-	e5:SetCode(EVENT_FREE_CHAIN)
-	e5:SetRange(LOCATION_MZONE)
-	e5:SetCountLimit(1,id)
-	e5:SetCost(s.atkcost)
-	e5:SetTarget(s.settg)
-	e5:SetOperation(s.setop)
-	c:RegisterEffect(e5)
-	--(6)Force a Tribute
-	local e6=Effect.CreateEffect(c)
-	e6:SetDescription(aux.Stringid(id,1))
-	e6:SetCategory(CATEGORY_RELEASE)
-	e6:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e6:SetProperty(EFFECT_FLAG_DELAY)
-	e6:SetCode(EVENT_RELEASE)
-	e6:SetRange(LOCATION_MZONE)
-	e6:SetCountLimit(1,id+1)
-	e6:SetCondition(s.relcon)
-	e6:SetTarget(s.reltg)
-	e6:SetOperation(s.relop)
-	c:RegisterEffect(e6)
+    -- Efeito 1: Special Summon da mão (Tributando 1 DARK - Suporte Lair of Darkness)
+    local e1 = Effect.CreateEffect(c)
+    e1:SetDescription(aux.Stringid(id, 0))
+    e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
+    e1:SetType(EFFECT_TYPE_IGNITION)
+    e1:SetRange(LOCATION_HAND)
+    e1:SetCountLimit(1, id)
+    e1:SetCost(s.spcost)
+    e1:SetTarget(s.sptg)
+    e1:SetOperation(s.spop)
+    c:RegisterEffect(e1)
+
+    -- Efeito 2: Se Tributado -> SpSummon -> Mexer no Extra Deck (Colocar S/T no oponente)
+    local e2 = Effect.CreateEffect(c)
+    e2:SetDescription(aux.Stringid(id, 1))
+    e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
+    e2:SetType(EFFECT_TYPE_SINGLE + EFFECT_TYPE_TRIGGER_O)
+    e2:SetProperty(EFFECT_FLAG_DELAY)
+    e2:SetCode(EVENT_RELEASE)
+    e2:SetCountLimit(1, id + 1)
+    e2:SetTarget(s.reltg)
+    e2:SetOperation(s.relop)
+    c:RegisterEffect(e2)
+
+    -- ====================================================================
+    -- Mecânica Spirit Exata
+    -- ====================================================================
+    local sme,soe=Spirit.AddProcedure(c,EVENT_SUMMON_SUCCESS,EVENT_SPSUMMON_SUCCESS)
+    --Mandatory return
+    sme:SetCategory(CATEGORY_TOHAND+CATEGORY_SPECIAL_SUMMON+CATEGORY_TOKEN)
+    sme:SetTarget(s.mrettg)
+    sme:SetOperation(s.retop)
+    --Optional return
+    soe:SetCategory(CATEGORY_TOHAND+CATEGORY_SPECIAL_SUMMON+CATEGORY_TOKEN)
+    soe:SetTarget(s.orettg)
+    soe:SetOperation(s.retop)
 end
-s.listed_card_types={TYPE_SPIRIT}
---(2)Special Summon itself from the hand
-function s.selfspfilter(c)
-	return c:IsSetCard(0x304) and c:IsMonster() and c:IsFaceup()
+
+-- ====================================================================
+-- Efeito 1: Special Summon da mão (Suporte Lair of Darkness)
+-- ====================================================================
+function s.spcost(e, tp, eg, ep, ev, re, r, rp, chk)
+    local c = e:GetHandler()
+    if chk == 0 then return Duel.CheckReleaseGroupCost(tp, Card.IsAttribute, 1, true, nil, c, ATTRIBUTE_DARK) end
+    local g = Duel.SelectReleaseGroupCost(tp, Card.IsAttribute, 1, 1, true, nil, c, ATTRIBUTE_DARK)
+    Duel.Release(g, REASON_COST)
 end
-function s.spcon(e,c)
-	if c==nil then return true end
-	local tp=e:GetHandlerPlayer()
-	local g=Duel.GetMatchingGroup(s.selfspfilter,tp,LOCATION_GRAVE+LOCATION_MZONE,0,nil)
-	return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and #g>=3 and g:GetClassCount(Card.GetCode)>=3
+
+function s.sptg(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return Duel.GetLocationCount(tp, LOCATION_MZONE) > 0
+        and e:GetHandler():IsCanBeSpecialSummoned(e, 0, tp, false, false) end
+    Duel.SetOperationInfo(0, CATEGORY_SPECIAL_SUMMON, e:GetHandler(), 1, 0, 0)
 end
---(4)Protection to Shinigamis
-function s.indtg(e,c)
-	return c:IsSetCard(0x304) and c:IsFaceup()
+
+function s.spop(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    if c:IsRelateToEffect(e) then
+        Duel.SpecialSummon(c, 0, tp, tp, false, false, POS_FACEUP)
+    end
 end
---(5)Activate Curse
-function s.cfilter(c)
-	return c:IsType(TYPE_MONSTER) and c:IsAttribute(ATTRIBUTE_DARK)
+
+-- ====================================================================
+-- Efeito 2: Retorno após Tributo + Transformar Extra Deck em Armadilha
+-- ====================================================================
+function s.reltg(e, tp, eg, ep, ev, re, r, rp, chk)
+    local c = e:GetHandler()
+    if chk == 0 then return Duel.GetLocationCount(tp, LOCATION_MZONE) > 0
+        and c:IsCanBeSpecialSummoned(e, 0, tp, false, false) end
+    Duel.SetOperationInfo(0, CATEGORY_SPECIAL_SUMMON, c, 1, 0, 0)
 end
-function s.atkcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND+LOCATION_MZONE,LOCATION_MZONE,1,c) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
-	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_HAND+LOCATION_MZONE,LOCATION_MZONE,1,1,c)
-	Duel.Release(g,REASON_COST)
+
+function s.relop(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    
+    if c:IsRelateToEffect(e) and Duel.SpecialSummon(c, 0, tp, tp, false, false, POS_FACEUP) > 0 then
+        local exg = Duel.GetMatchingGroup(Card.IsFacedown, tp, 0, LOCATION_EXTRA, nil)
+        
+        -- Checa se o oponente tem Extra Deck e se tem espaço na S&T dele
+        if #exg > 0 and Duel.GetLocationCount(1 - tp, LOCATION_SZONE) > 0 
+            and Duel.SelectYesNo(tp, aux.Stringid(id, 2)) then
+            
+            Duel.BreakEffect()
+            
+            -- Seleciona até 3 cartas aleatórias, ou menos se ele não tiver 3
+            local count = math.min(3, #exg)
+            local conf = exg:RandomSelect(tp, count)
+            Duel.ConfirmCards(tp, conf)
+            
+            Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_TOFIELD)
+            local sg = conf:Select(tp, 1, 1, nil)
+            local tc = sg:GetFirst()
+            
+            if tc then
+                -- Move para a zona do oponente face-up
+                if Duel.MoveToField(tc, tp, 1 - tp, LOCATION_SZONE, POS_FACEUP, true) then
+                    -- Altera o tipo nativo da carta para Armadilha Contínua
+                    local e1 = Effect.CreateEffect(c)
+                    e1:SetType(EFFECT_TYPE_SINGLE)
+                    e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+                    e1:SetCode(EFFECT_CHANGE_TYPE)
+                    e1:SetValue(TYPE_TRAP + TYPE_CONTINUOUS)
+                    e1:SetReset(RESET_EVENT + RESETS_STANDARD - RESET_TURN_SET)
+                    tc:RegisterEffect(e1)
+                end
+            end
+        end
+    end
 end
-function s.cursefilter(c)
-	return c:IsType(TYPE_TRAP) and c:IsSetCard(0x304b) --and c:IsSSetable()
+
+-- ====================================================================
+-- Efeito 3: Spirit Procedure + Roubo de Extra Deck com Boss
+-- ====================================================================
+function s.mrettg(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return true end
+    Duel.SetOperationInfo(0, CATEGORY_TOHAND, e:GetHandler(), 1, 0, 0)
 end
-function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.cursefilter,tp,LOCATION_DECK,0,1,nil)
-		and Duel.GetLocationCount(1-tp,LOCATION_SZONE)>0 end
+
+function s.orettg(e, tp, eg, ep, ev, re, r, rp, chk)
+    if chk == 0 then return e:GetHandler():IsAbleToHand() end
+    Duel.SetOperationInfo(0, CATEGORY_TOHAND, e:GetHandler(), 1, 0, 0)
 end
-function s.setop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
-		local g=Duel.SelectMatchingCard(tp,s.cursefilter,tp,LOCATION_DECK,0,1,1,nil)
-		if #g>0 then
-			Duel.MoveToField(g:GetFirst(),tp,1-tp,LOCATION_SZONE,POS_FACEUP,true)
-		end
+
+function s.bossfilter(c)
+    return c:IsFaceup() and c:GetOriginalCode() == 777001120
 end
---(6)Force a Tribute
-function s.thfilter2(c,tp)
-	return c:IsType(TYPE_MONSTER) and c:IsSetCard(0x304) and c:IsPreviousLocation(LOCATION_ONFIELD+LOCATION_HAND) and c:IsPreviousControler(tp)
+
+function s.spfilter_extra(c, e, tp)
+    -- Filtro para garantir que a carta escolhida pode ser invocada
+    return c:IsCanBeSpecialSummoned(e, 0, tp, false, false)
 end
-function s.relcon(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsExists(s.thfilter2,1,e:GetHandler(),tp)
-end
-function s.reltg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsReleasable,tp,0,LOCATION_MZONE+LOCATION_HAND,1,nil) end
-	Duel.SetOperationInfo(0,CATEGORY_RELEASE,nil,1,0,LOCATION_MZONE+LOCATION_HAND)
-end
-function s.relop(e,tp,eg,ep,ev,re,r,rp)
-	if not e:GetHandler():IsRelateToEffect(e) then return end
-	local g=Duel.GetMatchingGroup(Card.IsReleasable,1-tp,LOCATION_MZONE+LOCATION_HAND,0,nil)
-	if #g>0 then
-		Duel.Hint(HINT_SELECTMSG,1-tp,HINTMSG_RELEASE)
-		local sg=g:Select(1-tp,1,1,nil)
-		Duel.HintSelection(sg)
-		Duel.Release(sg,REASON_RULE)
-	end
+
+function s.retop(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    
+    if c:IsRelateToEffect(e) and Duel.SendtoHand(c, nil, REASON_EFFECT) > 0 and c:IsLocation(LOCATION_HAND) then
+        
+        local exg2 = Duel.GetMatchingGroup(Card.IsFacedown, tp, 0, LOCATION_EXTRA, nil)
+        
+        -- Bônus Boss: Olhar 2 aleatórias e roubar 1 pro seu campo
+        if Duel.IsExistingMatchingCard(s.bossfilter, tp, LOCATION_MZONE, 0, 1, nil)
+            and #exg2 > 0 and Duel.GetLocationCount(tp, LOCATION_MZONE) > 0
+            and Duel.SelectYesNo(tp, aux.Stringid(id, 3)) then
+            
+            Duel.BreakEffect()
+            
+            local count = math.min(2, #exg2)
+            local conf = exg2:RandomSelect(tp, count)
+            Duel.ConfirmCards(tp, conf)
+            
+            -- Filtra as aleatórias para ver quais realmente podem ser invocadas
+            local sg2 = conf:FilterSelect(tp, s.spfilter_extra, 1, 1, nil, e, tp)
+            local tc2 = sg2:GetFirst()
+            
+            if tc2 and Duel.SpecialSummonStep(tc2, 0, tp, tp, false, false, POS_FACEUP) then
+                -- "...but its effects are negated"
+                local e1 = Effect.CreateEffect(c)
+                e1:SetType(EFFECT_TYPE_SINGLE)
+                e1:SetCode(EFFECT_DISABLE)
+                e1:SetReset(RESET_EVENT + RESETS_STANDARD)
+                tc2:RegisterEffect(e1, true)
+                local e2 = Effect.CreateEffect(c)
+                e2:SetType(EFFECT_TYPE_SINGLE)
+                e2:SetCode(EFFECT_DISABLE_EFFECT)
+                e2:SetReset(RESET_EVENT + RESETS_STANDARD)
+                tc2:RegisterEffect(e2, true)
+                
+                Duel.SpecialSummonComplete()
+            end
+        end
+    end
 end
