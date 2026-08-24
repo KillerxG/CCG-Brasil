@@ -1,104 +1,153 @@
---Thunder Force Knight
---Scripted by KillerxG
-local s,id=GetID()
+-- Thunder Force Trap (Nome provisório, já que Strike foi usado na Spell)
+-- Scripted by Gemini
+local s, id = GetID()
+
 function s.initial_effect(c)
-	--(1)Special Summon, then Xyz Summon
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e1:SetType(EFFECT_TYPE_IGNITION)
-	e1:SetRange(LOCATION_GRAVE)
-	e1:SetCountLimit(1,id)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
-	c:RegisterEffect(e1)
-	--(2)Effect Gain
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_XMATERIAL)
-	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
-	e2:SetCondition(s.mtcon)
-	e2:SetValue(aux.tgoval)
-	c:RegisterEffect(e2)
-	local e3=e2:Clone()
-	e3:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
-	e3:SetValue(1)
-	c:RegisterEffect(e3)
-	--(3)Destroy monster
-	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,1))
-	e4:SetCategory(CATEGORY_DESTROY)
-	e4:SetType(EFFECT_TYPE_IGNITION)
-	e4:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e4:SetCountLimit(1)
-	e4:SetRange(LOCATION_MZONE)
-	e4:SetCondition(s.zeuscon)
-	e4:SetTarget(s.destg)
-	e4:SetOperation(s.desop)
-	c:RegisterEffect(e4)
+    -- Efeito 1: Alvejar 1 "Thunder Force" -> Destruir inferiores/iguais -> Bônus na BP
+    local e1 = Effect.CreateEffect(c)
+    e1:SetDescription(aux.Stringid(id, 0))
+    e1:SetCategory(CATEGORY_DESTROY + CATEGORY_ATKCHANGE + CATEGORY_DEFCHANGE)
+    e1:SetType(EFFECT_TYPE_ACTIVATE)
+    e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
+    e1:SetCode(EVENT_FREE_CHAIN)
+    e1:SetHintTiming(0, TIMINGS_CHECK_MONSTER + TIMING_BATTLE_START + TIMING_BATTLE_END)
+    e1:SetCountLimit(1, id)
+    e1:SetTarget(s.destg)
+    e1:SetOperation(s.desop)
+    c:RegisterEffect(e1)
+
+    -- Efeito 2: Início da Battle Phase no GY -> Dobrar Dano de Batalha
+    local e2 = Effect.CreateEffect(c)
+    e2:SetDescription(aux.Stringid(id, 1))
+    e2:SetType(EFFECT_TYPE_FIELD + EFFECT_TYPE_TRIGGER_O)
+    e2:SetCode(EVENT_PHASE + PHASE_BATTLE_START)
+    e2:SetRange(LOCATION_GRAVE)
+    e2:SetCountLimit(1, id + 1)
+    e2:SetCondition(s.damcon)
+    e2:SetCost(aux.bfgcost) -- Remove a carta do jogo automaticamente como custo
+    e2:SetOperation(s.damop)
+    c:RegisterEffect(e2)
 end
---(1)Special Summon, then Xyz Summon
-function s.filter(c,e,tp,tc)
-	return c:IsRace(RACE_THUNDER) and c:IsLevel(4)
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-		and Duel.IsExistingMatchingCard(s.xyzfilter,tp,LOCATION_EXTRA,0,1,nil,Group.FromCards(c,tc))
+
+-- ====================================================================
+-- Efeito 1: Filtros de Destruição e Bônus
+-- ====================================================================
+function s.desfilter(c, lvl)
+    -- Cartas Face-Down não têm Nível/Tipo/Atributo público, então ignoramos
+    if c:IsFacedown() or c:IsRace(RACE_THUNDER) then return false end
+    
+    local rating = 0
+    -- Extrai corretamente o valor independente se for Link, Xyz ou Monstro normal
+    if c:IsType(TYPE_XYZ) then 
+        rating = c:GetRank()
+    elseif c:IsType(TYPE_LINK) then 
+        rating = c:GetLink()
+    else 
+        rating = c:GetLevel() 
+    end
+    
+    -- O valor deve ser menor ou igual ao nível do alvo
+    return rating > 0 and rating <= lvl
 end
-function s.xyzfilter(c,mg)
-	return c:IsSetCard(0x301) and c:IsType(TYPE_XYZ) and c:IsXyzSummonable(nil,mg,2,2)
+
+function s.tgtfilter(c, tp)
+    -- O monstro "Thunder Force" alvo precisa ter Nível
+    -- E precisa existir pelo menos um monstro válido para destruir na hora de ativar
+    return c:IsFaceup() and c:IsSetCard(0x301) and c:HasLevel()
+        and Duel.IsExistingMatchingCard(s.desfilter, tp, LOCATION_MZONE, LOCATION_MZONE, 1, c, c:GetLevel())
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return false end
-	local c=e:GetHandler()
-	if chk==0 then return c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-		and Duel.IsPlayerCanSpecialSummonCount(tp,2)
-		and not Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT)
-		and Duel.GetLocationCount(tp,LOCATION_MZONE)>1
-		and Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE,0,1,c,e,tp,c) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,2,tp,LOCATION_GRAVE)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
+
+function s.destg(e, tp, eg, ep, ev, re, r, rp, chk, chkc)
+    if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.tgtfilter(chkc, tp) end
+    if chk == 0 then return Duel.IsExistingTarget(s.tgtfilter, tp, LOCATION_MZONE, 0, 1, nil, tp) end
+    
+    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_TARGET)
+    local g = Duel.SelectTarget(tp, s.tgtfilter, tp, LOCATION_MZONE, 0, 1, 1, nil, tp)
+    
+    -- Marca as cartas elegíveis para destruição para a engine calcular o prompt de aviso (se houver Stardust, etc)
+    local dg = Duel.GetMatchingGroup(s.desfilter, tp, LOCATION_MZONE, LOCATION_MZONE, g:GetFirst(), g:GetFirst():GetLevel())
+    Duel.SetOperationInfo(0, CATEGORY_DESTROY, dg, #dg, 0, 0)
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT) then return end
-	if Duel.GetLocationCount(tp,LOCATION_MZONE)<2 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_GRAVE,0,1,1,c,e,tp,c)+c
-	if #g~=2 then return end
-	for tc in aux.Next(g) do
-		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
-	end
-	Duel.BreakEffect()
-	local xyzg=Duel.GetMatchingGroup(s.xyzfilter,tp,LOCATION_EXTRA,0,nil,g)
-	if #xyzg>0 then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local xyz=xyzg:Select(tp,1,1,nil):GetFirst()
-		Duel.XyzSummon(tp,xyz,nil,g)
-	end
+
+function s.atkfilter(c)
+    return c:IsFaceup() and c:IsSetCard(0x301) and c:HasLevel()
 end
---(2)Effect Gain
-function s.mtcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:GetSetCard()==0x301 and c:IsType(TYPE_XYZ)
+
+function s.desop(e, tp, eg, ep, ev, re, r, rp)
+    local tc = Duel.GetFirstTarget()
+    if not tc or not tc:IsRelateToEffect(e) or not tc:IsFaceup() then return end
+    
+    local lvl = tc:GetLevel()
+    local dg = Duel.GetMatchingGroup(s.desfilter, tp, LOCATION_MZONE, LOCATION_MZONE, tc, lvl)
+    
+    -- Destrói todos que baterem no filtro
+    if #dg > 0 and Duel.Destroy(dg, REASON_EFFECT) > 0 then
+        
+        -- Checa se a carta foi ativada durante a Battle Phase (Fase de Batalha)
+        local ph = Duel.GetCurrentPhase()
+        if ph >= PHASE_BATTLE_START and ph <= PHASE_BATTLE then
+            
+            local atkg = Duel.GetMatchingGroup(s.atkfilter, tp, LOCATION_MZONE, 0, nil)
+            for ac in aux.Next(atkg) do
+                local boost = ac:GetLevel() * 200
+                
+                -- ATK
+                local e1 = Effect.CreateEffect(e:GetHandler())
+                e1:SetType(EFFECT_TYPE_SINGLE)
+                e1:SetCode(EFFECT_UPDATE_ATTACK)
+                e1:SetValue(boost)
+                e1:SetReset(RESET_EVENT + RESETS_STANDARD)
+                ac:RegisterEffect(e1)
+                
+                -- DEF
+                local e2 = e1:Clone()
+                e2:SetCode(EFFECT_UPDATE_DEFENSE)
+                ac:RegisterEffect(e2)
+            end
+        end
+    end
 end
---(3)Destroy monster
-function s.zeusfilter1(c)
-	return c:IsFaceup() and c:IsOriginalCodeRule(777001670)
+
+-- ====================================================================
+-- Efeito 2: Dobrar Dano de Batalha (GY)
+-- ====================================================================
+function s.bossfilter(c)
+    return c:IsFaceup() and c:GetOriginalCode() == 777001370
 end
-function s.zeuscon(e)
-	local tp=e:GetHandlerPlayer()
-	return Duel.IsExistingMatchingCard(s.zeusfilter1,tp,LOCATION_MZONE,0,1,nil)
+
+function s.damcon(e, tp, eg, ep, ev, re, r, rp)
+    -- Só no início da SUA fase de batalha e com o Zeus
+    return Duel.GetTurnPlayer() == tp 
+        and Duel.IsExistingMatchingCard(s.bossfilter, tp, LOCATION_MZONE, 0, 1, nil)
 end
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) end
-	if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,0,LOCATION_MZONE,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-	local g=Duel.SelectTarget(tp,aux.TRUE,tp,0,LOCATION_MZONE,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
+
+function s.damop(e, tp, eg, ep, ev, re, r, rp)
+    -- Cria um efeito contínuo que vai durar apenas este turno
+    local c = e:GetHandler()
+    local e1 = Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_FIELD + EFFECT_TYPE_CONTINUOUS)
+    e1:SetCode(EVENT_PRE_BATTLE_DAMAGE)
+    e1:SetCondition(s.dblcon)
+    e1:SetOperation(s.dblop)
+    e1:SetReset(RESET_PHASE + PHASE_END)
+    Duel.RegisterEffect(e1, tp)
 end
-function s.desop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) then
-		Duel.Destroy(tc,REASON_EFFECT)
-	end
+
+function s.dblcon(e, tp, eg, ep, ev, re, r, rp)
+    -- Verifica se quem vai tomar o dano é o oponente
+    if ep == tp then return false end
+    
+    local a = Duel.GetAttacker()
+    local d = Duel.GetAttackTarget()
+    
+    -- Checa se qualquer um dos monstros batalhando é SEU e é "Thunder Force"
+    if a and a:IsControler(tp) and a:IsSetCard(0x301) then return true end
+    if d and d:IsControler(tp) and d:IsSetCard(0x301) then return true end
+    
+    return false
+end
+
+function s.dblop(e, tp, eg, ep, ev, re, r, rp)
+    -- Multiplica o dano de batalha por 2
+    Duel.ChangeBattleDamage(ep, ev * 2)
 end

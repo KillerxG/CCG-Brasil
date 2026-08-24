@@ -1,136 +1,161 @@
---Thunder Force Witch - Junipher
+--King of Thunder Force - Zeus
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)
-	--(1)Special Summon, then Xyz Summon
+	c:EnableReviveLimit()
+	c:SetSPSummonOnce(id)
+	--(1)Special Summon condition
+	local e0=Effect.CreateEffect(c)
+	e0:SetType(EFFECT_TYPE_SINGLE)
+	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
+	e0:SetValue(aux.FALSE)
+	c:RegisterEffect(e0)
+	--(2)Special Summon itself from the hand
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e1:SetType(EFFECT_TYPE_IGNITION)
-	e1:SetRange(LOCATION_GRAVE)
-	e1:SetCountLimit(1,id)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
+	e1:SetType(EFFECT_TYPE_FIELD)
+	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
+	e1:SetCode(EFFECT_SPSUMMON_PROC)
+	e1:SetRange(LOCATION_HAND)
+	e1:SetCondition(s.spcon)
 	c:RegisterEffect(e1)
-    --(2)Effect Gain: Add Thunder monster, then you can add another or Special Summon
-    local e2=Effect.CreateEffect(c)
-    e2:SetDescription(aux.Stringid(id,1))
-    e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_SPECIAL_SUMMON)
-    e2:SetType(EFFECT_TYPE_XMATERIAL+EFFECT_TYPE_IGNITION)
-	e2:SetCondition(s.mtcon)
-    e2:SetCountLimit(1,id+1)
-    e2:SetTarget(s.thtg)
-    e2:SetOperation(s.thop)
+	--(3)Cannot be destroyed by battle by Level/Rank/Link Rating lower than itself
+	local e2=Effect.CreateEffect(c)
+    e2:SetType(EFFECT_TYPE_SINGLE)
+    e2:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
+    e2:SetValue(s.indval)
     c:RegisterEffect(e2)
-	--(3)Draw 1 card
+	--(4)Level up for Level 9 or lower "Thunder Force"
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,1))
+	e3:SetCategory(CATEGORY_LVCHANGE)
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e3:SetProperty(EFFECT_FLAG_DELAY)
+	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e3:SetRange(LOCATION_MZONE)
+	e3:SetCondition(s.lvupcon)
+	e3:SetTarget(s.lvuptg)
+	e3:SetOperation(s.lvupop)
+	c:RegisterEffect(e3)
+	--(5)Conduct next BP Twice
 	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,4))
-	e4:SetCategory(CATEGORY_DRAW)
-	e4:SetType(EFFECT_TYPE_IGNITION)
-	e4:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e4:SetCountLimit(1)
+	e4:SetDescription(aux.Stringid(id,2))
+	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e4:SetProperty(EFFECT_FLAG_DELAY)
+	e4:SetCode(EVENT_TOSS_COIN)
 	e4:SetRange(LOCATION_MZONE)
-	e4:SetCondition(s.zeuscon)
-	e4:SetTarget(s.drtg)
-	e4:SetOperation(s.drop)
+	e4:SetCountLimit(1)
+	e4:SetCondition(function(e,tp) return not Duel.IsPlayerAffectedByEffect(tp,EFFECT_BP_TWICE) end)
+	e4:SetOperation(s.doublebattlephase)
 	c:RegisterEffect(e4)
+	--(6)Choose coin toss result
+	local e5=Effect.CreateEffect(c)
+	e5:SetDescription(aux.Stringid(id,3))
+	e5:SetType(EFFECT_TYPE_QUICK_O)
+	e5:SetCode(EVENT_CHAINING)
+	e5:SetRange(LOCATION_MZONE)
+	e5:SetCountLimit(2)
+	e5:SetCondition(s.coincon1)
+	e5:SetOperation(s.coinop1)
+	c:RegisterEffect(e5)
 end
---(1)Special Summon, then Xyz Summon
-function s.filter(c,e,tp,tc)
-	return c:IsRace(RACE_THUNDER) and c:IsLevel(4)
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-		and Duel.IsExistingMatchingCard(s.xyzfilter,tp,LOCATION_EXTRA,0,1,nil,Group.FromCards(c,tc))
+--(2)Special Summon itself from the hand
+function s.selfspfilter(c)
+	return c:IsSetCard(0x301) and c:IsMonster() and c:IsFaceup()
 end
-function s.xyzfilter(c,mg)
-	return c:IsSetCard(0x301) and c:IsType(TYPE_XYZ) and c:IsXyzSummonable(nil,mg,2,2)
+function s.spcon(e,c)
+	if c==nil then return true end
+	local tp=e:GetHandlerPlayer()
+	local g=Duel.GetMatchingGroup(s.selfspfilter,tp,LOCATION_GRAVE+LOCATION_MZONE,0,nil)
+	return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and #g>=3 and g:GetClassCount(Card.GetCode)>=3
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return false end
-	local c=e:GetHandler()
-	if chk==0 then return c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-		and Duel.IsPlayerCanSpecialSummonCount(tp,2)
-		and not Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT)
-		and Duel.GetLocationCount(tp,LOCATION_MZONE)>1
-		and Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE,0,1,c,e,tp,c) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,2,tp,LOCATION_GRAVE)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
+--(3)Cannot be destroyed by battle by Level/Rank/Link Rating lower than itself
+function s.indval(e,c)
+    local tc=c
+    if not tc or not tc:IsFaceup() then return false end    
+    local rating=0
+    if tc:IsType(TYPE_XYZ) then
+        rating=tc:GetRank()
+    elseif tc:IsType(TYPE_LINK) then
+        rating=tc:GetLink()
+    elseif tc:IsType(TYPE_MONSTER) and not tc:IsType(TYPE_XYZ+TYPE_LINK) then
+        rating=tc:GetLevel()
+    else
+        return false
+    end    
+    return rating>0 and rating<e:GetHandler():GetLevel()
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT) then return end
-	if Duel.GetLocationCount(tp,LOCATION_MZONE)<2 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_GRAVE,0,1,1,c,e,tp,c)+c
-	if #g~=2 then return end
-	for tc in aux.Next(g) do
-		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
-	end
-	Duel.BreakEffect()
-	local xyzg=Duel.GetMatchingGroup(s.xyzfilter,tp,LOCATION_EXTRA,0,nil,g)
-	if #xyzg>0 then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local xyz=xyzg:Select(tp,1,1,nil):GetFirst()
-		Duel.XyzSummon(tp,xyz,nil,g)
-	end
+--(4)Level up for Level 9 or lower "Thunder Force"
+function s.lvupcon(e,tp,eg,ep,ev,re,r,rp)
+	return eg:IsExists(aux.NOT(Card.IsSummonPlayer),1,nil,tp)
 end
---(2)Effect Gain: Add Thunder monster, then you can add another or Special Summon
-function s.mtcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:GetSetCard()==0x301 and c:IsType(TYPE_XYZ)
+function s.cfilter(c,tp)
+    return c:IsControler(1-tp)
 end
-function s.addfilter(c)
-    return c:IsRace(RACE_THUNDER) and c:IsAbleToHand()
+function s.lvcon(e,tp,eg,ep,ev,re,r,rp)
+    return eg:IsExists(s.cfilter,1,nil,tp)
 end
-function s.fil2ter(c,e,tp,ft)
-	return c:IsRace(RACE_THUNDER) and c:IsFaceup() and (c:IsAbleToHand()
-		or (ft>0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false)))
+function s.lvlfilter(c)
+    return c:IsFaceup() and c:IsSetCard(0x301) and c:GetLevel()>0 and c:GetLevel()<=9
 end
-function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.addfilter,tp,LOCATION_DECK,0,1,nil) end
-    Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
+function s.lvuptg(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return Duel.IsExistingMatchingCard(s.lvlfilter,tp,LOCATION_MZONE,0,1,nil) end
 end
-function s.thop(e,tp,eg,ep,ev,re,r,rp)
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-    local g=Duel.SelectMatchingCard(tp,s.addfilter,tp,LOCATION_DECK,0,1,1,nil)
-    if g:GetCount()>0 then
-        Duel.SendtoHand(g,nil,REASON_EFFECT)
-        Duel.ConfirmCards(1-tp,g)
-        local tc=g:GetFirst()
-		local ft=Duel.GetLocationCount(tp,LOCATION_MZONE)
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-        if tc and tc:IsLevelBelow(4) and Duel.IsExistingMatchingCard(s.fil2ter,tp,LOCATION_GRAVE,0,1,nil,e,tp)
-            and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
-            local sc=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.fil2ter),tp,LOCATION_GRAVE,0,1,1,nil,e,tp,ft):GetFirst()
-	if not sc then return end
-	aux.ToHandOrElse(sc,tp,
-		function()
-			return ft>0 and sc:IsCanBeSpecialSummoned(e,0,tp,false,false)
-		end,
-		function()
-			Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)
-		end,
-		aux.Stringid(id,3)
-	)
-        end
+function s.lvupop(e,tp,eg,ep,ev,re,r,rp)
+    local g=Duel.GetMatchingGroup(s.lvlfilter,tp,LOCATION_MZONE,0,nil)
+    for tc in aux.Next(g) do
+        local e1=Effect.CreateEffect(e:GetHandler())
+        e1:SetType(EFFECT_TYPE_SINGLE)
+        e1:SetCode(EFFECT_UPDATE_LEVEL)
+        e1:SetValue(1)
+        e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+        tc:RegisterEffect(e1)
     end
 end
---(3)Draw 1 card
-function s.zeusfilter1(c)
-	return c:IsFaceup() and c:IsOriginalCodeRule(777001670)
+--(5)Conduct next BP Twice
+function s.doublebattlephase(e,tp,eg,ep,ev,re,r,rp)
+	if Duel.IsPlayerAffectedByEffect(tp,EFFECT_BP_TWICE) then return end
+	local turn_ct=Duel.GetTurnCount()
+	local ct=Duel.IsTurnPlayer(tp) and Duel.IsBattlePhase() and 2 or 1
+	--You can conduct your next Battle Phase twice
+	local e1=Effect.CreateEffect(e:GetHandler())
+	e1:SetDescription(aux.Stringid(id,5))
+	e1:SetType(EFFECT_TYPE_FIELD)
+	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_CLIENT_HINT)
+	e1:SetCode(EFFECT_BP_TWICE)
+	e1:SetTargetRange(1,0)
+	e1:SetValue(1)
+	e1:SetCondition(function() return ct==1 or Duel.GetTurnCount()~=turn_ct end)
+	e1:SetReset(RESET_PHASE|PHASE_BATTLE|RESET_SELF_TURN,ct)
+	Duel.RegisterEffect(e1,tp)
 end
-function s.zeuscon(e)
-	local tp=e:GetHandlerPlayer()
-	return Duel.IsExistingMatchingCard(s.zeusfilter1,tp,LOCATION_MZONE,0,1,nil)
+--(6)Choose coin toss result
+function s.coincon1(e,tp,eg,ep,ev,re,r,rp)
+	local ex,eg,et,cp,ct=Duel.GetOperationInfo(ev,CATEGORY_COIN)
+	if ex and ct>0 then
+		e:SetLabelObject(re)
+		return true
+	else return false end
 end
-function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsPlayerCanDraw(tp,1) end
-	Duel.SetTargetPlayer(tp)
-	Duel.SetTargetParam(1)
-	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
+function s.coinop1(e,tp,eg,ep,ev,re,r,rp)
+	local e1=Effect.CreateEffect(e:GetHandler())
+	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e1:SetCode(EVENT_TOSS_COIN_NEGATE)
+	e1:SetCondition(s.coincon2)
+	e1:SetOperation(s.coinop2)
+	e1:SetLabel(ev)
+	e1:SetLabelObject(e:GetLabelObject())
+	e1:SetReset(RESET_CHAIN)
+	Duel.RegisterEffect(e1,tp)
 end
-function s.drop(e,tp,eg,ep,ev,re,r,rp)
-	local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
-	Duel.Draw(p,d,REASON_EFFECT)
+function s.coincon2(e,tp,eg,ep,ev,re,r,rp)
+	return re==e:GetLabelObject() and Duel.GetCurrentChain()==e:GetLabel()
+end
+function s.coinop2(e,tp,eg,ep,ev,re,r,rp)
+	local res={}
+	for i=1,ev do
+		table.insert(res,COIN_HEADS)
+	end
+	Duel.SetCoinResult(table.unpack(res))
 end

@@ -1,104 +1,153 @@
---Thunder Force Detective
---Scripted by KillerxG
-local s,id=GetID()
+-- Thunder Force Potions
+-- Scripted by Gemini
+local s, id = GetID()
+
 function s.initial_effect(c)
-	--(1)Special Summon, then Xyz Summon
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e1:SetType(EFFECT_TYPE_IGNITION)
-	e1:SetRange(LOCATION_HAND)
-	e1:SetCountLimit(1,id)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
-	c:RegisterEffect(e1)
-	--(2)Effect Gain
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_XMATERIAL)
-	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
-	e2:SetCondition(s.mtcon)
-	e2:SetValue(1)
-	c:RegisterEffect(e2)
-	--(3)Special Summon from GY
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,1))
-	e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e3:SetType(EFFECT_TYPE_IGNITION)
-	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e3:SetCountLimit(1)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetCondition(s.zeuscon)
-	e3:SetTarget(s.revtg)
-	e3:SetOperation(s.revop)
-	c:RegisterEffect(e3)
+    -- Efeito Único de Ativação com Menu de Escolhas
+    local e1 = Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_ACTIVATE)
+    e1:SetCode(EVENT_FREE_CHAIN)
+    e1:SetTarget(s.target)
+    e1:SetOperation(s.operation)
+    c:RegisterEffect(e1)
 end
---(1)Special Summon, then Xyz Summon
-function s.filter(c,e,tp,tc)
-	return c:IsRace(RACE_THUNDER) and c:IsLevel(4)
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-		and Duel.IsExistingMatchingCard(s.xyzfilter,tp,LOCATION_EXTRA,0,1,nil,Group.FromCards(c,tc))
+
+-- Identificador nativo para mostrar o ícone de moeda
+s.toss_coin = true
+
+-- ====================================================================
+-- Filtros das 3 Opções e do Boss
+-- ====================================================================
+function s.spfilter(c, e, tp)
+    return c:IsSetCard(0x301) and c:IsCanBeSpecialSummoned(e, 0, tp, false, false)
 end
-function s.xyzfilter(c,mg)
-	return c:IsSetCard(0x301) and c:IsType(TYPE_XYZ) and c:IsXyzSummonable(nil,mg,2,2)
+
+function s.lvfilter(c)
+    return c:IsFaceup() and c:IsSetCard(0x301) and c:HasLevel() and c:GetLevel() < 10
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return false end
-	local c=e:GetHandler()
-	if chk==0 then return c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-		and Duel.IsPlayerCanSpecialSummonCount(tp,2)
-		and not Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT)
-		and Duel.GetLocationCount(tp,LOCATION_MZONE)>1
-		and Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_HAND,0,1,c,e,tp,c) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,2,tp,LOCATION_HAND)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
+
+function s.atkfilter(c)
+    return c:IsFaceup() and c:IsSetCard(0x301) and c:HasLevel()
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT) then return end
-	if Duel.GetLocationCount(tp,LOCATION_MZONE)<2 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_HAND,0,1,1,c,e,tp,c)+c
-	if #g~=2 then return end
-	for tc in aux.Next(g) do
-		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
-	end
-	Duel.BreakEffect()
-	local xyzg=Duel.GetMatchingGroup(s.xyzfilter,tp,LOCATION_EXTRA,0,nil,g)
-	if #xyzg>0 then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local xyz=xyzg:Select(tp,1,1,nil):GetFirst()
-		Duel.XyzSummon(tp,xyz,nil,g)
-	end
+
+function s.bossfilter(c)
+    return c:IsFaceup() and c:GetOriginalCode() == 777001370
 end
---(2)Effect Gain
-function s.mtcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:GetSetCard()==0x301 and c:IsType(TYPE_XYZ)
+
+-- ====================================================================
+-- Target (Construção do Menu e Validação de Flags)
+-- ====================================================================
+function s.target(e, tp, eg, ep, ev, re, r, rp, chk)
+    -- Verifica quais efeitos são possíveis E ainda não foram usados neste turno
+    local b1 = Duel.GetFlagEffect(tp, id) == 0 and Duel.GetLocationCount(tp, LOCATION_MZONE) > 0 
+        and Duel.IsExistingMatchingCard(s.spfilter, tp, LOCATION_GRAVE, 0, 1, nil, e, tp)
+        
+    local b2 = Duel.GetFlagEffect(tp, id + 1) == 0 
+        and Duel.IsExistingMatchingCard(s.lvfilter, tp, LOCATION_MZONE, 0, 1, nil)
+        
+    local b3 = Duel.GetFlagEffect(tp, id + 2) == 0 
+        and Duel.IsExistingMatchingCard(s.atkfilter, tp, LOCATION_MZONE, 0, 1, nil)
+        
+    if chk == 0 then return b1 or b2 or b3 end
+    
+    local ops = {}
+    local opval = {}
+    
+    if b1 then
+        table.insert(ops, aux.Stringid(id, 0))
+        table.insert(opval, 1)
+    end
+    if b2 then
+        table.insert(ops, aux.Stringid(id, 1))
+        table.insert(opval, 2)
+    end
+    if b3 then
+        table.insert(ops, aux.Stringid(id, 2))
+        table.insert(opval, 3)
+    end
+    
+    -- O jogador escolhe a opção disponível
+    local op = Duel.SelectOption(tp, table.unpack(ops))
+    local sel = opval[op + 1]
+    e:SetLabel(sel)
+    
+    -- Registra que essa opção foi usada no turno (id, id+1 ou id+2)
+    Duel.RegisterFlagEffect(tp, id + (sel - 1), RESET_PHASE + PHASE_END, 0, 1)
+    
+    -- Define as Categorias corretas para o motor do jogo baseado na escolha
+    if sel == 1 then
+        e:SetCategory(CATEGORY_SPECIAL_SUMMON)
+        Duel.SetOperationInfo(0, CATEGORY_SPECIAL_SUMMON, nil, 1, tp, LOCATION_GRAVE)
+    elseif sel == 2 then
+        e:SetCategory(CATEGORY_COIN)
+        Duel.SetOperationInfo(0, CATEGORY_COIN, nil, 0, tp, 1)
+    elseif sel == 3 then
+        e:SetCategory(CATEGORY_ATKCHANGE)
+    end
 end
---(3)Special Summon from GY
-function s.zeusfilter1(c)
-	return c:IsFaceup() and c:IsOriginalCodeRule(777001670)
-end
-function s.zeuscon(e)
-	local tp=e:GetHandlerPlayer()
-	return Duel.IsExistingMatchingCard(s.zeusfilter1,tp,LOCATION_MZONE,0,1,nil)
-end
-function s.revfilter(c,e,tp)
-	return c:IsRace(RACE_THUNDER) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP)
-end
-function s.revtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.revfilter(chkc,e,tp) end
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and Duel.IsExistingTarget(s.revfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectTarget(tp,s.revfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,g,1,0,0)
-end
-function s.revop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc:IsRelateToEffect(e) then
-		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
-	end
+
+-- ====================================================================
+-- Operation (Resolução da Opção Escolhida + Efeito do Zeus)
+-- ====================================================================
+function s.operation(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    local sel = e:GetLabel()
+    
+    -- Executa a Opção 1
+    if sel == 1 then
+        if Duel.GetLocationCount(tp, LOCATION_MZONE) > 0 then
+            Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_SPSUMMON)
+            local g = Duel.SelectMatchingCard(tp, s.spfilter, tp, LOCATION_GRAVE, 0, 1, 1, nil, e, tp)
+            if #g > 0 then
+                Duel.SpecialSummon(g, 0, tp, tp, false, false, POS_FACEUP)
+            end
+        end
+        
+    -- Executa a Opção 2
+    elseif sel == 2 then
+        Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_FACEUP)
+        local g = Duel.SelectMatchingCard(tp, s.lvfilter, tp, LOCATION_MZONE, 0, 1, 1, nil)
+        local tc = g:GetFirst()
+        if tc then
+            local call = Duel.AnnounceCoin(tp)
+            local res = Duel.TossCoin(tp, 1)
+            
+            local inc = (call == res) and 2 or 1
+            local max_inc = math.min(inc, 10 - tc:GetLevel())
+            
+            if max_inc > 0 then
+                local e1 = Effect.CreateEffect(c)
+                e1:SetType(EFFECT_TYPE_SINGLE)
+                e1:SetCode(EFFECT_UPDATE_LEVEL)
+                e1:SetValue(max_inc)
+                e1:SetReset(RESET_EVENT + RESETS_STANDARD)
+                tc:RegisterEffect(e1)
+            end
+        end
+        
+    -- Executa a Opção 3
+    elseif sel == 3 then
+        Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_FACEUP)
+        local g = Duel.SelectMatchingCard(tp, s.atkfilter, tp, LOCATION_MZONE, 0, 1, 1, nil)
+        local tc = g:GetFirst()
+        if tc then
+            local e1 = Effect.CreateEffect(c)
+            e1:SetType(EFFECT_TYPE_SINGLE)
+            e1:SetCode(EFFECT_UPDATE_ATTACK)
+            e1:SetValue(tc:GetLevel() * 200)
+            e1:SetReset(RESET_EVENT + RESETS_STANDARD + RESET_PHASE + PHASE_END)
+            tc:RegisterEffect(e1)
+        end
+    end
+    
+    -- Resolução final (Comum para as 3 opções): Bônus do Zeus
+    if c:IsRelateToEffect(e) and c:IsCanTurnSet() 
+        and Duel.IsExistingMatchingCard(s.bossfilter, tp, LOCATION_MZONE, 0, 1, nil) 
+        and Duel.SelectYesNo(tp, aux.Stringid(id, 3)) then
+        
+        Duel.BreakEffect()
+        c:CancelToGrave() -- Cancela o envio da carta pro cemitério
+        Duel.ChangePosition(c, POS_FACEDOWN)
+        Duel.RaiseEvent(c, EVENT_SSET, e, REASON_EFFECT, tp, tp, 0)
+    end
 end

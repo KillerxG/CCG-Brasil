@@ -1,99 +1,215 @@
---Thunder Force Devil
---Scripted by KillerxG
-local s,id=GetID()
+-- Thunder Force Rogue
+-- Scripted by Gemini
+local s, id = GetID()
+
 function s.initial_effect(c)
-	--Xyz Material
-	Xyz.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x301),4,2)
-	c:EnableReviveLimit()
-	--(1)"Thunder Force" Traps can be activated from the hand
+    -- Efeito 1: Alvejar S/T -> Moeda -> Special Summon + (Destruir ou Voltar pra mão)
+    local e1 = Effect.CreateEffect(c)
+    e1:SetDescription(aux.Stringid(id, 0))
+    e1:SetCategory(CATEGORY_SPECIAL_SUMMON + CATEGORY_COIN + CATEGORY_DESTROY + CATEGORY_TOHAND)
+    e1:SetType(EFFECT_TYPE_IGNITION)
+    e1:SetRange(LOCATION_HAND)
+    e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
+    e1:SetCountLimit(1, id)
+    e1:SetTarget(s.sptg)
+    e1:SetOperation(s.spop)
+    c:RegisterEffect(e1)
+
+    -- Efeito 2: Oponente invoca do Extra Deck -> Moeda para subir Nível (+1)
+    local e2 = Effect.CreateEffect(c)
+    e2:SetDescription(aux.Stringid(id, 1))
+    e2:SetCategory(CATEGORY_COIN)
+    e2:SetType(EFFECT_TYPE_FIELD + EFFECT_TYPE_TRIGGER_O)
+    e2:SetProperty(EFFECT_FLAG_DELAY)
+    e2:SetCode(EVENT_SPSUMMON_SUCCESS)
+    e2:SetRange(LOCATION_MZONE)
+    e2:SetCountLimit(1)
+    e2:SetCondition(s.lvcon)
+    e2:SetTarget(s.lvtg)
+    e2:SetOperation(s.lvop)
+    c:RegisterEffect(e2)
+
+    -- Efeito 3: Substituir destruição reduzindo o Nível em 1 (Manual + Once Per Turn)
+    local e3 = Effect.CreateEffect(c)
+    e3:SetType(EFFECT_TYPE_CONTINUOUS + EFFECT_TYPE_SINGLE)
+    e3:SetCode(EFFECT_DESTROY_REPLACE)
+    e3:SetCountLimit(1)
+    e3:SetTarget(s.reptg)
+    e3:SetOperation(s.repop)
+    c:RegisterEffect(e3)
+
+    -- Efeito 4: Proteção de Batalha baseada no Nível contra monstros menores (Com Zeus)
+    local e4 = Effect.CreateEffect(c)
+    e4:SetType(EFFECT_TYPE_SINGLE)
+    e4:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
+    e4:SetCondition(s.indcon)
+    e4:SetValue(s.indval)
+    c:RegisterEffect(e4)
+	
+	-- Efeito 5: your opponent must keep their hand revealed, also you can look at their Set cards at any time
 	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetCode(EFFECT_TRAP_ACT_IN_HAND)
+	e1:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
+	e1:SetCode(EFFECT_PUBLIC)
 	e1:SetRange(LOCATION_MZONE)
-	e1:SetTargetRange(LOCATION_HAND,0)
-	e1:SetTarget(aux.TargetBoolFunction(Card.IsSetCard,0x301))
+	e1:SetCondition(s.lvldebuff_con)
+	e1:SetTargetRange(0,LOCATION_HAND|LOCATION_ONFIELD)
 	c:RegisterEffect(e1)
-	--(2)Destroy 1 monster your opponent controls, or if you targeted an LIGHT monster at activation, you can take control of it instead
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_DESTROY+CATEGORY_CONTROL)
-	e2:SetType(EFFECT_TYPE_QUICK_O)
-	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e2:SetCode(EVENT_CHAINING)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetCountLimit(1,id)
-	e2:SetCondition(function(e,tp,eg,ep,ev,re,r,rp) return rp==1-tp end)
-	e2:SetCost(Cost.DetachFromSelf(1,1,nil))
-	e2:SetTarget(s.destg)
-	e2:SetOperation(s.desop)
-	c:RegisterEffect(e2)
-	--(3)Special Summon 1 monster from either GY to either field
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,2))
-	e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e3:SetType(EFFECT_TYPE_IGNITION)
-	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetCountLimit(1,id+1)
-	e3:SetCondition(s.zeuscon)
-	e3:SetTarget(s.sptg)
-	e3:SetOperation(s.spop)
-	c:RegisterEffect(e3)
 end
---(2)Destroy 1 monster your opponent controls, or if you targeted an LIGHT monster at activation, you can take control of it instead
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) end
-	if chk==0 then return Duel.IsExistingTarget(nil,tp,0,LOCATION_MZONE,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-	local tc=Duel.SelectTarget(tp,nil,tp,0,LOCATION_MZONE,1,1,nil):GetFirst()
-	if tc:IsAttribute(ATTRIBUTE_LIGHT) and tc:IsFaceup() then
-		e:SetLabel(100)
-		Duel.SetPossibleOperationInfo(0,CATEGORY_DESTROY,tc,1,tp,0)
-		Duel.SetPossibleOperationInfo(0,CATEGORY_CONTROL,tc,1,tp,0)
-	else
-		e:SetLabel(0)
-		Duel.SetOperationInfo(0,CATEGORY_DESTROY,tc,1,tp,0)
-	end
+
+-- Identificador nativo para mostrar o ícone de moeda
+s.toss_coin = true
+
+-- ====================================================================
+-- Efeito 1: Special Summon e Controle de S/T
+-- ====================================================================
+function s.stfilter(c)
+    return c:IsType(TYPE_SPELL + TYPE_TRAP)
 end
-function s.desop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if not tc:IsRelateToEffect(e) then return end
-	local earth_chk=e:GetLabel()==100
-	if earth_chk and tc:IsControlerCanBeChanged() and Duel.SelectYesNo(tp,aux.Stringid(id,5)) then
-		Duel.GetControl(tc,tp)
-	else
-		Duel.Destroy(tc,REASON_EFFECT)
-	end
+
+function s.sptg(e, tp, eg, ep, ev, re, r, rp, chk, chkc)
+    if chkc then return chkc:IsOnField() and s.stfilter(chkc) end
+    if chk == 0 then return Duel.GetLocationCount(tp, LOCATION_MZONE) > 0
+        and e:GetHandler():IsCanBeSpecialSummoned(e, 0, tp, false, false)
+        and Duel.IsExistingTarget(s.stfilter, tp, LOCATION_ONFIELD, LOCATION_ONFIELD, 1, nil) end
+        
+    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_TARGET)
+    local g = Duel.SelectTarget(tp, s.stfilter, tp, LOCATION_ONFIELD, LOCATION_ONFIELD, 1, 1, nil)
+    Duel.SetOperationInfo(0, CATEGORY_SPECIAL_SUMMON, e:GetHandler(), 1, 0, 0)
+    Duel.SetOperationInfo(0, CATEGORY_COIN, nil, 0, tp, 1)
 end
---(3)Special Summon 1 monster from either GY to either field
-function s.zeusfilter1(c)
-	return c:IsFaceup() and c:IsOriginalCodeRule(777001670)
+
+function s.spop(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    if not c:IsRelateToEffect(e) then return end
+    
+    local call = Duel.AnnounceCoin(tp)
+    local res = Duel.TossCoin(tp, 1)
+    
+    if Duel.SpecialSummon(c, 0, tp, tp, false, false, POS_FACEUP) > 0 then
+        local tc = Duel.GetFirstTarget()
+        -- Se acertar a moeda e o alvo ainda estiver em campo
+        if call == res and tc and tc:IsRelateToEffect(e) then
+            
+            -- Verifica o que é possível fazer com o alvo
+            local b1 = tc:IsDestructable()
+            local b2 = tc:IsAbleToHand()
+            
+            if not b1 and not b2 then return end
+            
+            Duel.BreakEffect()
+            local op = 0
+            
+            -- Constrói o menu dinâmico
+            if b1 and b2 then
+                op = Duel.SelectOption(tp, aux.Stringid(id, 3), aux.Stringid(id, 4))
+            elseif b1 then
+                op = Duel.SelectOption(tp, aux.Stringid(id, 3))
+            elseif b2 then
+                op = Duel.SelectOption(tp, aux.Stringid(id, 4)) + 1
+            end
+            
+            -- Executa a opção escolhida
+            if op == 0 then
+                Duel.Destroy(tc, REASON_EFFECT)
+            elseif op == 1 then
+                Duel.SendtoHand(tc, nil, REASON_EFFECT)
+            end
+        end
+    end
 end
-function s.zeuscon(e)
-	local tp=e:GetHandlerPlayer()
-	return Duel.IsExistingMatchingCard(s.zeusfilter1,tp,LOCATION_MZONE,0,1,nil)
+
+-- ====================================================================
+-- Efeito 2: Invocação do Extra Deck -> Moeda para subir Nível (+1)
+-- ====================================================================
+function s.cfilter(c, tp)
+    return c:IsSummonLocation(LOCATION_EXTRA)
 end
-function s.spfilter(c,e,tp)
-	return ((Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false))
-		or (Duel.GetLocationCount(1-tp,LOCATION_MZONE,tp)>0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP,1-tp)))
+
+function s.lvcon(e, tp, eg, ep, ev, re, r, rp)
+    return eg:IsExists(s.cfilter, 1, nil, tp)
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and s.spfilter(chkc,e,tp) end
-	if chk==0 then return Duel.IsExistingTarget(s.spfilter,tp,LOCATION_GRAVE,LOCATION_GRAVE,1,nil,e,tp) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectTarget(tp,s.spfilter,tp,LOCATION_GRAVE,LOCATION_GRAVE,1,1,nil,e,tp)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,g,1,0,0)
+
+function s.lvtg(e, tp, eg, ep, ev, re, r, rp, chk)
+    local c = e:GetHandler()
+    if chk == 0 then return c:IsFaceup() and c:GetLevel() > 0 and c:GetLevel() < 10 end
+    Duel.SetOperationInfo(0, CATEGORY_COIN, nil, 0, tp, 1)
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if not tc:IsRelateToEffect(e) then return end
-	local b1=Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and tc:IsCanBeSpecialSummoned(e,0,tp,false,false)
-	local b2=Duel.GetLocationCount(1-tp,LOCATION_MZONE,tp)>0 and tc:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP,1-tp)
-	if not (b1 or b2) then return end
-	local op=Duel.SelectEffect(tp,
-		{b1,aux.Stringid(id,3)},
-		{b2,aux.Stringid(id,4)})
-	local target_player=op==1 and tp or 1-tp
-	Duel.SpecialSummon(tc,0,tp,target_player,false,false,POS_FACEUP)
+
+function s.lvop(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    if c:IsFaceup() and c:IsRelateToEffect(e) and c:GetLevel() > 0 and c:GetLevel() < 10 then
+        local call = Duel.AnnounceCoin(tp)
+        local res = Duel.TossCoin(tp, 1)
+        
+        if call == res then
+            local max_inc = math.min(1, 10 - c:GetLevel())
+            if max_inc > 0 then
+                local e1 = Effect.CreateEffect(c)
+                e1:SetType(EFFECT_TYPE_SINGLE)
+                e1:SetCode(EFFECT_UPDATE_LEVEL)
+                e1:SetValue(max_inc)
+                e1:SetReset(RESET_EVENT + RESETS_STANDARD)
+                c:RegisterEffect(e1)
+            end
+        end
+    end
+end
+
+-- ====================================================================
+-- Efeito 3: Substituir Destruição reduzindo Nível em 1
+-- ====================================================================
+function s.reptg(e, tp, eg, ep, ev, re, r, rp, chk)
+    local c = e:GetHandler()
+    if chk == 0 then return c:IsReason(REASON_BATTLE + REASON_EFFECT) and not c:IsReason(REASON_REPLACE) 
+        and c:GetLevel() > 1 end
+    return Duel.SelectYesNo(tp, aux.Stringid(id, 2))
+end
+
+function s.repop(e, tp, eg, ep, ev, re, r, rp)
+    local c = e:GetHandler()
+    local e1 = Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_SINGLE)
+    e1:SetCode(EFFECT_UPDATE_LEVEL)
+    e1:SetValue(-1)
+    e1:SetReset(RESET_EVENT + RESETS_STANDARD)
+    c:RegisterEffect(e1)
+end
+
+-- ====================================================================
+-- Efeito 4: Proteção de Batalha (Com Zeus)
+-- ====================================================================
+function s.bossfilter(c)
+    return c:IsFaceup() and c:GetOriginalCode() == 777001370
+end
+
+function s.indcon(e)
+    return Duel.IsExistingMatchingCard(s.bossfilter, e:GetHandlerPlayer(), LOCATION_MZONE, 0, 1, nil)
+end
+
+function s.indval(e, c)
+    local tc = c
+    if not tc or not tc:IsFaceup() then return false end
+    
+    local rating = 0
+    if tc:IsType(TYPE_XYZ) then
+        rating = tc:GetRank()
+    elseif tc:IsType(TYPE_LINK) then
+        rating = tc:GetLink()
+    elseif tc:IsType(TYPE_MONSTER) and not tc:IsType(TYPE_XYZ + TYPE_LINK) then
+        rating = tc:GetLevel()
+    else
+        return false
+    end
+    
+    return rating > 0 and rating < e:GetHandler():GetLevel()
+end
+
+-- ====================================================================
+-- Efeito 5: your opponent must keep their hand revealed, also you can look at their Set cards at any time
+-- ====================================================================
+function s.lvldebuff_con(e)
+    local c = e:GetHandler()
+    -- Confere se a própria carta que tem o efeito está Face-Up, tem Nível, e se é Nível 8 ou maior
+    return c:IsFaceup() and c:GetLevel() > 0 and c:GetLevel() >= 8
 end
