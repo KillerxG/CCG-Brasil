@@ -2,7 +2,7 @@
 -- Scripted by Gemini
 Duel.EnableUnofficialProc(PROC_EVENT_LP0)
 local s,id=GetID()
-
+Duel.LoadScript("proc_divine_hierarchy_mod.lua")
 function s.initial_effect(c)
     -- [ESCUDO ABSOLUTO: INAFETADA POR TUDO]
     if not s.global_check then
@@ -16,7 +16,8 @@ function s.initial_effect(c)
         ge1:SetValue(function(e,te) return te:GetOwner():GetOriginalCode()~=id end)
         Duel.RegisterEffect(ge1, 0)
     end
-
+	--Divine Hierarchy Rank 2
+	DivineHierarchyMod.Register(c,2)
     -- [ATIVAÇÃO RÁPIDA] Pode ser ativada no mesmo turno em que foi Baixada (Set)
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_SINGLE)
@@ -34,6 +35,12 @@ function s.initial_effect(c)
     e1:SetOperation(s.activate)
     c:RegisterEffect(e1)
     aux.LP0ActivationValidity(e1)
+	--Can be activated from the hand
+	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(id,0))
+	e2:SetType(EFFECT_TYPE_SINGLE)
+	e2:SetCode(EFFECT_TRAP_ACT_IN_HAND)
+	c:RegisterEffect(e2)
 end
 
 function s.filter(c,e,tp)
