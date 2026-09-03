@@ -3,10 +3,11 @@
 local s,id=GetID()
 Duel.LoadScript("proc_divine_hierarchy_mod.lua")
 function s.initial_effect(c)	
-	--Divine Hierarchy Rank 4
+	--Divine Hierarchy 4
 	DivineHierarchyMod.Register(c,4)
 	--(1)Search
     local e1 = Effect.CreateEffect(c)
+    e1:SetDescription(aux.Stringid(id, 0))
     e1:SetType(EFFECT_TYPE_ACTIVATE)
     e1:SetCode(EVENT_FREE_CHAIN)
     e1:SetTarget(s.acttg)
@@ -43,27 +44,21 @@ function s.initial_effect(c)
 end
 --(1)Search
 function s.acttg(e, tp, eg, ep, ev, re, r, rp, chk)
-    if chk == 0 then return true end  
-    Duel.SetChainLimit(aux.FALSE)
-    if Duel.IsExistingMatchingCard(Card.IsAbleToHand, tp, LOCATION_DECK, 0, 1, nil) 
-        and Duel.SelectYesNo(tp, aux.Stringid(id, 0)) then
-        e:SetCategory(CATEGORY_TOHAND + CATEGORY_SEARCH)
-        Duel.SetOperationInfo(0, CATEGORY_TOHAND, nil, 1, tp, LOCATION_DECK)
+    if chk == 0 then return true end
+    if Duel.SelectYesNo(tp, aux.Stringid(id, 1)) then
         e:SetLabel(1)
     else
-        e:SetCategory(0)
         e:SetLabel(0)
     end
 end
+
 function s.actop(e, tp, eg, ep, ev, re, r, rp)
     local c = e:GetHandler()
     if not c:IsRelateToEffect(e) then return end
     if e:GetLabel() == 1 then
-        Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_ATOHAND)
-        local g = Duel.SelectMatchingCard(tp, Card.IsAbleToHand, tp, LOCATION_DECK, 0, 1, 1, nil)
-        if #g > 0 then
-            Duel.SendtoHand(g, nil, REASON_EFFECT)
-            Duel.ConfirmCards(1 - tp, g)
+        local token = Duel.CreateToken(tp, 776000010)        
+        if token and Duel.SendtoHand(token, nil, REASON_EFFECT) > 0 then
+            Duel.ConfirmCards(1 - tp, token)
         end
     end
 end

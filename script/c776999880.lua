@@ -1,10 +1,19 @@
--- Divine Hierarchy Test - Rank 2
+-- Champion of Draconics - Blaze
+--[[ Effects: 
+	E0: Cannot be Normal Summoned/Set. This card's Divine Hierarchy Rank is 2.
+	E1: If another monster(s) you control is destroyed by battle or card effect: You can target 1 of those monster(s); this card gains ATK equal to its original ATK.
+	E2: You can reduce this card's ATK by 4000; increase this card's Hierarchy Rank by 1.
+	E3: Once per turn (Quick Effect): You can banish 1 Dragon or FIRE monster from your Extra Deck; banish 1 card your opponent controls.
+	E4:Once per turn, if this card would be destroyed by battle or card effect, you can banish 2 Dragon and/or FIRE monsters from your Extra Deck instead.
+]]
 local s,id=GetID()
 Duel.LoadScript("proc_divine_hierarchy_mod.lua")
-
 function s.initial_effect(c)
+	--Divine Hierarchy 2
 	DivineHierarchyMod.Register(c,2)
-	--Gain ATK when another monster you control is destroyed
+	--Cannot be Normal Summoned/Set
+	c:EnableReviveLimit()
+	--(1)Gain ATK when another monster you control is destroyed
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_ATKCHANGE)
@@ -15,7 +24,7 @@ function s.initial_effect(c)
 	e1:SetTarget(s.atktg)
 	e1:SetOperation(s.atkop)
 	c:RegisterEffect(e1)
-	--Reduce this card's ATK to increase its Hierarchy Rank
+	--(2)Reduce this card's ATK to increase its Hierarchy Rank
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_ATKCHANGE)
@@ -24,7 +33,7 @@ function s.initial_effect(c)
 	e2:SetCost(s.hrcost)
 	e2:SetOperation(s.hrop)
 	c:RegisterEffect(e2)
-	--Banish an opponent's card without targeting
+	--(3)Banish an opponent's card
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_REMOVE)
@@ -36,7 +45,7 @@ function s.initial_effect(c)
 	e3:SetTarget(s.rmtg)
 	e3:SetOperation(s.rmop)
 	c:RegisterEffect(e3)
-	--Banish 2 monsters from the Extra Deck instead of destroying this card
+	--(4)Banish 2 monsters from the Extra Deck instead of destroying this card
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,3))
 	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
@@ -48,12 +57,11 @@ function s.initial_effect(c)
 	e4:SetOperation(s.desrepop)
 	c:RegisterEffect(e4)
 end
-
+--(1)Gain ATK when another monster you control is destroyed
 function s.atkfilter(c,tp,hc)
 	return c~=hc and c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_MZONE)
 		and c:IsReason(REASON_BATTLE|REASON_EFFECT)
 end
-
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local g=eg:Filter(s.atkfilter,nil,tp,e:GetHandler())
 	if chk==0 then return #g>0 end
@@ -62,7 +70,6 @@ function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.SetTargetCard(tc)
 	Duel.SetOperationInfo(0,CATEGORY_ATKCHANGE,e:GetHandler(),1,tp,math.max(tc:GetBaseAttack(),0))
 end
-
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local tc=Duel.GetFirstTarget()
@@ -73,30 +80,33 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 		c:UpdateAttack(atk,RESET_EVENT|RESETS_STANDARD,c)
 	end
 end
-
+--(2)Reduce this card's ATK to increase its Hierarchy Rank
 function s.hrcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
 	if chk==0 then return c:IsFaceup() and c:GetAttack()>=4000 end
 	c:UpdateAttack(-4000,RESET_EVENT|RESETS_STANDARD,c)
 end
-
+function s.hrop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	if c:IsRelateToEffect(e) and c:IsFaceup() then
+		DivineHierarchyMod.IncreaseRank(c,1,RESET_EVENT|RESETS_STANDARD)
+	end
+end
+--(3)Banish an opponent's card
 function s.exfilter(c)
 	return (c:IsRace(RACE_DRAGON) or c:IsAttribute(ATTRIBUTE_FIRE))
 		and c:IsAbleToRemoveAsCost()
 end
-
 function s.rmcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.exfilter,tp,LOCATION_EXTRA,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
 	local g=Duel.SelectMatchingCard(tp,s.exfilter,tp,LOCATION_EXTRA,0,1,1,nil)
 	Duel.Remove(g,POS_FACEUP,REASON_COST)
 end
-
 function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsAbleToRemove,tp,0,LOCATION_ONFIELD,1,nil) end
 	Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,1-tp,LOCATION_ONFIELD)
 end
-
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(Card.IsAbleToRemove,tp,0,LOCATION_ONFIELD,nil)
 	if #g==0 then return end
@@ -104,11 +114,10 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	local sg=g:Select(tp,1,1,nil)
 	Duel.Remove(sg,POS_FACEUP,REASON_EFFECT)
 end
-
+--(4)Banish 2 monsters from the Extra Deck instead of destroying this card
 function s.desrepfilter(c)
 	return (c:IsRace(RACE_DRAGON) or c:IsAttribute(ATTRIBUTE_FIRE)) and c:IsAbleToRemove()
 end
-
 function s.desreptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
 	if chk==0 then return c:IsReason(REASON_BATTLE|REASON_EFFECT)
@@ -116,16 +125,8 @@ function s.desreptg(e,tp,eg,ep,ev,re,r,rp,chk)
 		and Duel.IsExistingMatchingCard(s.desrepfilter,tp,LOCATION_EXTRA,0,2,nil) end
 	return Duel.SelectEffectYesNo(tp,c,aux.Stringid(id,3))
 end
-
 function s.desrepop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESREPLACE)
 	local g=Duel.SelectMatchingCard(tp,s.desrepfilter,tp,LOCATION_EXTRA,0,2,2,nil)
 	Duel.Remove(g,POS_FACEUP,REASON_EFFECT|REASON_REPLACE)
-end
-
-function s.hrop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) and c:IsFaceup() then
-		DivineHierarchyMod.IncreaseRank(c,1,RESET_EVENT|RESETS_STANDARD)
-	end
 end
