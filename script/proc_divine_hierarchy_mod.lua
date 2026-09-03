@@ -13,6 +13,11 @@ end
 function DivineHierarchyMod.Start()
 	if DivineHierarchyMod.started then return end
 	DivineHierarchyMod.started=true
+	local function getrank(c)
+		if not c then return nil end
+		return c:GetFlagEffectLabel(FLAG_DIVINE_HIERARCHY_MOD)
+			or DivineHierarchyMod.ranks[c:GetOriginalCode()]
+	end
 	local function rankfilter(c)
 		local rank=DivineHierarchyMod.ranks[c:GetOriginalCode()]
 		return c:IsFaceup() and rank and c:GetFlagEffectLabel(FLAG_DIVINE_HIERARCHY_MOD)~=rank
@@ -30,10 +35,10 @@ function DivineHierarchyMod.Start()
 	local function hrfilter(e,te,c)
 		if not te then return false end
 		local tc=te:GetOwner()
-		return (te:IsMonsterEffect() and c~=tc
-			and (not tc:GetFlagEffectLabel(FLAG_DIVINE_HIERARCHY_MOD)
-				or c:GetFlagEffectLabel(FLAG_DIVINE_HIERARCHY_MOD)>tc:GetFlagEffectLabel(FLAG_DIVINE_HIERARCHY_MOD)))
-			or (te:IsSpellTrapEffect() and c~=tc)
+		if c==tc or not (te:IsMonsterEffect() or te:IsSpellTrapEffect()) then return false end
+		local chr=getrank(c)
+		local thr=getrank(tc)
+		return not thr or chr>thr
 	end
 	local function rellimit(e,c,tp,sumtp)
 		return c:HasFlagEffect(FLAG_DIVINE_HIERARCHY_MOD) and c:IsFaceup() and c:IsControler(1-tp)
@@ -46,7 +51,8 @@ function DivineHierarchyMod.Start()
 	local function reptg(e,tp,eg,ep,ev,re,r,rp,chk)
 		local c=e:GetHandler()
 		if chk==0 then return c:IsReason(REASON_EFFECT) and r&REASON_EFFECT~=0
-			and re and re:IsSpellTrapEffect() and c:HasFlagEffect(FLAG_DIVINE_HIERARCHY_MOD) end
+			and re and re:IsSpellTrapEffect() and c:HasFlagEffect(FLAG_DIVINE_HIERARCHY_MOD)
+			and (not getrank(re:GetOwner()) or getrank(c)>getrank(re:GetOwner())) end
 		return true
 	end
 	local function battlelevelpierce(c,hr)
