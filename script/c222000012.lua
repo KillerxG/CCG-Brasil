@@ -1,4 +1,4 @@
--- Divine Ascension
+-- Egyptian Ascension
 local s,id=GetID()
 
 s.exchange_map={
