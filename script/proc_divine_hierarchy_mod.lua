@@ -6,8 +6,46 @@ DivineHierarchyMod.ranks={}
 FLAG_DIVINE_HIERARCHY_MOD=161300000
 
 function DivineHierarchyMod.Register(c,rank)
+	rank=math.max(1,math.floor(tonumber(rank) or 1))
 	DivineHierarchyMod.ranks[c:GetOriginalCode()]=rank
 	DivineHierarchyMod.Start()
+end
+
+function DivineHierarchyMod.GetRank(c)
+	if not c then return nil end
+	return c:GetFlagEffectLabel(FLAG_DIVINE_HIERARCHY_MOD)
+		or DivineHierarchyMod.ranks[c:GetOriginalCode()]
+end
+
+function DivineHierarchyMod.SetRank(c,rank,reset,reset_count)
+	if not c or not DivineHierarchyMod.GetRank(c) then return false end
+	rank=tonumber(rank)
+	if not rank then return false end
+	rank=math.max(1,math.floor(rank))
+	c:ResetFlagEffect(FLAG_DIVINE_HIERARCHY_MOD)
+	c:RegisterFlagEffect(FLAG_DIVINE_HIERARCHY_MOD,reset or 0,0,reset_count or 0,rank)
+	return true
+end
+
+function DivineHierarchyMod.IncreaseRank(c,amount,reset,reset_count)
+	local rank=DivineHierarchyMod.GetRank(c)
+	if not rank then return false end
+	amount=math.max(1,math.floor(tonumber(amount) or 1))
+	return DivineHierarchyMod.SetRank(c,rank+amount,reset,reset_count)
+end
+
+function DivineHierarchyMod.DecreaseRank(c,amount,reset,reset_count)
+	local rank=DivineHierarchyMod.GetRank(c)
+	if not rank then return false end
+	amount=math.max(1,math.floor(tonumber(amount) or 1))
+	return DivineHierarchyMod.SetRank(c,rank-amount,reset,reset_count)
+end
+
+function DivineHierarchyMod.ResetRank(c)
+	if not c then return false end
+	local rank=DivineHierarchyMod.ranks[c:GetOriginalCode()]
+	if not rank then return false end
+	return DivineHierarchyMod.SetRank(c,rank)
 end
 
 function DivineHierarchyMod.Start()
@@ -20,7 +58,7 @@ function DivineHierarchyMod.Start()
 	end
 	local function rankfilter(c)
 		local rank=DivineHierarchyMod.ranks[c:GetOriginalCode()]
-		return c:IsFaceup() and rank and c:GetFlagEffectLabel(FLAG_DIVINE_HIERARCHY_MOD)~=rank
+		return c:IsFaceup() and rank and not c:HasFlagEffect(FLAG_DIVINE_HIERARCHY_MOD)
 	end
 	local function rankcon(e,tp,eg,ev,ep,re,r,rp)
 		return Duel.IsExistingMatchingCard(rankfilter,tp,0xff,0xff,1,nil)
