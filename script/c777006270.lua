@@ -50,8 +50,8 @@ function s.initial_effect(c)
     e5:SetType(EFFECT_TYPE_SINGLE + EFFECT_TYPE_TRIGGER_O)
     e5:SetProperty(EFFECT_FLAG_DELAY)
     e5:SetCode(EVENT_DESTROYED)
-    e5:SetTarget(s.thtg)
-    e5:SetOperation(s.thop)
+    e5:SetTarget(s.thtg2)
+    e5:SetOperation(s.thop2)
     c:RegisterEffect(e5)
 	--(5)Act Limit
 	local e6=Effect.CreateEffect(c)
@@ -148,10 +148,10 @@ function s.recop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 --(4)Trigger RPG Event v2
-function s.thtg(e, tp, eg, ep, ev, re, r, rp, chk)
+function s.thtg2(e, tp, eg, ep, ev, re, r, rp, chk)
     if chk == 0 then return true end
 end
-function s.thop(e, tp, eg, ep, ev, re, r, rp)
+function s.thop2(e, tp, eg, ep, ev, re, r, rp)
     local token = Duel.CreateToken(tp, 776000000)    
     if token and Duel.SendtoHand(token, nil, REASON_EFFECT) > 0 then
         Duel.ConfirmCards(1 - tp, token)
