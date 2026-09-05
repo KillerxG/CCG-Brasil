@@ -1,10 +1,11 @@
 -- Champion of Draconics - Blaze
+-- Scripted by Codex
 --[[ Effects: 
 	E0: Cannot be Normal Summoned/Set. This card's Divine Hierarchy Rank is 2.
 	E1: If another monster(s) you control is destroyed by battle or card effect: You can target 1 of those monster(s); this card gains ATK equal to its original ATK.
 	E2: You can reduce this card's ATK by 4000; increase this card's Hierarchy Rank by 1.
 	E3: Once per turn (Quick Effect): You can banish 1 Dragon or FIRE monster from your Extra Deck; banish 1 card your opponent controls.
-	E4:Once per turn, if this card would be destroyed by battle or card effect, you can banish 2 Dragon and/or FIRE monsters from your Extra Deck instead.
+	E4: Once per turn, if this card would be destroyed by battle or card effect, you can banish 2 Dragon and/or FIRE monsters from your Extra Deck instead.
 ]]
 local s,id=GetID()
 Duel.LoadScript("proc_divine_hierarchy_mod.lua")
