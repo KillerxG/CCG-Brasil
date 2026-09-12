@@ -13,3 +13,4 @@ function s.initial_effect(c)
 	DivineHierarchyMod.Register(c,1)
 	--Cannot be Normal Summoned/Set
 	c:EnableReviveLimit()
+end

@@ -47,14 +47,14 @@ function s.initial_effect(c)
     c:RegisterEffect(e4)
 	
 	-- Efeito 5: your opponent must keep their hand revealed, also you can look at their Set cards at any time
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
-	e1:SetCode(EFFECT_PUBLIC)
-	e1:SetRange(LOCATION_MZONE)
-	e1:SetCondition(s.lvldebuff_con)
-	e1:SetTargetRange(0,LOCATION_HAND|LOCATION_ONFIELD)
-	c:RegisterEffect(e1)
+	local e5=Effect.CreateEffect(c)
+	e5:SetType(EFFECT_TYPE_FIELD)
+	e5:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
+	e5:SetCode(EFFECT_PUBLIC)
+	e5:SetRange(LOCATION_MZONE)
+	e5:SetCondition(s.lvldebuff_con)
+	e5:SetTargetRange(0,LOCATION_HAND|LOCATION_ONFIELD)
+	c:RegisterEffect(e5)
 end
 
 -- Identificador nativo para mostrar o ícone de moeda
