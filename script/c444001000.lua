@@ -51,7 +51,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e3b)
 
     -- 4. Refletir o dano (Antes do cálculo)
-    local e3=Effect.CreateEffect(c)
+    local e4=Effect.CreateEffect(c)
     e4:SetCategory(CATEGORY_DAMAGE)
     e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_F)
     e4:SetCode(EVENT_PRE_DAMAGE_CALCULATE)
