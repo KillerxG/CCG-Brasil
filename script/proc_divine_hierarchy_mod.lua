@@ -3,7 +3,14 @@
 if DivineHierarchyMod then return end
 DivineHierarchyMod={}
 DivineHierarchyMod.ranks={}
+DivineHierarchyMod.HINT_TAG=0x4849520000000000
 FLAG_DIVINE_HIERARCHY_MOD=161300000
+FLAG_DIVINE_HIERARCHY_HINT=161300001
+
+function DivineHierarchyMod.ShowRank(c,rank)
+	if not c or not rank then return end
+	c:SetHint(CHINT_NUMBER,DivineHierarchyMod.HINT_TAG|(rank&0xffffffff))
+end
 
 function DivineHierarchyMod.Register(c,rank)
 	rank=math.max(1,math.floor(tonumber(rank) or 1))
@@ -24,6 +31,9 @@ function DivineHierarchyMod.SetRank(c,rank,reset,reset_count)
 	rank=math.max(1,math.floor(rank))
 	c:ResetFlagEffect(FLAG_DIVINE_HIERARCHY_MOD)
 	c:RegisterFlagEffect(FLAG_DIVINE_HIERARCHY_MOD,reset or 0,0,reset_count or 0,rank)
+	DivineHierarchyMod.ShowRank(c,rank)
+	c:ResetFlagEffect(FLAG_DIVINE_HIERARCHY_HINT)
+	c:RegisterFlagEffect(FLAG_DIVINE_HIERARCHY_HINT,RESET_EVENT|RESETS_STANDARD,0,1)
 	return true
 end
 
@@ -58,7 +68,8 @@ function DivineHierarchyMod.Start()
 	end
 	local function rankfilter(c)
 		local rank=DivineHierarchyMod.ranks[c:GetOriginalCode()]
-		return c:IsFaceup() and rank and not c:HasFlagEffect(FLAG_DIVINE_HIERARCHY_MOD)
+		return c:IsFaceup() and rank and (not c:HasFlagEffect(FLAG_DIVINE_HIERARCHY_MOD)
+			or not c:HasFlagEffect(FLAG_DIVINE_HIERARCHY_HINT))
 	end
 	local function rankcon(e,tp,eg,ev,ep,re,r,rp)
 		return Duel.IsExistingMatchingCard(rankfilter,tp,0xff,0xff,1,nil)
@@ -66,8 +77,14 @@ function DivineHierarchyMod.Start()
 	local function rankop(e,tp,eg,ev,ep,re,r,rp)
 		local g=Duel.GetMatchingGroup(rankfilter,tp,0xff,0xff,nil)
 		for c in aux.Next(g) do
-			c:ResetFlagEffect(FLAG_DIVINE_HIERARCHY_MOD)
-			c:RegisterFlagEffect(FLAG_DIVINE_HIERARCHY_MOD,0,0,0,DivineHierarchyMod.ranks[c:GetOriginalCode()])
+			local current_rank=c:GetFlagEffectLabel(FLAG_DIVINE_HIERARCHY_MOD)
+				or DivineHierarchyMod.ranks[c:GetOriginalCode()]
+			if not c:HasFlagEffect(FLAG_DIVINE_HIERARCHY_MOD) then
+				c:RegisterFlagEffect(FLAG_DIVINE_HIERARCHY_MOD,0,0,0,current_rank)
+			end
+			DivineHierarchyMod.ShowRank(c,current_rank)
+			c:ResetFlagEffect(FLAG_DIVINE_HIERARCHY_HINT)
+			c:RegisterFlagEffect(FLAG_DIVINE_HIERARCHY_HINT,RESET_EVENT|RESETS_STANDARD,0,1)
 		end
 	end
 	local function hrfilter(e,te,c)
