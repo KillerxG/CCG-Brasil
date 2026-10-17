@@ -30,6 +30,9 @@ function s.startop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.RegisterFlagEffect(tp,id,0,0,0)
 	Duel.Hint(HINT_CARD,0,id)
 
+	--Register Destiny Draw only for this card's owner
+	s.register_destiny_draw(tp)
+
 	--Find every copy owned by this player
 	local g=Duel.GetMatchingGroup(
 		Card.IsCode,tp,0x7f,0,nil,id)
@@ -49,64 +52,61 @@ function s.startop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
-if not DestinyDrawCCG then
-	DestinyDrawCCG={}
+function s.register_destiny_draw(p)
+	--Register the Rule only for its owner
+	local e1=Effect.GlobalEffect()
+	e1:SetType(EFFECT_TYPE_FIELD|EFFECT_TYPE_CONTINUOUS)
+	e1:SetProperty(
+		EFFECT_FLAG_CANNOT_DISABLE|
+		EFFECT_FLAG_UNCOPYABLE)
+	e1:SetCode(EVENT_PREDRAW)
 
-	aux.GlobalCheck(DestinyDrawCCG,function()
-		DestinyDrawCCG[0]=false
-		DestinyDrawCCG[1]=false
-	end)
+	--Labels 0/1 identify the owner
+	--Labels 2/3 indicate that the Rule was already used
+	e1:SetLabel(p)
+	e1:SetCondition(s.ddcon)
+	e1:SetOperation(s.ddop)
+	Duel.RegisterEffect(e1,p)
+end
 
-	local function finishsetup()
-		--Check before player 0's normal draw
-		local e1=Effect.GlobalEffect()
-		e1:SetType(EFFECT_TYPE_FIELD|EFFECT_TYPE_CONTINUOUS)
-		e1:SetProperty(
-			EFFECT_FLAG_CANNOT_DISABLE|
-			EFFECT_FLAG_UNCOPYABLE)
-		e1:SetCode(EVENT_PREDRAW)
-		e1:SetCondition(DestinyDrawCCG.condition)
-		e1:SetOperation(DestinyDrawCCG.operation)
-		Duel.RegisterEffect(e1,0)
+function s.ddcon(e,tp,eg,ep,ev,re,r,rp)
+	local p=e:GetLabel()
+	return p<2
+		and tp==p
+		and Duel.GetTurnPlayer()==p
+		and Duel.GetDrawCount(p)>0
+		and Duel.GetFieldGroupCount(
+			p,LOCATION_DECK,0)>0
+		and Duel.GetLP(1-p)>=Duel.GetLP(p)*2
+		and Duel.GetFieldGroupCount(
+			p,0,LOCATION_MZONE)>0
+end
 
-		--Check before player 1's normal draw
-		local e2=e1:Clone()
-		Duel.RegisterEffect(e2,1)
+function s.ddop(e,tp,eg,ep,ev,re,r,rp)
+	local p=e:GetLabel()
+	if p>=2 or tp~=p or Duel.GetTurnPlayer()~=p then
+		return
 	end
 
-	function DestinyDrawCCG.condition(e,tp,eg,ep,ev,re,r,rp)
-		return not DestinyDrawCCG[tp]
-			and Duel.GetDrawCount(tp)>0
-			and Duel.GetFieldGroupCount(
-				tp,LOCATION_DECK,0)>0
-			and Duel.GetLP(1-tp)>=Duel.GetLP(tp)*2
-			and Duel.GetFieldGroupCount(
-				tp,0,LOCATION_MZONE)>0
+	--Using this Rule is optional
+	if not Duel.SelectYesNo(
+		p,aux.Stringid(id,0)) then
+		return
 	end
 
-	function DestinyDrawCCG.operation(e,tp,eg,ep,ev,re,r,rp)
-		--Using this Rule is optional
-		if not Duel.SelectYesNo(
-			tp,aux.Stringid(id,0)) then
-			return
-		end
+	Duel.Hint(HINT_CARD,0,id)
 
-		Duel.Hint(HINT_CARD,0,id)
+	--Choose any card from the Deck
+	Duel.Hint(HINT_SELECTMSG,p,HINTMSG_SELECT)
+	local g=Duel.SelectMatchingCard(
+		p,aux.TRUE,p,LOCATION_DECK,0,1,1,nil)
+	local tc=g:GetFirst()
+	if not tc then return end
 
-		--Choose any card from the Deck
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SELECT)
-		local g=Duel.SelectMatchingCard(
-			tp,aux.TRUE,tp,LOCATION_DECK,0,1,1,nil)
-		local tc=g:GetFirst()
-		if not tc then return end
+	--Consume the once-per-Duel use
+	e:SetLabel(p+2)
 
-		--Consume the once-per-Duel use
-		DestinyDrawCCG[tp]=true
-
-		--Shuffle, then place the selected card on top
-		Duel.ShuffleDeck(tp)
-		Duel.MoveSequence(tc,0)
-	end
-
-	finishsetup()
+	--Shuffle, then place the selected card on top
+	Duel.ShuffleDeck(p)
+	Duel.MoveSequence(tc,0)
 end
