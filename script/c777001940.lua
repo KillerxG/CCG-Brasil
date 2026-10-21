@@ -1,22 +1,25 @@
---Water Dinossaur
---Scripted by KillerxG
+--Waterfall Dinosaur
+--Scripted by Codex
 local s,id=GetID()
 function s.initial_effect(c)
+	--You can only control 1 "Waterfall Dinosaur"
+	c:SetUniqueOnField(1,0,id)
 	--Link Summon
-	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsAttribute,ATTRIBUTE_WATER),2,2)
+	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsAttribute,ATTRIBUTE_WATER),2,2,s.lcheck)
 	c:EnableReviveLimit()
-	--(1)Payment Damage
+	--(1)Inflict damage and recover LP
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_DAMAGE+CATEGORY_RECOVER)
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_DELAY)
+	e1:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_PLAYER_TARGET)
 	e1:SetCode(EVENT_PAY_LPCOST)
 	e1:SetRange(LOCATION_MZONE)
+	e1:SetCondition(s.damcon)
 	e1:SetTarget(s.damtg)
 	e1:SetOperation(s.damop)
 	c:RegisterEffect(e1)
-	--(2)Destroy
+	--(2)Destroy 1 face-up monster
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DESTROY)
@@ -28,42 +31,51 @@ function s.initial_effect(c)
 	e2:SetOperation(s.desop)
 	c:RegisterEffect(e2)
 end
---(1)Payment Damage
+--Link Summon
+function s.lcheck(g,lc,sumtype,tp)
+	return g:CheckDifferentProperty(Card.GetCode,lc,sumtype,tp)
+end
+--(1)Inflict damage and recover LP
+function s.damcon(e,tp,eg,ep,ev,re,r,rp)
+	local phase=Duel.GetCurrentPhase()
+	return phase~=PHASE_DAMAGE and phase~=PHASE_DAMAGE_CAL
+end
 function s.damtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
+	local val=math.ceil(ev/2)
+	if chk==0 then return val>0 end
 	Duel.SetTargetPlayer(1-tp)
-	Duel.SetTargetParam(ev)
-	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,ev)
+	Duel.SetTargetParam(val)
+	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,val)
+	Duel.SetOperationInfo(0,CATEGORY_RECOVER,nil,0,tp,val)
 end
 function s.damop(e,tp,eg,ep,ev,re,r,rp)
 	local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
-	if Duel.Damage(p,d,REASON_EFFECT) then
-		Duel.Recover(tp,1000,REASON_EFFECT)
+	local dam=Duel.Damage(p,d,REASON_EFFECT)
+	if dam>0 then
+		Duel.Recover(tp,dam,REASON_EFFECT)
 	end
 end
---(2)Destroy
-function s.filter(c)
-	return c:IsDestructable()
+--(2)Destroy 1 face-up monster
+function s.desfilter(c)
+	return c:IsFaceup()
 end
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_ONFIELD) and chkc:IsControler(1-tp) and s.filter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,0,LOCATION_ONFIELD,1,nil) end
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and s.desfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.desfilter,tp,0,LOCATION_MZONE,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-	local g=Duel.SelectTarget(tp,s.filter,tp,0,LOCATION_ONFIELD,1,1,nil)
-	if not Duel.CheckLPCost(1-tp,1000) then
-		Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
-	end
+	local g=Duel.SelectTarget(tp,s.desfilter,tp,0,LOCATION_MZONE,1,1,nil)
+	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
 end
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
-	if Duel.CheckLPCost(1-tp,1000) and Duel.SelectYesNo(1-tp,aux.Stringid(id,2)) then
-		Duel.PayLPCost(1-tp,1000)
+	if Duel.CheckLPCost(1-tp,800) and Duel.SelectYesNo(1-tp,aux.Stringid(id,2)) then
+		Duel.PayLPCost(1-tp,800)
 		if Duel.IsChainDisablable(0) then
 			Duel.NegateEffect(0)
-			return
 		end
-	end
-	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsFaceup() and tc:IsRelateToEffect(e) then
-		Duel.Destroy(tc,REASON_EFFECT)
+	else
+		local tc=Duel.GetFirstTarget()
+		if tc and tc:IsFaceup() and tc:IsRelateToEffect(e) then
+			Duel.Destroy(tc,REASON_EFFECT)
+		end
 	end
 end
