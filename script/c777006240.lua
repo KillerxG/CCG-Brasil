@@ -1,4 +1,4 @@
---
+--Hallowferno Lament Soul
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)	
@@ -60,7 +60,7 @@ function s.ngop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(1.2)Draw
 function s.drfilter(c, tp)
-    if not (c:IsRace(RACE_YOKAI) and c:HasLevel() and c:GetLevel() >= 4 and not c:IsPublic()) then return false end
+    if not (c:IsRace(RACE_ILLUSION) and c:IsAttribute(ATTRIBUTE_FIRE) and c:HasLevel() and c:GetLevel() >= 4 and not c:IsPublic()) then return false end
     local draws = math.floor(c:GetLevel() / 4)
     return Duel.IsPlayerCanDraw(tp, draws)
 end
@@ -87,7 +87,7 @@ function s.drop(e, tp, eg, ep, ev, re, r, rp)
 end
 --(2.1)Recycle then Special Summon itself
 function s.thfilter(c)
-    return c:IsFaceup() and (c:IsRace(RACE_YOKAI) or c:IsCode(777006270)) and c:IsAbleToHand()
+    return c:IsFaceup() and (c:IsRace(RACE_ILLUSION) and c:IsAttribute(ATTRIBUTE_FIRE) or c:IsCode(777006270)) and c:IsAbleToHand()
 end
 function s.thtg(e, tp, eg, ep, ev, re, r, rp, chk, chkc)
     if chkc then return chkc:IsLocation(LOCATION_GRAVE + LOCATION_REMOVED) and chkc:IsControler(tp) and s.thfilter(chkc) end    

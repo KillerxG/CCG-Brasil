@@ -1,13 +1,10 @@
---
+--Hallowferno Giant Destroyer
 --Scripted by KillerxG
 local s,id=GetID()
-Duel.LoadScript("proc_divine_hierarchy_mod.lua")
 function s.initial_effect(c)
 	--Synchro Summon
 	Synchro.AddProcedure(c,s.tunerfilter,1,1,Synchro.NonTuner(nil),1,99)
 	c:EnableReviveLimit()
-	--Divine Hierarchy Rank 1
-	DivineHierarchyMod.Register(c,1)
 	--(1)Attack Twice
 	local e1 = Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
@@ -59,7 +56,7 @@ end
 function s.thop(e, tp, eg, ep, ev, re, r, rp)
     local tc = Duel.GetFirstTarget()
     if tc and tc:IsRelateToEffect(e) then
-        Duel.SendtoHand(tc, tp, REASON_EFFECT)
+        Duel.SendtoHand(tc, nil, REASON_EFFECT)
     end
 end
 --(3)Recycle
@@ -67,7 +64,7 @@ function s.epcon(e, tp, eg, ep, ev, re, r, rp)
     return Duel.GetTurnPlayer() == tp
 end
 function s.rockfilter(c)
-    return c:IsRace(RACE_YOKAI) and c:IsAbleToHand()
+    return c:IsRace(RACE_ILLUSION) and c:IsAttribute(ATTRIBUTE_FIRE) and c:IsAbleToHand()
 end
 function s.rocktg(e, tp, eg, ep, ev, re, r, rp, chk, chkc)
     if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.rockfilter(chkc) end

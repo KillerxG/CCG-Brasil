@@ -1,13 +1,10 @@
---
+--Hallowferno Plague Flutist
 --Scripted by KillerxG
 local s,id=GetID()
-Duel.LoadScript("proc_divine_hierarchy_mod.lua")
 function s.initial_effect(c)
 	--Synchro Summon
 	Synchro.AddProcedure(c,s.tunerfilter,1,1,Synchro.NonTuner(nil),1,99)
 	c:EnableReviveLimit()
-	--Divine Hierarchy Rank 1
-	DivineHierarchyMod.Register(c,1)
 	--(1)Send to the GY and change Level
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
@@ -29,7 +26,7 @@ function s.initial_effect(c)
 	e2:SetValue(s.repval)
 	e2:SetOperation(s.repop)
 	c:RegisterEffect(e2)
-	--(3)Substitute Issun as Tuner
+	--(3)Substitute Hallowferno Cat as Tuner
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_SINGLE)
 	e3:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
@@ -46,7 +43,7 @@ function s.tgcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSynchroSummoned()
 end
 function s.filter(c)
-	return c:IsRace(RACE_YOKAI) and c:IsMonster() and c:IsAbleToGrave()
+	return c:IsRace(RACE_ILLUSION) and c:IsAttribute(ATTRIBUTE_FIRE) and c:IsMonster() and c:IsAbleToGrave()
 end
 function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_DECK,0,1,nil) end
@@ -70,7 +67,7 @@ function s.tgop(e,tp,eg,ep,ev,re,r,rp)
 end
 --(2)Destroy Replace
 function s.repfilter(c,tp)
-	return c:IsFaceup() and c:IsRace(RACE_YOKAI) and c:IsLocation(LOCATION_MZONE) and c:IsControler(tp) 
+	return c:IsFaceup() and c:IsRace(RACE_ILLUSION) and c:IsAttribute(ATTRIBUTE_FIRE) and c:IsLocation(LOCATION_MZONE) and c:IsControler(tp) 
 		and not c:IsReason(REASON_REPLACE) and c:IsReason(REASON_EFFECT|REASON_BATTLE)
 end
 function s.reptg(e,tp,eg,ep,ev,re,r,rp,chk)

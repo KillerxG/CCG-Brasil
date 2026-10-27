@@ -1,14 +1,11 @@
---
+--Hallowferno Werewolf
 --Scripted by KillerxG
 local s,id=GetID()
-Duel.LoadScript("proc_divine_hierarchy_mod.lua")
 function s.initial_effect(c)
 	--Synchro Summon
 	Synchro.AddProcedure(c,s.tunerfilter,1,1,Synchro.NonTuner(nil),1,99)
-	c:EnableReviveLimit()
-	--Divine Hierarchy Rank 1
-	DivineHierarchyMod.Register(c,1)
-	--(1)Place Yokai Scales
+	c:EnableReviveLimit()	
+	--(1)Place FIRE Illusion Scales
 	local e1 = Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id, 0))
     e1:SetType(EFFECT_TYPE_SINGLE + EFFECT_TYPE_TRIGGER_O)
@@ -48,12 +45,12 @@ s.material={777006250}
 function s.tunerfilter(c,lc,stype,tp)
 	return c:IsSummonCode(lc,stype,tp,777006250) or c:IsHasEffect(777006280)
 end
---(1)Place Yokai Scales
+--(1)Place FIRE Illusion Scales
 function s.pencon(e, tp, eg, ep, ev, re, r, rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
 end
 function s.penfilter(c)
-    return c:IsRace(RACE_YOKAI) and c:IsType(TYPE_PENDULUM) and not c:IsForbidden()
+    return c:IsRace(RACE_ILLUSION) and c:IsAttribute(ATTRIBUTE_FIRE) and c:IsType(TYPE_PENDULUM) and not c:IsForbidden()
 end
 
 function s.pentg(e, tp, eg, ep, ev, re, r, rp, chk)

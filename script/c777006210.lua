@@ -1,9 +1,9 @@
--- Corrupted Okami - Evil Rao
+--Hallowferno Knight
 -- Scripted by Gemini
 local s, id = GetID()
 
 function s.initial_effect(c)
-    -- Efeito 1: Special Summon da mão se controlar um monstro Yokai
+    -- Efeito 1: Special Summon da mão se controlar um monstro FIRE Illusion
     local e1 = Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id, 0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -15,7 +15,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.spop1)
     c:RegisterEffect(e1)
 
-    -- Efeito 2: Se Normal ou Special Summoned -> Revelar Yokai na mão -> SS Yokai do Deck (nome diferente)
+    -- Efeito 2: Se Normal ou Special Summoned -> Revelar FIRE Illusion na mão -> SS .sol do Deck (nome diferente)
     local e2 = Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id, 1))
     e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -38,8 +38,8 @@ end
 -- Efeito 1: Invocação Especial da Mão (Ignição)
 -- ====================================================================
 function s.cfilter(c)
-    -- Checa se o monstro está virado para cima e pertence à raça Yokai
-    return c:IsFaceup() and c:IsRace(RACE_YOKAI)
+    -- Checa se o monstro está virado para cima e pertence à raça FIRE Illusion
+    return c:IsFaceup() and c:IsRace(RACE_ILLUSION) and c:IsAttribute(ATTRIBUTE_FIRE)
 end
 
 function s.spcon1(e, tp, eg, ep, ev, re, r, rp)
@@ -63,13 +63,13 @@ end
 -- Efeito 2: Revelar da Mão para Invocar do Deck (Gatilho)
 -- ====================================================================
 function s.spfilter2(c, code, e, tp)
-    -- Precisa ser Yokai, NÃO pode ter o mesmo código da carta revelada e tem que ser invocável
-    return c:IsRace(RACE_YOKAI) and not c:IsCode(code) and c:IsCanBeSpecialSummoned(e, 0, tp, false, false)
+    -- Precisa ser FIRE Illusion, NÃO pode ter o mesmo código da carta revelada e tem que ser invocável
+    return c:IsSetCard(0x249) and not c:IsCode(code) and c:IsCanBeSpecialSummoned(e, 0, tp, false, false)
 end
 
 function s.revfilter(c, e, tp)
-    -- Verifica a viabilidade do custo: Se revelar este Yokai, ainda sobra alvo válido no deck?
-    return c:IsRace(RACE_YOKAI) and not c:IsPublic() 
+    -- Verifica a viabilidade do custo: Se revelar este FIRE Illusion, ainda sobra alvo válido no deck?
+    return c:IsRace(RACE_ILLUSION) and c:IsAttribute(ATTRIBUTE_FIRE) and not c:IsPublic() 
         and Duel.IsExistingMatchingCard(s.spfilter2, tp, LOCATION_DECK, 0, 1, nil, c:GetCode(), e, tp)
 end
 

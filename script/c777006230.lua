@@ -1,4 +1,4 @@
---
+--Hallowferno Tombstone Soul
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)	
@@ -58,32 +58,33 @@ function s.disop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 --(1.2)Change Scale
-function s.scfilter(c)
-    return c:IsFaceup() and c:IsAttribute(ATTRIBUTE_DARK) and c:HasLevel()
+function s.scfilter(c,scale)
+	return c:IsFaceup() and c:IsAttribute(ATTRIBUTE_FIRE) and c:HasLevel()
+		and c:GetLevel()~=scale
 end
-function s.sctg(e, tp, eg, ep, ev, re, r, rp, chk, chkc)
-    if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.scfilter(chkc) end
-    if chk == 0 then return Duel.IsExistingTarget(s.scfilter, tp, LOCATION_MZONE, LOCATION_MZONE, 1, nil) end
-    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_TARGET)
-    Duel.SelectTarget(tp, s.scfilter, tp, LOCATION_MZONE, LOCATION_MZONE, 1, 1, nil)
+function s.sctg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	local scale=e:GetHandler():GetScale()
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.scfilter(chkc,scale) end
+	if chk==0 then return Duel.IsExistingTarget(s.scfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil,scale) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
+	Duel.SelectTarget(tp,s.scfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,nil,scale)
 end
-function s.scop(e, tp, eg, ep, ev, re, r, rp)
-    local c = e:GetHandler()
-    local tc = Duel.GetFirstTarget()    
-    if c:IsRelateToEffect(e) and tc and tc:IsRelateToEffect(e) and tc:IsFaceup() and tc:HasLevel() then
-        local lvl = tc:GetLevel()        
-        -- Altera a Escala Esquerda
-        local e1 = Effect.CreateEffect(c)
-        e1:SetType(EFFECT_TYPE_SINGLE)
-        e1:SetCode(EFFECT_CHANGE_LSCALE)
-        e1:SetValue(lvl)
-        e1:SetReset(RESET_EVENT + RESETS_STANDARD)
-        c:RegisterEffect(e1)        
-        -- Altera a Escala Direita clonando o efeito anterior
-        local e2 = e1:Clone()
-        e2:SetCode(EFFECT_CHANGE_RSCALE)
-        c:RegisterEffect(e2)
-    end
+function s.scop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local tc=Duel.GetFirstTarget()
+	if not c:IsRelateToEffect(e) or not tc or not tc:IsRelateToEffect(e)
+		or not tc:IsFaceup() or not tc:HasLevel() then return end
+	local lvl=tc:GetLevel()
+	if lvl==c:GetScale() then return end
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetCode(EFFECT_CHANGE_LSCALE)
+	e1:SetValue(lvl)
+	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+	c:RegisterEffect(e1)
+	local e2=e1:Clone()
+	e2:SetCode(EFFECT_CHANGE_RSCALE)
+	c:RegisterEffect(e2)
 end
 --(2.1)Recycle it self then can recycle another
 function s.thcon3(e, tp, eg, ep, ev, re, r, rp)

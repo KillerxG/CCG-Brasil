@@ -1,4 +1,4 @@
--- Corrupted Okami - Yomigami
+-- Hallowferno Pumpkin
 -- Scripted by Gemini
 local s, id = GetID()
 
@@ -15,7 +15,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.thop)
     c:RegisterEffect(e1)
 
-    -- Efeito 2: Reviver 1 Yokai Tuner do GY e (opcionalmente) aumentar Nível em 2
+    -- Efeito 2: Reviver 1 FIRE Illusion Tuner do GY e (opcionalmente) aumentar Nível em 2
     local e2 = Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id, 1))
     e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -23,6 +23,7 @@ function s.initial_effect(c)
     e2:SetRange(LOCATION_GRAVE)
     e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
     e2:SetCountLimit(1, id + 1)
+	e2:SetCost(Cost.SelfBanish)
     e2:SetTarget(s.sptg)
     e2:SetOperation(s.spop)
     c:RegisterEffect(e2)
@@ -57,11 +58,11 @@ function s.thop(e, tp, eg, ep, ev, re, r, rp)
 end
 
 -- ====================================================================
--- Efeito 2: Reviver Yokai Tuner e Manipular Nível
+-- Efeito 2: Reviver FIRE Illusion Tuner e Manipular Nível
 -- ====================================================================
 function s.spfilter(c, e, tp)
-    -- O alvo precisa ser da raça Yokai e do tipo Tuner
-    return c:IsRace(RACE_YOKAI) and c:IsType(TYPE_TUNER) and c:IsCanBeSpecialSummoned(e, 0, tp, false, false)
+    -- O alvo precisa ser da raça FIRE Illusion e do tipo Tuner
+    return c:IsRace(RACE_ILLUSION) and c:IsAttribute(ATTRIBUTE_FIRE) and c:IsType(TYPE_TUNER) and c:IsCanBeSpecialSummoned(e, 0, tp, false, false)
 end
 
 function s.sptg(e, tp, eg, ep, ev, re, r, rp, chk, chkc)

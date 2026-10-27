@@ -1,4 +1,4 @@
---
+--Hallowferno Cat
 --Scripted by KillerxG
 local s,id=GetID()
 function s.initial_effect(c)	
@@ -31,7 +31,7 @@ function s.initial_effect(c)
 end
 --(1)Search then additional Normal
 function s.thfilter(c)
-	return c:IsRace(RACE_YOKAI) and c:IsAbleToHand() and not c:IsCode(id)
+	return c:IsRace(RACE_ILLUSION) and c:IsAttribute(ATTRIBUTE_FIRE) and c:IsAbleToHand() and not c:IsCode(id)
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil)
@@ -47,13 +47,13 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 	if Duel.IsPlayerCanSummon(tp) and Duel.IsPlayerCanAdditionalSummon(tp) then
 		local c=e:GetHandler()
-		--Can Normal Summon 1 Yokai monster in addition to your Normal Summon/Set this turn
+		--Can Normal Summon 1 FIRE Illusion monster in addition to your Normal Summon/Set this turn
 		local e1=Effect.CreateEffect(c)
 		e1:SetDescription(aux.Stringid(id,2))
 		e1:SetType(EFFECT_TYPE_FIELD)
 		e1:SetCode(EFFECT_EXTRA_SUMMON_COUNT)
 		e1:SetTargetRange(LOCATION_HAND|LOCATION_MZONE,0)
-		e1:SetTarget(aux.TargetBoolFunction(Card.IsRace,RACE_YOKAI))
+		e1:SetTarget(function(e,c) return c:IsRace(RACE_ILLUSION) and c:IsAttribute(ATTRIBUTE_FIRE) end)
 		e1:SetReset(RESET_PHASE|PHASE_END)
 		Duel.RegisterEffect(e1,tp)
 		Auxiliary.RegisterClientHint(c,nil,tp,1,0,aux.Stringid(id,3))
@@ -62,7 +62,7 @@ end
 --(2)Special Summon
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsLocation(LOCATION_GRAVE) and r==REASON_SYNCHRO and c:GetReasonCard():IsRace(RACE_YOKAI)
+	return c:IsLocation(LOCATION_GRAVE) and r==REASON_SYNCHRO and c:GetReasonCard():IsRace(RACE_ILLUSION) and c:GetReasonCard():IsAttribute(ATTRIBUTE_FIRE)
 end
 function s.spfilter(c,e,tp)
 	return not c:IsCode(id) and c:IsLocation(LOCATION_GRAVE) and c:IsControler(tp) and c:IsCanBeEffectTarget(e)

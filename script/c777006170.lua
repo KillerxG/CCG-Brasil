@@ -1,13 +1,10 @@
---
+--Hallowferno Giant Destroyer
 --Scripted by KillerxG
 local s,id=GetID()
-Duel.LoadScript("proc_divine_hierarchy_mod.lua")
 function s.initial_effect(c)
 	--Synchro Summon
 	Synchro.AddProcedure(c,s.tunerfilter,1,1,Synchro.NonTuner(nil),1,99)
 	c:EnableReviveLimit()
-	--Divine Hierarchy Rank 1
-	DivineHierarchyMod.Register(c,1)
 	--(1)Place opponent's monster in their S/T Zone
 	local e1 = Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id, 0))

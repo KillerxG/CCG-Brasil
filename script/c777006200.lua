@@ -1,9 +1,9 @@
--- Corrupted Okami - Crinsom Helm
+-- Hallowferno Scarecrow
 -- Scripted by Gemini
 local s, id = GetID()
 
 function s.initial_effect(c)
-    -- Efeito 1: Descartar 1 OUTRO Yokai para invocar esta carta da mão/GY
+    -- Efeito 1: Descartar 1 OUTRO FIRE Illusion para invocar esta carta da mão/GY
     local e1 = Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id, 0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -24,7 +24,7 @@ function s.initial_effect(c)
     e2:SetValue(1)
     c:RegisterEffect(e2)
 
-    -- Efeito 3: Alvejar 2 Yokais diferentes no GY -> Adicionar 1 e Invocar o outro
+    -- Efeito 3: Alvejar 2 FIRE Illusion monsters diferentes no GY -> Adicionar 1 e Invocar o outro
     local e3 = Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id, 1))
     e3:SetCategory(CATEGORY_TOHAND + CATEGORY_SPECIAL_SUMMON)
@@ -41,12 +41,12 @@ end
 -- Efeito 1: Invocação Especial da Mão ou Cemitério
 -- ====================================================================
 function s.dcfilter(c)
-    return c:IsRace(RACE_YOKAI) and c:IsDiscardable()
+    return c:IsRace(RACE_ILLUSION) and c:IsAttribute(ATTRIBUTE_FIRE) and c:IsDiscardable()
 end
 
 function s.spcost1(e, tp, eg, ep, ev, re, r, rp, chk)
     local c = e:GetHandler()
-    -- Passar o 'c' no final garante que você descarta 1 *outro* Yokai e não a si mesmo se estiver na mão
+    -- Passar o 'c' no final garante que você descarta 1 *outro* FIRE Illusion e não a si mesmo se estiver na mão
     if chk == 0 then return Duel.IsExistingMatchingCard(s.dcfilter, tp, LOCATION_HAND, 0, 1, c) end
     Duel.DiscardHand(tp, s.dcfilter, 1, 1, REASON_COST + REASON_DISCARD, c)
 end
@@ -66,11 +66,11 @@ function s.spop1(e, tp, eg, ep, ev, re, r, rp)
 end
 
 -- ====================================================================
--- Efeito 3: Alvejar 2 Yokais, Adicionar e Invocar
+-- Efeito 3: Alvejar 2 FIRE Illusion monsters, Adicionar e Invocar
 -- ====================================================================
 function s.tgfilter(c, e, tp)
-    -- As cartas precisam ser Yokai e ter pelo menos uma utilidade (ir pra mão ou invocar)
-    return c:IsRace(RACE_YOKAI) and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(e, 0, tp, false, false))
+    -- As cartas precisam ser FIRE Illusion e ter pelo menos uma utilidade (ir pra mão ou invocar)
+    return c:IsRace(RACE_ILLUSION) and c:IsAttribute(ATTRIBUTE_FIRE) and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(e, 0, tp, false, false))
 end
 
 function s.rescon(sg, e, tp, mg)
