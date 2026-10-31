@@ -65,7 +65,7 @@ function s.initial_effect(c)
 	e5:SetOperation(s.spop)
 	c:RegisterEffect(e5)
 end
-s.listed_names={id,48179391,110000100,110000101,777006340,777006350,777006371}
+s.listed_names={id,48179391,110000100,110000101,777006340,777006350,777006375}
 --(2)Place this card in the Spell & Trap Zone and Special Summon Tokens
 function s.plcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsRitualSummoned()
@@ -91,13 +91,13 @@ function s.plop(e,tp,eg,ep,ev,re,r,rp)
 	c:RegisterEffect(e1)
 	local ft=math.min(4,Duel.GetLocationCount(tp,LOCATION_MZONE))
 	if ft<=0 or not s.sealcheck(tp)
-		or not Duel.IsPlayerCanSpecialSummonMonster(tp,777006371,0,TYPES_TOKEN,0,0,1,RACE_WARRIOR,ATTRIBUTE_DARK) then return end
+		or not Duel.IsPlayerCanSpecialSummonMonster(tp,777006375,0,TYPES_TOKEN,0,0,1,RACE_WARRIOR,ATTRIBUTE_DARK) then return end
 	if Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT) then ft=1 end
 	local t={}
 	for i=1,ft do t[i]=i end
 	local ct=Duel.AnnounceNumber(tp,table.unpack(t))
 	for i=1,ct do
-		local token=Duel.CreateToken(tp,777006371)
+		local token=Duel.CreateToken(tp,777006375)
 		Duel.SpecialSummonStep(token,0,tp,tp,false,false,POS_FACEUP)
 	end
 	Duel.SpecialSummonComplete()
@@ -121,14 +121,14 @@ function s.atkcon(e)
 	return s.auracon(e) and Duel.IsPhase(PHASE_DAMAGE_CAL) and Duel.GetAttackTarget()
 end
 function s.atktg(e,c)
-	return c:IsFaceup() and c:IsCode(777006371) and c:GetBattleTarget()
+	return c:IsFaceup() and c:IsCode(777006375) and c:GetBattleTarget()
 end
 function s.atkval(e,c)
 	return c:GetBattleTarget():GetAttack()
 end
 --(5)Special Summon 1 Monster Card from your Spell & Trap Zone
 function s.cfilter(c)
-	return c:IsCode(777006371) and c:IsReleasable()
+	return c:IsCode(777006375) and c:IsReleasable()
 end
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil) end
